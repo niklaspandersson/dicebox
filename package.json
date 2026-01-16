@@ -1,0 +1,15 @@
+{
+  "name": "dicebox",
+  "version": "1.0.0",
+  "description": "A peer-to-peer dice rolling web application using WebRTC and Web Components",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["dice", "webrtc", "web-components", "p2p"],
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}
