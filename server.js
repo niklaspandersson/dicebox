@@ -34,44 +34,40 @@ const server = http.createServer((req, res) => {
   });
 });
 
-// WebSocket signaling server
+// WebSocket signaling server - MINIMAL ICE BROKER
 const wss = new WebSocket.Server({ server });
 
-// Room management
+// Minimal room tracking: roomId -> { hostPeerId, hostWs }
 const rooms = new Map();
+
+// Peer connections: peerId -> { ws, roomId }
+const peers = new Map();
 
 function generatePeerId() {
   return Math.random().toString(36).substring(2, 10);
 }
 
-function broadcastToRoom(roomId, message, excludePeerId = null) {
-  const room = rooms.get(roomId);
-  if (!room) return;
-
-  room.forEach((client, peerId) => {
-    if (peerId !== excludePeerId && client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(message));
-    }
-  });
+function sendTo(ws, message) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(message));
+  }
 }
 
-function getRoomPeers(roomId, excludePeerId = null) {
-  const room = rooms.get(roomId);
-  if (!room) return [];
-
-  return Array.from(room.entries())
-    .filter(([peerId]) => peerId !== excludePeerId)
-    .map(([peerId, client]) => ({
-      peerId,
-      username: client.username || 'Anonymous'
-    }));
+function sendToPeer(peerId, message) {
+  const peer = peers.get(peerId);
+  if (peer) {
+    sendTo(peer.ws, message);
+  }
 }
 
 wss.on('connection', (ws) => {
   const peerId = generatePeerId();
-  let currentRoom = null;
+  peers.set(peerId, { ws, roomId: null });
 
   console.log(`Peer connected: ${peerId}`);
+
+  // Send peer their ID
+  sendTo(ws, { type: 'peer-id', peerId });
 
   ws.on('message', (data) => {
     let message;
@@ -82,76 +78,120 @@ wss.on('connection', (ws) => {
       return;
     }
 
+    const peer = peers.get(peerId);
+
     switch (message.type) {
-      case 'join': {
-        const { roomId, username } = message;
-        currentRoom = roomId;
-        ws.username = username || 'Anonymous';
-
-        if (!rooms.has(roomId)) {
-          rooms.set(roomId, new Map());
-        }
-
+      // Room discovery: check if room exists and get host info
+      case 'query-room': {
+        const { roomId } = message;
         const room = rooms.get(roomId);
-        room.set(peerId, ws);
 
-        // Send peer their ID and existing peers in the room
-        ws.send(JSON.stringify({
-          type: 'joined',
-          peerId,
-          roomId,
-          peers: getRoomPeers(roomId, peerId)
-        }));
-
-        // Notify other peers
-        broadcastToRoom(roomId, {
-          type: 'peer-joined',
-          peerId,
-          username: ws.username
-        }, peerId);
-
-        console.log(`Peer ${peerId} (${ws.username}) joined room ${roomId}`);
+        if (room) {
+          sendTo(ws, {
+            type: 'room-info',
+            roomId,
+            exists: true,
+            hostPeerId: room.hostPeerId
+          });
+        } else {
+          sendTo(ws, {
+            type: 'room-info',
+            roomId,
+            exists: false
+          });
+        }
         break;
       }
 
+      // Register as host for a room
+      case 'register-host': {
+        const { roomId } = message;
+
+        // Check if room already has a host
+        if (rooms.has(roomId)) {
+          sendTo(ws, { type: 'register-host-failed', roomId, reason: 'Room already has a host' });
+          return;
+        }
+
+        rooms.set(roomId, { hostPeerId: peerId, hostWs: ws });
+        peer.roomId = roomId;
+
+        sendTo(ws, { type: 'register-host-success', roomId });
+        console.log(`Room ${roomId} created with host ${peerId}`);
+        break;
+      }
+
+      // Claim host role (for migration)
+      case 'claim-host': {
+        const { roomId } = message;
+        const room = rooms.get(roomId);
+
+        // Allow claiming if room doesn't exist or has no active host
+        if (!room || !peers.has(room.hostPeerId)) {
+          rooms.set(roomId, { hostPeerId: peerId, hostWs: ws });
+          peer.roomId = roomId;
+          sendTo(ws, { type: 'claim-host-success', roomId });
+          console.log(`Room ${roomId} host migrated to ${peerId}`);
+        } else {
+          sendTo(ws, { type: 'claim-host-failed', roomId, reason: 'Room already has active host' });
+        }
+        break;
+      }
+
+      // Join a room (connect to its host)
+      case 'join-room': {
+        const { roomId } = message;
+        const room = rooms.get(roomId);
+
+        if (!room) {
+          sendTo(ws, { type: 'join-room-failed', roomId, reason: 'Room does not exist' });
+          return;
+        }
+
+        peer.roomId = roomId;
+
+        // Tell the peer who the host is so they can initiate WebRTC
+        sendTo(ws, {
+          type: 'join-room-success',
+          roomId,
+          hostPeerId: room.hostPeerId
+        });
+
+        // Notify host that a peer wants to connect
+        sendTo(room.hostWs, {
+          type: 'peer-connecting',
+          peerId
+        });
+
+        console.log(`Peer ${peerId} joining room ${roomId}`);
+        break;
+      }
+
+      // WebRTC signaling - just relay between peers
       case 'offer':
       case 'answer':
       case 'ice-candidate': {
-        // Relay WebRTC signaling messages to specific peer
         const { targetPeerId } = message;
-        const room = rooms.get(currentRoom);
-        if (room && room.has(targetPeerId)) {
-          const targetWs = room.get(targetPeerId);
-          if (targetWs.readyState === WebSocket.OPEN) {
-            targetWs.send(JSON.stringify({
-              ...message,
-              fromPeerId: peerId
-            }));
+        sendToPeer(targetPeerId, {
+          ...message,
+          fromPeerId: peerId
+        });
+        break;
+      }
+
+      // Leave room
+      case 'leave-room': {
+        if (peer.roomId) {
+          const room = rooms.get(peer.roomId);
+
+          // If this peer was the host, remove the room
+          if (room && room.hostPeerId === peerId) {
+            rooms.delete(peer.roomId);
+            console.log(`Room ${peer.roomId} closed (host left)`);
           }
+
+          peer.roomId = null;
         }
-        break;
-      }
-
-      case 'dice-roll': {
-        // Broadcast dice roll to all peers in room (including sender for confirmation)
-        broadcastToRoom(currentRoom, {
-          type: 'dice-roll',
-          peerId,
-          username: ws.username,
-          ...message
-        });
-        break;
-      }
-
-      case 'chat': {
-        // Broadcast chat message to all peers
-        broadcastToRoom(currentRoom, {
-          type: 'chat',
-          peerId,
-          username: ws.username,
-          message: message.message,
-          timestamp: Date.now()
-        });
         break;
       }
 
@@ -161,23 +201,20 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    if (currentRoom && rooms.has(currentRoom)) {
-      const room = rooms.get(currentRoom);
-      room.delete(peerId);
+    const peer = peers.get(peerId);
 
-      // Notify other peers
-      broadcastToRoom(currentRoom, {
-        type: 'peer-left',
-        peerId,
-        username: ws.username
-      });
+    if (peer && peer.roomId) {
+      const room = rooms.get(peer.roomId);
 
-      // Clean up empty rooms
-      if (room.size === 0) {
-        rooms.delete(currentRoom);
-        console.log(`Room ${currentRoom} deleted (empty)`);
+      // If this peer was the host, remove the room entry
+      // (clients will handle migration via claim-host)
+      if (room && room.hostPeerId === peerId) {
+        rooms.delete(peer.roomId);
+        console.log(`Room ${peer.roomId} host disconnected, awaiting migration`);
       }
     }
+
+    peers.delete(peerId);
     console.log(`Peer disconnected: ${peerId}`);
   });
 
@@ -188,5 +225,5 @@ wss.on('connection', (ws) => {
 
 server.listen(PORT, () => {
   console.log(`DiceBox server running on http://localhost:${PORT}`);
-  console.log(`WebSocket signaling server ready`);
+  console.log(`Minimal ICE broker ready (host-based rooms)`);
 });

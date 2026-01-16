@@ -4,6 +4,7 @@
 class RoomView extends HTMLElement {
   constructor() {
     super();
+    this._isHost = false;
   }
 
   connectedCallback() {
@@ -13,7 +14,10 @@ class RoomView extends HTMLElement {
   render() {
     this.innerHTML = `
       <div class="room-header">
-        <div class="room-id">Room: <span id="current-room-id"></span></div>
+        <div class="room-info">
+          <div class="room-id">Room: <span id="current-room-id"></span></div>
+          <div class="host-badge" id="host-badge" style="display: none;">HOST</div>
+        </div>
         <button class="btn-leave" id="btn-leave">Leave Room</button>
       </div>
       <div class="room-content">
@@ -36,6 +40,14 @@ class RoomView extends HTMLElement {
     const el = this.querySelector('#current-room-id');
     if (el) {
       el.textContent = roomId;
+    }
+  }
+
+  setHostStatus(isHost) {
+    this._isHost = isHost;
+    const badge = this.querySelector('#host-badge');
+    if (badge) {
+      badge.style.display = isHost ? 'inline-block' : 'none';
     }
   }
 

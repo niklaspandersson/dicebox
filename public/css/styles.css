@@ -153,6 +153,12 @@ room-view .room-header {
   border-bottom: 1px solid var(--surface-light);
 }
 
+room-view .room-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 room-view .room-id {
   font-size: 1.2rem;
   color: var(--text-muted);
@@ -161,6 +167,16 @@ room-view .room-id {
 room-view .room-id span {
   color: var(--secondary-color);
   font-weight: 600;
+}
+
+room-view .host-badge {
+  background: var(--warning);
+  color: var(--background);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 room-view .btn-leave {

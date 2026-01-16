@@ -1,5 +1,6 @@
 /**
  * WebRTCManager - Handles peer-to-peer connections using WebRTC
+ * Simplified for host-based room model - app controls connection initiation
  */
 import { signalingClient } from './signaling-client.js';
 
@@ -17,48 +18,43 @@ export class WebRTCManager extends EventTarget {
   }
 
   setupSignalingHandlers() {
-    signalingClient.addEventListener('peer-joined', async (e) => {
-      const { peerId, username } = e.detail;
-      console.log(`Peer joined: ${peerId} (${username})`);
-      // Initiate connection to new peer
-      await this.createPeerConnection(peerId, true);
-    });
-
-    signalingClient.addEventListener('peer-left', (e) => {
-      const { peerId } = e.detail;
-      console.log(`Peer left: ${peerId}`);
-      this.closePeerConnection(peerId);
-    });
-
+    // Handle incoming WebRTC offers
     signalingClient.addEventListener('offer', async (e) => {
       const { fromPeerId, offer } = e.detail;
       console.log(`Received offer from: ${fromPeerId}`);
       await this.handleOffer(fromPeerId, offer);
     });
 
+    // Handle incoming WebRTC answers
     signalingClient.addEventListener('answer', async (e) => {
       const { fromPeerId, answer } = e.detail;
       console.log(`Received answer from: ${fromPeerId}`);
       await this.handleAnswer(fromPeerId, answer);
     });
 
+    // Handle incoming ICE candidates
     signalingClient.addEventListener('ice-candidate', async (e) => {
       const { fromPeerId, candidate } = e.detail;
       await this.handleIceCandidate(fromPeerId, candidate);
     });
+  }
 
-    signalingClient.addEventListener('joined', async (e) => {
-      const { peers } = e.detail;
-      // Connect to existing peers in the room
-      for (const peer of peers) {
-        await this.createPeerConnection(peer.peerId, true);
-      }
-    });
+  // Create a connection to a peer and initiate WebRTC handshake
+  async connectToPeer(peerId) {
+    console.log(`Initiating connection to peer: ${peerId}`);
+    return this.createPeerConnection(peerId, true);
+  }
+
+  // Accept a connection from a peer (wait for their offer)
+  async acceptPeer(peerId) {
+    console.log(`Preparing to accept connection from peer: ${peerId}`);
+    // Connection will be created when offer is received
   }
 
   async createPeerConnection(peerId, initiator = false) {
+    // Close existing connection if any
     if (this.peerConnections.has(peerId)) {
-      return this.peerConnections.get(peerId);
+      this.closePeerConnection(peerId);
     }
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
@@ -76,7 +72,9 @@ export class WebRTCManager extends EventTarget {
         detail: { peerId, state: pc.connectionState }
       }));
 
-      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+      if (pc.connectionState === 'connected') {
+        this.dispatchEvent(new CustomEvent('peer-connected', { detail: { peerId } }));
+      } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
         this.closePeerConnection(peerId);
       }
     };
@@ -103,19 +101,26 @@ export class WebRTCManager extends EventTarget {
 
     channel.onopen = () => {
       console.log(`Data channel with ${peerId} opened`);
-      this.dispatchEvent(new CustomEvent('channel-open', { detail: { peerId } }));
+      this.dispatchEvent(new CustomEvent('channel-open', {
+        detail: { peerId, channel }
+      }));
     };
 
     channel.onclose = () => {
       console.log(`Data channel with ${peerId} closed`);
       this.dataChannels.delete(peerId);
+      this.dispatchEvent(new CustomEvent('channel-closed', { detail: { peerId } }));
     };
 
     channel.onmessage = (e) => {
-      const message = JSON.parse(e.data);
-      this.dispatchEvent(new CustomEvent('message', {
-        detail: { peerId, message }
-      }));
+      try {
+        const message = JSON.parse(e.data);
+        this.dispatchEvent(new CustomEvent('message', {
+          detail: { peerId, message }
+        }));
+      } catch (err) {
+        console.error('Error parsing message from peer:', err);
+      }
     };
   }
 
@@ -151,20 +156,32 @@ export class WebRTCManager extends EventTarget {
       pc.close();
       this.peerConnections.delete(peerId);
     }
-    this.dataChannels.delete(peerId);
+
+    const channel = this.dataChannels.get(peerId);
+    if (channel) {
+      channel.close();
+      this.dataChannels.delete(peerId);
+    }
+
     this.dispatchEvent(new CustomEvent('peer-disconnected', { detail: { peerId } }));
+  }
+
+  getDataChannel(peerId) {
+    return this.dataChannels.get(peerId);
   }
 
   sendToPeer(peerId, message) {
     const channel = this.dataChannels.get(peerId);
     if (channel && channel.readyState === 'open') {
       channel.send(JSON.stringify(message));
+      return true;
     }
+    return false;
   }
 
-  broadcast(message) {
+  broadcast(message, excludePeerId = null) {
     for (const [peerId, channel] of this.dataChannels) {
-      if (channel.readyState === 'open') {
+      if (peerId !== excludePeerId && channel.readyState === 'open') {
         channel.send(JSON.stringify(message));
       }
     }
@@ -177,7 +194,14 @@ export class WebRTCManager extends EventTarget {
   }
 
   getConnectedPeers() {
-    return Array.from(this.dataChannels.keys());
+    return Array.from(this.dataChannels.entries())
+      .filter(([_, channel]) => channel.readyState === 'open')
+      .map(([peerId]) => peerId);
+  }
+
+  isConnectedTo(peerId) {
+    const channel = this.dataChannels.get(peerId);
+    return channel && channel.readyState === 'open';
   }
 }
 

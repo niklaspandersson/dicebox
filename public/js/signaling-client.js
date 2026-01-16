@@ -1,5 +1,6 @@
 /**
- * SignalingClient - Handles WebSocket connection to signaling server
+ * SignalingClient - Handles WebSocket connection to minimal ICE broker
+ * Only handles: peer ID assignment, room queries, host registration, and WebRTC signaling
  */
 export class SignalingClient extends EventTarget {
   constructor() {
@@ -7,9 +8,9 @@ export class SignalingClient extends EventTarget {
     this.ws = null;
     this.peerId = null;
     this.roomId = null;
-    this.username = null;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
+    this._pendingPeerId = null;
   }
 
   connect() {
@@ -23,11 +24,11 @@ export class SignalingClient extends EventTarget {
         console.log('Connected to signaling server');
         this.reconnectAttempts = 0;
         this.dispatchEvent(new CustomEvent('connected'));
-        resolve();
       };
 
       this.ws.onclose = () => {
         console.log('Disconnected from signaling server');
+        this.peerId = null;
         this.dispatchEvent(new CustomEvent('disconnected'));
         this.attemptReconnect();
       };
@@ -38,7 +39,17 @@ export class SignalingClient extends EventTarget {
       };
 
       this.ws.onmessage = (event) => {
-        this.handleMessage(JSON.parse(event.data));
+        const message = JSON.parse(event.data);
+
+        // Handle peer-id specially to resolve connect promise
+        if (message.type === 'peer-id') {
+          this.peerId = message.peerId;
+          console.log('Assigned peer ID:', this.peerId);
+          resolve();
+          return;
+        }
+
+        this.handleMessage(message);
       };
     });
   }
@@ -46,6 +57,7 @@ export class SignalingClient extends EventTarget {
   attemptReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.log('Max reconnection attempts reached');
+      this.dispatchEvent(new CustomEvent('reconnect-failed'));
       return;
     }
 
@@ -54,52 +66,13 @@ export class SignalingClient extends EventTarget {
 
     console.log(`Attempting reconnect in ${delay}ms...`);
     setTimeout(() => {
-      this.connect().then(() => {
-        if (this.roomId && this.username) {
-          this.joinRoom(this.roomId, this.username);
-        }
-      }).catch(() => {});
+      this.connect().catch(() => {});
     }, delay);
   }
 
   handleMessage(message) {
-    switch (message.type) {
-      case 'joined':
-        this.peerId = message.peerId;
-        this.dispatchEvent(new CustomEvent('joined', { detail: message }));
-        break;
-
-      case 'peer-joined':
-        this.dispatchEvent(new CustomEvent('peer-joined', { detail: message }));
-        break;
-
-      case 'peer-left':
-        this.dispatchEvent(new CustomEvent('peer-left', { detail: message }));
-        break;
-
-      case 'offer':
-        this.dispatchEvent(new CustomEvent('offer', { detail: message }));
-        break;
-
-      case 'answer':
-        this.dispatchEvent(new CustomEvent('answer', { detail: message }));
-        break;
-
-      case 'ice-candidate':
-        this.dispatchEvent(new CustomEvent('ice-candidate', { detail: message }));
-        break;
-
-      case 'dice-roll':
-        this.dispatchEvent(new CustomEvent('dice-roll', { detail: message }));
-        break;
-
-      case 'chat':
-        this.dispatchEvent(new CustomEvent('chat', { detail: message }));
-        break;
-
-      default:
-        console.log('Unknown message type:', message.type);
-    }
+    // Dispatch all messages as events - let the app handle them
+    this.dispatchEvent(new CustomEvent(message.type, { detail: message }));
   }
 
   send(message) {
@@ -108,12 +81,35 @@ export class SignalingClient extends EventTarget {
     }
   }
 
-  joinRoom(roomId, username) {
-    this.roomId = roomId;
-    this.username = username;
-    this.send({ type: 'join', roomId, username });
+  // Query if a room exists and who the host is
+  queryRoom(roomId) {
+    this.send({ type: 'query-room', roomId });
   }
 
+  // Register as host for a new room
+  registerHost(roomId) {
+    this.roomId = roomId;
+    this.send({ type: 'register-host', roomId });
+  }
+
+  // Claim host role (for migration)
+  claimHost(roomId) {
+    this.send({ type: 'claim-host', roomId });
+  }
+
+  // Join an existing room
+  joinRoom(roomId) {
+    this.roomId = roomId;
+    this.send({ type: 'join-room', roomId });
+  }
+
+  // Leave current room
+  leaveRoom() {
+    this.send({ type: 'leave-room' });
+    this.roomId = null;
+  }
+
+  // WebRTC signaling
   sendOffer(targetPeerId, offer) {
     this.send({ type: 'offer', targetPeerId, offer });
   }
@@ -126,16 +122,9 @@ export class SignalingClient extends EventTarget {
     this.send({ type: 'ice-candidate', targetPeerId, candidate });
   }
 
-  sendDiceRoll(diceType, count, values, total) {
-    this.send({ type: 'dice-roll', diceType, count, values, total });
-  }
-
-  sendChat(message) {
-    this.send({ type: 'chat', message });
-  }
-
   disconnect() {
     if (this.ws) {
+      this.send({ type: 'leave-room' });
       this.ws.close();
       this.ws = null;
     }
