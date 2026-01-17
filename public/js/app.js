@@ -34,6 +34,9 @@ class DiceBoxApp {
     // Join order (for migration election)
     this.myJoinOrder = 0;
 
+    // Connection state
+    this.serverConnected = false;
+
     // UI components
     this.roomJoin = document.querySelector('room-join');
     this.roomView = document.querySelector('room-view');
@@ -46,6 +49,12 @@ class DiceBoxApp {
 
   async init() {
     this.setupEventListeners();
+
+    // Show connecting state
+    if (this.roomJoin) {
+      this.roomJoin.setConnecting();
+    }
+
     await this.connectToSignalingServer();
   }
 
@@ -53,10 +62,21 @@ class DiceBoxApp {
     try {
       await signalingClient.connect();
       this.peerId = signalingClient.peerId;
+      this.serverConnected = true;
       console.log('Connected to signaling server, peer ID:', this.peerId);
+
+      // Update UI to show connected state
+      if (this.roomJoin) {
+        this.roomJoin.setConnected();
+      }
     } catch (error) {
       console.error('Failed to connect to signaling server:', error);
-      this.showStatus('Connection failed. Retrying...', 'disconnected');
+      this.serverConnected = false;
+
+      // Show error state in UI
+      if (this.roomJoin) {
+        this.roomJoin.setDisconnected(true);
+      }
     }
   }
 
@@ -85,6 +105,11 @@ class DiceBoxApp {
       this.leaveRoom();
     });
 
+    // Retry connection event
+    document.addEventListener('retry-connection', () => {
+      this.retryConnection();
+    });
+
     // Dice roll UI events
     document.addEventListener('dice-rolled', (e) => {
       this.handleLocalDiceRoll(e.detail);
@@ -97,7 +122,48 @@ class DiceBoxApp {
     this.setupWebRTCEvents();
   }
 
+  async retryConnection() {
+    console.log('Retrying connection...');
+
+    if (this.roomJoin) {
+      this.roomJoin.setConnecting();
+    }
+
+    // Small delay before retry
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    await this.connectToSignalingServer();
+  }
+
   setupSignalingEvents() {
+    // Connection state events
+    signalingClient.addEventListener('connected', () => {
+      this.serverConnected = true;
+      if (this.roomJoin && this.roomJoin.style.display !== 'none') {
+        this.roomJoin.setConnected();
+      }
+    });
+
+    signalingClient.addEventListener('disconnected', () => {
+      console.log('Disconnected from signaling server');
+      this.serverConnected = false;
+
+      // If we're in the lobby, show the error
+      if (this.roomJoin && this.roomJoin.style.display !== 'none') {
+        this.roomJoin.setDisconnected(true);
+      } else {
+        // If we're in a room, show a status message
+        this.showStatus('Disconnected from server', 'disconnected');
+      }
+    });
+
+    signalingClient.addEventListener('reconnect-failed', () => {
+      console.log('Reconnection failed');
+      if (this.roomJoin && this.roomJoin.style.display !== 'none') {
+        this.roomJoin.setDisconnected(true);
+      }
+    });
+
     // Room query response
     signalingClient.addEventListener('room-info', (e) => {
       this.handleRoomInfo(e.detail);
@@ -135,12 +201,6 @@ class DiceBoxApp {
 
     signalingClient.addEventListener('claim-host-failed', (e) => {
       console.log('Another peer claimed host');
-    });
-
-    // Disconnection
-    signalingClient.addEventListener('disconnected', () => {
-      console.log('Disconnected from signaling server');
-      this.showStatus('Disconnected from server', 'disconnected');
     });
   }
 
@@ -574,6 +634,13 @@ class DiceBoxApp {
     // Show join form, hide room view
     this.roomJoin.style.display = 'block';
     this.roomView.hide();
+
+    // Update room-join state based on connection
+    if (this.serverConnected) {
+      this.roomJoin.setConnected();
+    } else {
+      this.roomJoin.setDisconnected(true);
+    }
   }
 }
 

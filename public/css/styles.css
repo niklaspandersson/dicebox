@@ -135,6 +135,113 @@ room-join .btn-join {
   font-weight: 600;
 }
 
+room-join .join-form {
+  position: relative;
+}
+
+room-join .connecting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 41, 59, 0.95);
+  border-radius: var(--border-radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 10;
+}
+
+room-join .connecting-overlay p {
+  color: var(--text-muted);
+}
+
+room-join .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--surface-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Server Error State */
+room-join .server-error {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--surface);
+  border-radius: var(--border-radius);
+  padding: 40px 32px;
+  box-shadow: var(--shadow);
+}
+
+room-join .server-error .error-icon {
+  font-size: 4rem;
+  color: var(--warning);
+  margin-bottom: 16px;
+}
+
+room-join .server-error h2 {
+  color: var(--text);
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+}
+
+room-join .server-error p {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+room-join .server-error ul {
+  text-align: left;
+  color: var(--text-muted);
+  margin: 0 auto 20px;
+  max-width: 320px;
+  padding-left: 20px;
+}
+
+room-join .server-error li {
+  margin-bottom: 8px;
+}
+
+room-join .server-error .error-hint {
+  color: var(--text);
+  font-weight: 500;
+  margin-top: 24px;
+}
+
+room-join .server-error pre {
+  background: var(--background);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0 24px;
+  text-align: left;
+  overflow-x: auto;
+}
+
+room-join .server-error code {
+  color: var(--secondary-color);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9rem;
+}
+
+room-join .server-error .btn-retry {
+  background: var(--primary-color);
+  padding: 12px 32px;
+}
+
+room-join .server-error .btn-retry:hover {
+  background: var(--primary-hover);
+}
+
 /* Room View */
 room-view {
   display: none;
