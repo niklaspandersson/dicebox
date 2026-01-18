@@ -128,118 +128,68 @@ room-join label {
   font-size: 0.9rem;
 }
 
-room-join .btn-join {
-  width: 100%;
+room-join .join-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+room-join .btn-create {
+  flex: 1;
   padding: 16px;
   font-size: 1.1rem;
   font-weight: 600;
 }
 
-room-join .join-form {
-  position: relative;
+room-join .btn-join {
+  flex: 1;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: var(--surface-light);
 }
 
-room-join .connecting-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(30, 41, 59, 0.95);
+room-join .btn-join:hover {
+  background: var(--primary-color);
+}
+
+/* Server Warning Banner */
+room-join .server-banner {
+  max-width: 400px;
+  margin: 0 auto 16px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--warning);
   border-radius: var(--border-radius);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 10;
+  gap: 10px;
+  font-size: 0.85rem;
 }
 
-room-join .connecting-overlay p {
-  color: var(--text-muted);
-}
-
-room-join .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--surface-light);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Server Error State */
-room-join .server-error {
-  max-width: 500px;
-  margin: 0 auto;
-  text-align: center;
-  background: var(--surface);
-  border-radius: var(--border-radius);
-  padding: 40px 32px;
-  box-shadow: var(--shadow);
-}
-
-room-join .server-error .error-icon {
-  font-size: 4rem;
+room-join .server-banner .banner-icon {
   color: var(--warning);
-  margin-bottom: 16px;
+  font-size: 1.1rem;
 }
 
-room-join .server-error h2 {
-  color: var(--text);
-  margin-bottom: 16px;
-  font-size: 1.5rem;
-}
-
-room-join .server-error p {
+room-join .server-banner .banner-text {
+  flex: 1;
   color: var(--text-muted);
-  margin-bottom: 12px;
 }
 
-room-join .server-error ul {
-  text-align: left;
+room-join .server-banner .banner-dismiss {
+  background: transparent;
+  border: none;
   color: var(--text-muted);
-  margin: 0 auto 20px;
-  max-width: 320px;
-  padding-left: 20px;
+  font-size: 1.2rem;
+  padding: 0 4px;
+  cursor: pointer;
+  line-height: 1;
 }
 
-room-join .server-error li {
-  margin-bottom: 8px;
-}
-
-room-join .server-error .error-hint {
+room-join .server-banner .banner-dismiss:hover {
   color: var(--text);
-  font-weight: 500;
-  margin-top: 24px;
-}
-
-room-join .server-error pre {
-  background: var(--background);
-  border-radius: 8px;
-  padding: 16px;
-  margin: 16px 0 24px;
-  text-align: left;
-  overflow-x: auto;
-}
-
-room-join .server-error code {
-  color: var(--secondary-color);
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 0.9rem;
-}
-
-room-join .server-error .btn-retry {
-  background: var(--primary-color);
-  padding: 12px 32px;
-}
-
-room-join .server-error .btn-retry:hover {
-  background: var(--primary-hover);
+  background: transparent;
+  transform: none;
 }
 
 /* Room View */

@@ -14,72 +14,59 @@ class RoomJoin extends HTMLElement {
 
   render() {
     this.innerHTML = `
-      <div class="server-error" id="server-error" style="display: none;">
-        <div class="error-icon">&#9888;</div>
-        <h2>Unable to Connect</h2>
-        <p>Cannot connect to the DiceBox server. This could be because:</p>
-        <ul>
-          <li>The server is not running</li>
-          <li>You're viewing this page without a server (e.g., GitHub Pages)</li>
-          <li>There's a network issue</li>
-        </ul>
-        <p class="error-hint">
-          To play DiceBox, you need to run the server locally:
-        </p>
-        <pre><code>npm install
-npm start</code></pre>
-        <button class="btn-retry" id="btn-retry">Retry Connection</button>
+      <div class="server-banner" id="server-banner" style="display: none;">
+        <span class="banner-icon">&#9888;</span>
+        <span class="banner-text">No server connection - multiplayer unavailable</span>
+        <button class="banner-dismiss" id="banner-dismiss" aria-label="Dismiss">&times;</button>
       </div>
 
       <div class="card join-form" id="join-form">
-        <div class="connecting-overlay" id="connecting-overlay">
-          <div class="spinner"></div>
-          <p>Connecting to server...</p>
-        </div>
         <div class="form-group">
           <label for="username">Your Name</label>
-          <input type="text" id="username" placeholder="Enter your name" maxlength="20" autocomplete="off" disabled>
+          <input type="text" id="username" placeholder="Enter your name" maxlength="20" autocomplete="off">
         </div>
         <div class="form-group">
           <label for="room-id">Room Code</label>
-          <input type="text" id="room-id" placeholder="Enter room code or leave empty for new room" maxlength="20" autocomplete="off" disabled>
+          <input type="text" id="room-id" placeholder="Enter room code to join, or create a new room" maxlength="20" autocomplete="off">
         </div>
-        <button class="btn-join" id="btn-join" disabled>Join Room</button>
+        <div class="join-buttons">
+          <button class="btn-create" id="btn-create">Create Room</button>
+          <button class="btn-join" id="btn-join">Join Room</button>
+        </div>
       </div>
     `;
   }
 
   setupEventListeners() {
+    const createBtn = this.querySelector('#btn-create');
     const joinBtn = this.querySelector('#btn-join');
     const usernameInput = this.querySelector('#username');
     const roomIdInput = this.querySelector('#room-id');
-    const retryBtn = this.querySelector('#btn-retry');
+    const dismissBtn = this.querySelector('#banner-dismiss');
 
+    createBtn.addEventListener('click', () => this.handleCreate());
     joinBtn.addEventListener('click', () => this.handleJoin());
 
     // Enter key support
-    [usernameInput, roomIdInput].forEach(input => {
-      input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          this.handleJoin();
-        }
-      });
-    });
-
-    // Generate random room ID if empty on focus out
-    roomIdInput.addEventListener('blur', () => {
-      if (!roomIdInput.value.trim()) {
-        roomIdInput.value = this.generateRoomId();
+    usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.handleCreate();
       }
     });
 
-    // Retry button
-    retryBtn.addEventListener('click', () => {
-      this.dispatchEvent(new CustomEvent('retry-connection', { bubbles: true }));
+    roomIdInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.handleJoin();
+      }
     });
 
-    // Auto-generate room ID initially
-    roomIdInput.value = this.generateRoomId();
+    // Dismiss banner
+    dismissBtn.addEventListener('click', () => {
+      this.querySelector('#server-banner').style.display = 'none';
+    });
+
+    // Focus username on load
+    usernameInput.focus();
   }
 
   generateRoomId() {
@@ -91,9 +78,23 @@ npm start</code></pre>
     return `${adj}-${noun}-${num}`;
   }
 
-  handleJoin() {
-    if (!this._serverConnected) return;
+  handleCreate() {
+    const username = this.querySelector('#username').value.trim();
 
+    if (!username) {
+      this.querySelector('#username').focus();
+      return;
+    }
+
+    const roomId = this.generateRoomId();
+
+    this.dispatchEvent(new CustomEvent('join-room', {
+      bubbles: true,
+      detail: { username, roomId, isHost: true }
+    }));
+  }
+
+  handleJoin() {
     const username = this.querySelector('#username').value.trim();
     const roomId = this.querySelector('#room-id').value.trim();
 
@@ -109,65 +110,30 @@ npm start</code></pre>
 
     this.dispatchEvent(new CustomEvent('join-room', {
       bubbles: true,
-      detail: { username, roomId }
+      detail: { username, roomId, isHost: false }
     }));
   }
 
   // Called when successfully connected to server
   setConnected() {
     this._serverConnected = true;
-
-    const errorEl = this.querySelector('#server-error');
-    const formEl = this.querySelector('#join-form');
-    const overlayEl = this.querySelector('#connecting-overlay');
-
-    if (errorEl) errorEl.style.display = 'none';
-    if (formEl) formEl.style.display = 'block';
-    if (overlayEl) overlayEl.style.display = 'none';
-
-    // Enable form
-    this.querySelector('#username').disabled = false;
-    this.querySelector('#room-id').disabled = false;
-    this.querySelector('#btn-join').disabled = false;
-
-    // Focus username field
-    this.querySelector('#username').focus();
+    const bannerEl = this.querySelector('#server-banner');
+    if (bannerEl) bannerEl.style.display = 'none';
   }
 
   // Called when connection fails
-  setDisconnected(showError = true) {
+  setDisconnected() {
     this._serverConnected = false;
-
-    const errorEl = this.querySelector('#server-error');
-    const formEl = this.querySelector('#join-form');
-
-    if (showError) {
-      if (errorEl) errorEl.style.display = 'block';
-      if (formEl) formEl.style.display = 'none';
-    }
-
-    // Disable form
-    this.querySelector('#username').disabled = true;
-    this.querySelector('#room-id').disabled = true;
-    this.querySelector('#btn-join').disabled = true;
+    const bannerEl = this.querySelector('#server-banner');
+    if (bannerEl) bannerEl.style.display = 'flex';
   }
 
   // Called when attempting to connect
   setConnecting() {
     this._serverConnected = false;
-
-    const errorEl = this.querySelector('#server-error');
-    const formEl = this.querySelector('#join-form');
-    const overlayEl = this.querySelector('#connecting-overlay');
-
-    if (errorEl) errorEl.style.display = 'none';
-    if (formEl) formEl.style.display = 'block';
-    if (overlayEl) overlayEl.style.display = 'flex';
-
-    // Disable form while connecting
-    this.querySelector('#username').disabled = true;
-    this.querySelector('#room-id').disabled = true;
-    this.querySelector('#btn-join').disabled = true;
+    // Don't show banner while still trying to connect
+    const bannerEl = this.querySelector('#server-banner');
+    if (bannerEl) bannerEl.style.display = 'none';
   }
 }
 
