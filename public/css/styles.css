@@ -133,10 +133,55 @@ room-join .room-id-group {
   animation: slideDown 0.3s ease;
 }
 
-room-join .room-id-group input {
-  font-size: 1.2rem;
-  text-align: center;
-  letter-spacing: 0.15em;
+room-join .dice-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+room-join .dice-input-container {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+room-join .room-dice {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ffffff, #e2e8f0);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+room-join .room-dice svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+room-join .room-dice:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+room-join .room-dice:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+room-join .room-dice.flipping {
+  animation: diceFlip 0.2s ease;
+}
+
+@keyframes diceFlip {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
 }
 
 @keyframes slideDown {
