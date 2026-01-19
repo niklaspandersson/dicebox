@@ -13,11 +13,14 @@ const MSG = {
   PEER_JOINED: 'peer-joined',   // Notify all peers of new peer
   PEER_LEFT: 'peer-left',       // Notify all peers of departed peer
   DICE_ROLL: 'dice-roll',       // Broadcast dice roll
+  DICE_CONFIG: 'dice-config',   // Broadcast dice configuration change
+  DICE_HELD: 'dice-held',       // Broadcast that someone grabbed the dice
   HOST_LEAVING: 'host-leaving', // Host is leaving, includes migration info
 
   // Peer -> Host
   INTRODUCE: 'introduce',       // Peer sends username to host
   ROLL_DICE: 'roll-dice',       // Peer requests dice roll broadcast
+  GRAB_DICE: 'grab-dice',       // Peer wants to hold the dice
 };
 
 // Host migration configuration
@@ -51,6 +54,11 @@ class DiceBoxApp {
 
     // Track pending rolls (for duplicate prevention)
     this.pendingRolls = new Set();
+
+    // Local dice state (synced with room state)
+    this.diceConfig = { count: 1 };
+    this.holderPeerId = null;
+    this.holderUsername = null;
 
     // UI components
     this.roomJoin = document.querySelector('room-join');
@@ -133,6 +141,16 @@ class DiceBoxApp {
     // Dice roll UI events
     document.addEventListener('dice-rolled', (e) => {
       this.handleLocalDiceRoll(e.detail);
+    });
+
+    // Dice grab event (user clicked to hold the dice)
+    document.addEventListener('dice-grabbed', () => {
+      this.handleLocalDiceGrab();
+    });
+
+    // Dice config change event (host only)
+    document.addEventListener('dice-config-changed', (e) => {
+      this.handleLocalDiceConfigChange(e.detail);
     });
 
     // Signaling server events
@@ -386,6 +404,12 @@ class DiceBoxApp {
         }
         break;
 
+      case MSG.GRAB_DICE:
+        if (this.isHost) {
+          this.hostHandleGrabDice(fromPeerId, message);
+        }
+        break;
+
       // === Messages FROM HOST ===
       case MSG.WELCOME:
         if (!this.isHost) {
@@ -403,6 +427,14 @@ class DiceBoxApp {
 
       case MSG.DICE_ROLL:
         this.handleDiceRollMsg(fromPeerId, message);
+        break;
+
+      case MSG.DICE_CONFIG:
+        this.handleDiceConfigMsg(message);
+        break;
+
+      case MSG.DICE_HELD:
+        this.handleDiceHeldMsg(message);
         break;
 
       case MSG.HOST_LEAVING:
@@ -432,7 +464,10 @@ class DiceBoxApp {
         { peerId: this.peerId, username: this.username, joinOrder: this.myJoinOrder },
         ...state.peers.filter(p => p.peerId !== peerId)
       ],
-      rollHistory: state.rollHistory
+      rollHistory: state.rollHistory,
+      diceConfig: state.diceConfig,
+      holderPeerId: state.holderPeerId,
+      holderUsername: state.holderUsername
     });
 
     // Notify other peers
@@ -452,6 +487,11 @@ class DiceBoxApp {
     const peer = this.roomState.peers.get(peerId);
     if (!peer) return;
 
+    // Clear the holder since a roll happened
+    this.roomState.clearHolder();
+    this.holderPeerId = null;
+    this.holderUsername = null;
+
     const roll = {
       peerId,
       username: peer.username,
@@ -469,17 +509,51 @@ class DiceBoxApp {
     // Broadcast to all peers (including sender)
     this.roomState.broadcast({ type: MSG.DICE_ROLL, ...roll });
 
-    // Add to local UI
+    // Display roll result locally and add to history
+    if (this.diceRoller) {
+      this.diceRoller.displayExternalRoll(values);
+    }
     if (this.diceHistory) {
       this.diceHistory.addRoll(roll);
     }
+    this.updateDiceRollerState();
+  }
+
+  hostHandleGrabDice(peerId) {
+    const peer = this.roomState.peers.get(peerId);
+    if (!peer) return;
+
+    // Only allow grab if no one is holding
+    if (this.roomState.holderPeerId !== null) {
+      console.log(`Grab rejected - ${this.roomState.holderUsername} is already holding`);
+      return;
+    }
+
+    // Set the holder
+    this.roomState.setHolder(peerId, peer.username);
+    this.holderPeerId = peerId;
+    this.holderUsername = peer.username;
+
+    // Broadcast to all peers
+    this.roomState.broadcast({
+      type: MSG.DICE_HELD,
+      holderPeerId: peerId,
+      holderUsername: peer.username
+    });
+
+    this.updateDiceRollerState();
   }
 
   // === CLIENT MESSAGE HANDLERS ===
 
-  clientHandleWelcome({ yourJoinOrder, peers, rollHistory }) {
+  clientHandleWelcome({ yourJoinOrder, peers, rollHistory, diceConfig, holderPeerId, holderUsername }) {
     console.log('Received welcome from host');
     this.myJoinOrder = yourJoinOrder;
+
+    // Set dice config and holder state
+    this.diceConfig = diceConfig || { count: 1 };
+    this.holderPeerId = holderPeerId || null;
+    this.holderUsername = holderUsername || null;
 
     // Enter the room UI
     this.enterRoom();
@@ -495,6 +569,9 @@ class DiceBoxApp {
     for (const roll of rollHistory.slice().reverse()) {
       this.diceHistory.addRoll(roll);
     }
+
+    // Update dice roller with current state
+    this.updateDiceRollerState();
   }
 
   handlePeerJoinedMsg({ peerId, username }) {
@@ -512,6 +589,11 @@ class DiceBoxApp {
   }
 
   handleDiceRollMsg(fromPeerId, { peerId, username, diceType, count, values, total, rollId, timestamp }) {
+    // A roll also clears the holder
+    this.holderPeerId = null;
+    this.holderUsername = null;
+    this.updateDiceRollerState();
+
     // If this is our own roll coming back from the host, check for duplicate
     if (peerId === this.peerId && rollId && this.pendingRolls.has(rollId)) {
       // This is a confirmation of our roll - remove from pending, don't add again
@@ -519,9 +601,25 @@ class DiceBoxApp {
       return;
     }
 
+    // Display the roll result on the dice roller
+    if (this.diceRoller) {
+      this.diceRoller.displayExternalRoll(values);
+    }
+
     if (this.diceHistory) {
       this.diceHistory.addRoll({ peerId, username, diceType, count, values, total });
     }
+  }
+
+  handleDiceConfigMsg({ diceConfig }) {
+    this.diceConfig = diceConfig;
+    this.updateDiceRollerState();
+  }
+
+  handleDiceHeldMsg({ holderPeerId, holderUsername }) {
+    this.holderPeerId = holderPeerId;
+    this.holderUsername = holderUsername;
+    this.updateDiceRollerState();
   }
 
   handleHostLeavingMsg(fromPeerId, { nextHostPeerId, roomState }) {
@@ -616,6 +714,22 @@ class DiceBoxApp {
       if (peer) {
         this.roomState.removePeer(peerId);
 
+        // If this peer was holding the dice, clear the holder
+        if (this.roomState.holderPeerId === peerId) {
+          this.roomState.clearHolder();
+          this.holderPeerId = null;
+          this.holderUsername = null;
+
+          // Broadcast that no one is holding anymore
+          this.roomState.broadcast({
+            type: MSG.DICE_HELD,
+            holderPeerId: null,
+            holderUsername: null
+          });
+
+          this.updateDiceRollerState();
+        }
+
         this.roomState.broadcast({
           type: MSG.PEER_LEFT,
           peerId,
@@ -688,14 +802,80 @@ class DiceBoxApp {
     this.peerList.setSelf(this.peerId, this.username);
     this.diceHistory.peerId = this.peerId;
 
+    // Initialize dice roller state (for host, client gets this from WELCOME)
+    if (this.isHost) {
+      this.diceConfig = this.roomState.diceConfig;
+      this.holderPeerId = this.roomState.holderPeerId;
+      this.holderUsername = this.roomState.holderUsername;
+    }
+    this.updateDiceRollerState();
+
     console.log(`Entered room ${this.roomId} as ${this.username} (${this.isHost ? 'HOST' : 'CLIENT'})`);
   }
 
   // === DICE ROLLING ===
 
+  handleLocalDiceGrab() {
+    // User clicked to grab the dice
+    if (this.holderPeerId !== null) {
+      // Someone is already holding - ignore (or this could be the holder clicking to roll)
+      return;
+    }
+
+    if (this.isHost) {
+      // Host grabs immediately
+      this.roomState.setHolder(this.peerId, this.username);
+      this.holderPeerId = this.peerId;
+      this.holderUsername = this.username;
+
+      // Broadcast to all peers
+      this.roomState.broadcast({
+        type: MSG.DICE_HELD,
+        holderPeerId: this.peerId,
+        holderUsername: this.username
+      });
+
+      this.updateDiceRollerState();
+    } else {
+      // Client: send grab request to host
+      this.sendToHost({ type: MSG.GRAB_DICE });
+    }
+  }
+
+  handleLocalDiceConfigChange({ count }) {
+    if (!this.isHost) return; // Only host can change config
+
+    this.diceConfig = { count };
+    this.roomState.setDiceConfig({ count });
+
+    // Broadcast to all peers
+    this.roomState.broadcast({
+      type: MSG.DICE_CONFIG,
+      diceConfig: { count }
+    });
+
+    this.updateDiceRollerState();
+  }
+
+  updateDiceRollerState() {
+    if (!this.diceRoller) return;
+
+    this.diceRoller.setConfig({
+      diceCount: this.diceConfig.count,
+      holderPeerId: this.holderPeerId,
+      holderUsername: this.holderUsername,
+      myPeerId: this.peerId,
+      isHost: this.isHost
+    });
+  }
+
   handleLocalDiceRoll({ diceType, count, values, total }) {
     // Generate a unique roll ID for duplicate prevention
     const rollId = `${this.peerId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Clear holder since we rolled
+    this.holderPeerId = null;
+    this.holderUsername = null;
 
     const roll = {
       peerId: this.peerId,
@@ -709,7 +889,8 @@ class DiceBoxApp {
     };
 
     if (this.isHost) {
-      // Host: add to state and broadcast
+      // Host: clear holder, add to state and broadcast
+      this.roomState.clearHolder();
       this.roomState.addRoll(roll);
       this.roomState.broadcast({ type: MSG.DICE_ROLL, ...roll });
 
@@ -741,6 +922,8 @@ class DiceBoxApp {
         this.pendingRolls.delete(rollId);
       }, 10000);
     }
+
+    this.updateDiceRollerState();
   }
 
   sendToHost(message) {
@@ -779,6 +962,9 @@ class DiceBoxApp {
     this.hostPeerId = null;
     this.roomState.clear();
     this.pendingRolls.clear();
+    this.diceConfig = { count: 1 };
+    this.holderPeerId = null;
+    this.holderUsername = null;
 
     // Clear and reset components
     if (this.peerList) this.peerList.clear();
