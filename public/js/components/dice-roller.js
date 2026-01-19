@@ -97,12 +97,14 @@ class DiceRoller extends HTMLElement {
   renderDiceDisplay(isHolding, iAmHolder) {
     if (isHolding) {
       // Someone is holding - show holding state
+      const canDrop = this.isHost && !iAmHolder;
       return `
         <div class="dice-display holding-state">
           <div class="holding-indicator">
             <div class="holding-hand"></div>
             <div class="holding-text">${iAmHolder ? 'You are' : this.holderUsername + ' is'} holding...</div>
             ${iAmHolder ? '<div class="holding-hint">Click to roll!</div>' : ''}
+            ${canDrop ? '<button class="drop-dice-btn" id="btn-drop-dice">Drop dice</button>' : ''}
           </div>
         </div>
       `;
@@ -306,7 +308,20 @@ class DiceRoller extends HTMLElement {
     }
 
     // Re-attach click handler
-    wrapper.addEventListener('click', () => this.handleClick());
+    wrapper.addEventListener('click', (e) => {
+      // Don't trigger grab/roll when clicking the drop button
+      if (e.target.id === 'btn-drop-dice') return;
+      this.handleClick();
+    });
+
+    // Attach drop button handler if present
+    const dropBtn = wrapper.querySelector('#btn-drop-dice');
+    if (dropBtn) {
+      dropBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dispatchEvent(new CustomEvent('dice-dropped', { bubbles: true }));
+      });
+    }
   }
 
   // Called by app.js to update state
