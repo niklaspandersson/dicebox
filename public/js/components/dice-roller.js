@@ -19,6 +19,10 @@ class DiceRoller extends HTMLElement {
     this.holderUsername = null;
     this.myPeerId = null;
     this.isHost = false;
+
+    // Bound handlers for proper cleanup
+    this.boundHandleClick = this.handleClick.bind(this);
+    this.boundKeyHandler = this.handleKeyPress.bind(this);
   }
 
   // Generate SVG for a die face with proper pip arrangement
@@ -59,12 +63,22 @@ class DiceRoller extends HTMLElement {
 
   connectedCallback() {
     this.render();
-    this.setupEventListeners();
+    document.addEventListener('keypress', this.boundKeyHandler);
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener('keypress', this.boundKeyHandler);
+  }
+
+  handleKeyPress(e) {
+    if (e.key === 'r' && !e.target.matches('input')) {
+      this.handleClick();
+    }
   }
 
   render() {
     const isHolding = this.holderPeerId !== null;
-    const iAmHolder = this.holderPeerId === this.myPeerId;
+    const iAmHolder = this.myPeerId && this.holderPeerId === this.myPeerId;
 
     this.innerHTML = `
       <div class="card dice-area">
@@ -81,6 +95,55 @@ class DiceRoller extends HTMLElement {
         </div>
       </div>
     `;
+
+    this.attachEventListeners();
+  }
+
+  attachEventListeners() {
+    // Click on dice area to grab or roll
+    const clickArea = this.querySelector('#dice-click-area');
+    if (clickArea) {
+      clickArea.addEventListener('click', this.boundHandleClick);
+    }
+
+    // Host dice count controls
+    const addBtn = this.querySelector('#btn-add-die');
+    const removeBtn = this.querySelector('#btn-remove-die');
+
+    if (addBtn) {
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.diceCount < 10) {
+          this.diceCount++;
+          this.dispatchEvent(new CustomEvent('dice-config-changed', {
+            bubbles: true,
+            detail: { count: this.diceCount }
+          }));
+        }
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.diceCount > 1) {
+          this.diceCount--;
+          this.dispatchEvent(new CustomEvent('dice-config-changed', {
+            bubbles: true,
+            detail: { count: this.diceCount }
+          }));
+        }
+      });
+    }
+
+    // Drop button handler
+    const dropBtn = this.querySelector('#btn-drop-dice');
+    if (dropBtn) {
+      dropBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dispatchEvent(new CustomEvent('dice-dropped', { bubbles: true }));
+      });
+    }
   }
 
   renderHostControls() {
@@ -141,70 +204,13 @@ class DiceRoller extends HTMLElement {
     return 'Click to grab the dice';
   }
 
-  setupEventListeners() {
-    // Host dice count controls
-    if (this.isHost) {
-      const addBtn = this.querySelector('#btn-add-die');
-      const removeBtn = this.querySelector('#btn-remove-die');
+  handleClick(e) {
+    // Don't trigger grab/roll when clicking the drop button
+    if (e && e.target && e.target.id === 'btn-drop-dice') return;
 
-      if (addBtn) {
-        addBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (this.diceCount < 10) {
-            this.diceCount++;
-            this.querySelector('#dice-count').textContent = this.diceCount;
-            this.dispatchEvent(new CustomEvent('dice-config-changed', {
-              bubbles: true,
-              detail: { count: this.diceCount }
-            }));
-            // Re-render to update placeholder count
-            this.updateDisplay();
-          }
-        });
-      }
-
-      if (removeBtn) {
-        removeBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (this.diceCount > 1) {
-            this.diceCount--;
-            this.querySelector('#dice-count').textContent = this.diceCount;
-            this.dispatchEvent(new CustomEvent('dice-config-changed', {
-              bubbles: true,
-              detail: { count: this.diceCount }
-            }));
-            // Re-render to update placeholder count
-            this.updateDisplay();
-          }
-        });
-      }
-    }
-
-    // Click on dice area to grab or roll
-    const clickArea = this.querySelector('#dice-click-area');
-    if (clickArea) {
-      clickArea.addEventListener('click', () => this.handleClick());
-    }
-
-    // Keyboard shortcut
-    this.keyHandler = (e) => {
-      if (e.key === 'r' && !e.target.matches('input')) {
-        this.handleClick();
-      }
-    };
-    document.addEventListener('keypress', this.keyHandler);
-  }
-
-  disconnectedCallback() {
-    if (this.keyHandler) {
-      document.removeEventListener('keypress', this.keyHandler);
-    }
-  }
-
-  handleClick() {
     if (this.isRolling) return;
 
-    const iAmHolder = this.holderPeerId === this.myPeerId;
+    const iAmHolder = this.myPeerId && this.holderPeerId === this.myPeerId;
 
     if (this.holderPeerId === null) {
       // No one holding - grab the dice
@@ -223,6 +229,11 @@ class DiceRoller extends HTMLElement {
     const display = this.querySelector('.dice-display');
     const totalEl = this.querySelector('#roll-total');
     const hintEl = this.querySelector('#dice-hint');
+
+    if (!display) {
+      this.isRolling = false;
+      return;
+    }
 
     // Show rolling animation with SVG dice
     display.innerHTML = Array(this.diceCount).fill(0).map(() =>
@@ -290,66 +301,16 @@ class DiceRoller extends HTMLElement {
     }
   }
 
-  // Update display without full re-render
-  updateDisplay() {
-    const wrapper = this.querySelector('.dice-display-wrapper');
-    const hintEl = this.querySelector('#dice-hint');
-
-    if (!wrapper) return;
-
-    const isHolding = this.holderPeerId !== null;
-    const iAmHolder = this.holderPeerId === this.myPeerId;
-
-    wrapper.className = `dice-display-wrapper ${isHolding ? 'holding' : ''}`;
-    wrapper.innerHTML = this.renderDiceDisplay(isHolding, iAmHolder);
-
-    if (hintEl) {
-      hintEl.textContent = this.getHintText(isHolding, iAmHolder);
-    }
-
-    // Re-attach click handler
-    wrapper.addEventListener('click', (e) => {
-      // Don't trigger grab/roll when clicking the drop button
-      if (e.target.id === 'btn-drop-dice') return;
-      this.handleClick();
-    });
-
-    // Attach drop button handler if present
-    const dropBtn = wrapper.querySelector('#btn-drop-dice');
-    if (dropBtn) {
-      dropBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.dispatchEvent(new CustomEvent('dice-dropped', { bubbles: true }));
-      });
-    }
-  }
-
   // Called by app.js to update state
   setConfig({ diceCount, holderPeerId, holderUsername, myPeerId, isHost }) {
-    const needsRender = this.isHost !== isHost;
-
     this.diceCount = diceCount;
     this.holderPeerId = holderPeerId;
     this.holderUsername = holderUsername;
     this.myPeerId = myPeerId;
     this.isHost = isHost;
 
-    if (needsRender) {
-      // Full re-render if host status changed
-      this.render();
-      this.setupEventListeners();
-    } else {
-      // Just update the display
-      this.updateDisplay();
-
-      // Update dice count display if host
-      if (this.isHost) {
-        const countEl = this.querySelector('#dice-count');
-        if (countEl) {
-          countEl.textContent = this.diceCount;
-        }
-      }
-    }
+    // Always re-render to ensure UI matches state
+    this.render();
   }
 
   // Display a roll from another player
