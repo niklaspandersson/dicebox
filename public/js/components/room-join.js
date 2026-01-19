@@ -25,9 +25,9 @@ class RoomJoin extends HTMLElement {
           <label for="username">Your Name</label>
           <input type="text" id="username" placeholder="Enter your name" maxlength="20" autocomplete="off">
         </div>
-        <div class="form-group">
+        <div class="form-group room-id-group" id="room-id-group" style="display: none;">
           <label for="room-id">Room Code</label>
-          <input type="text" id="room-id" placeholder="Enter room code to join, or create a new room" maxlength="20" autocomplete="off">
+          <input type="text" id="room-id" placeholder="Enter dice room code (e.g. ⚀⚂⚄⚁⚅)" maxlength="20" autocomplete="off">
         </div>
         <div class="join-buttons">
           <button class="btn-create" id="btn-create">Create Room</button>
@@ -35,6 +35,7 @@ class RoomJoin extends HTMLElement {
         </div>
       </div>
     `;
+    this._joinMode = false;
   }
 
   setupEventListeners() {
@@ -70,12 +71,14 @@ class RoomJoin extends HTMLElement {
   }
 
   generateRoomId() {
-    const adjectives = ['red', 'blue', 'green', 'fast', 'lucky', 'wild', 'cool', 'epic'];
-    const nouns = ['dragon', 'wizard', 'knight', 'rogue', 'mage', 'warrior', 'archer', 'bard'];
-    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
-    const num = Math.floor(Math.random() * 100);
-    return `${adj}-${noun}-${num}`;
+    // Use dice faces for thematic room IDs: ⚀⚁⚂⚃⚄⚅
+    const dice = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+    let roomId = '';
+    // 5 dice gives 7776 combinations
+    for (let i = 0; i < 5; i++) {
+      roomId += dice[Math.floor(Math.random() * 6)];
+    }
+    return roomId;
   }
 
   handleCreate() {
@@ -86,6 +89,9 @@ class RoomJoin extends HTMLElement {
       return;
     }
 
+    // Reset join mode if active
+    this.resetJoinMode();
+
     const roomId = this.generateRoomId();
 
     this.dispatchEvent(new CustomEvent('join-room', {
@@ -94,17 +100,37 @@ class RoomJoin extends HTMLElement {
     }));
   }
 
+  resetJoinMode() {
+    this._joinMode = false;
+    const roomIdGroup = this.querySelector('#room-id-group');
+    const joinBtn = this.querySelector('#btn-join');
+    if (roomIdGroup) roomIdGroup.style.display = 'none';
+    if (joinBtn) joinBtn.textContent = 'Join Room';
+  }
+
   handleJoin() {
     const username = this.querySelector('#username').value.trim();
-    const roomId = this.querySelector('#room-id').value.trim();
+    const roomIdGroup = this.querySelector('#room-id-group');
+    const roomIdInput = this.querySelector('#room-id');
+    const roomId = roomIdInput.value.trim();
 
     if (!username) {
       this.querySelector('#username').focus();
       return;
     }
 
+    // If room ID input is not visible, show it
+    if (!this._joinMode) {
+      this._joinMode = true;
+      roomIdGroup.style.display = 'block';
+      roomIdInput.focus();
+      this.querySelector('#btn-join').textContent = 'Enter Room';
+      return;
+    }
+
+    // Room ID input is visible, validate and join
     if (!roomId) {
-      this.querySelector('#room-id').focus();
+      roomIdInput.focus();
       return;
     }
 

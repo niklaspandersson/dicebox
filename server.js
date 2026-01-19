@@ -170,10 +170,17 @@ function generatePeerId() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-// Validate room ID format (alphanumeric, 4-32 chars)
+// Validate room ID format
+// Accepts: dice emoji (⚀⚁⚂⚃⚄⚅) or alphanumeric with hyphens/underscores
 function isValidRoomId(roomId) {
-  return typeof roomId === 'string' &&
-         roomId.length >= 4 &&
+  if (typeof roomId !== 'string') return false;
+
+  // Dice emoji format: 4-10 dice faces
+  const dicePattern = /^[⚀⚁⚂⚃⚄⚅]{4,10}$/;
+  if (dicePattern.test(roomId)) return true;
+
+  // Legacy alphanumeric format: 4-32 chars
+  return roomId.length >= 4 &&
          roomId.length <= 32 &&
          /^[a-zA-Z0-9-_]+$/.test(roomId);
 }

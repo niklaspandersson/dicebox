@@ -128,6 +128,30 @@ room-join label {
   font-size: 0.9rem;
 }
 
+room-join .room-id-group {
+  overflow: hidden;
+  animation: slideDown 0.3s ease;
+}
+
+room-join .room-id-group input {
+  font-size: 1.2rem;
+  text-align: center;
+  letter-spacing: 0.15em;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 100px;
+    margin-bottom: 20px;
+  }
+}
+
 room-join .join-buttons {
   display: flex;
   gap: 12px;
@@ -224,6 +248,8 @@ room-view .room-id {
 room-view .room-id span {
   color: var(--secondary-color);
   font-weight: 600;
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
 }
 
 room-view .host-badge {
