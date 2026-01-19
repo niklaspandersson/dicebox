@@ -21,6 +21,7 @@ const MSG = {
   INTRODUCE: 'introduce',       // Peer sends username to host
   ROLL_DICE: 'roll-dice',       // Peer requests dice roll broadcast
   GRAB_DICE: 'grab-dice',       // Peer wants to hold the dice
+  DROP_DICE: 'drop-dice',       // Host forces holder to drop dice
 };
 
 // Host migration configuration
@@ -151,6 +152,11 @@ class DiceBoxApp {
     // Dice config change event (host only)
     document.addEventListener('dice-config-changed', (e) => {
       this.handleLocalDiceConfigChange(e.detail);
+    });
+
+    // Dice drop event (host forces holder to drop)
+    document.addEventListener('dice-dropped', () => {
+      this.handleLocalDiceDrop();
     });
 
     // Signaling server events
@@ -852,6 +858,25 @@ class DiceBoxApp {
     this.roomState.broadcast({
       type: MSG.DICE_CONFIG,
       diceConfig: { count }
+    });
+
+    this.updateDiceRollerState();
+  }
+
+  handleLocalDiceDrop() {
+    if (!this.isHost) return; // Only host can force drop
+    if (this.holderPeerId === null) return; // No one is holding
+
+    // Clear the holder
+    this.roomState.clearHolder();
+    this.holderPeerId = null;
+    this.holderUsername = null;
+
+    // Broadcast that no one is holding anymore
+    this.roomState.broadcast({
+      type: MSG.DICE_HELD,
+      holderPeerId: null,
+      holderUsername: null
     });
 
     this.updateDiceRollerState();

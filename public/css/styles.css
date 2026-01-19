@@ -509,6 +509,18 @@ dice-roller .holding-hint {
   50% { opacity: 1; }
 }
 
+dice-roller .drop-dice-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  background: var(--danger);
+  border-radius: 6px;
+}
+
+dice-roller .drop-dice-btn:hover {
+  background: #dc2626;
+}
+
 /* Dice hint text */
 dice-roller .dice-hint {
   text-align: center;
