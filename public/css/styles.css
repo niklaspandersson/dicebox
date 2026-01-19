@@ -401,36 +401,47 @@ dice-roller .die-placeholder svg {
   display: block;
 }
 
-/* Host dice configuration controls */
-dice-roller .host-dice-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 12px;
-  background: var(--surface-light);
-  border-radius: 8px;
+/* Dice Config Component (host only) */
+dice-config {
+  display: block;
+  margin-bottom: 16px;
 }
 
-dice-roller .host-dice-controls label {
+dice-config .dice-config {
+  padding: 16px;
+}
+
+dice-config .config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+dice-config .config-row label {
   color: var(--text-muted);
   font-size: 0.9rem;
 }
 
-dice-roller .dice-config-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  font-size: 1.2rem;
-  font-weight: bold;
-  border-radius: 6px;
+dice-config .config-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-dice-roller #dice-count {
-  font-size: 1.2rem;
+dice-config .config-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+dice-config .config-value {
+  font-size: 1.3rem;
   font-weight: 600;
-  min-width: 24px;
+  min-width: 30px;
   text-align: center;
 }
 
@@ -509,7 +520,7 @@ dice-roller .holding-hint {
   50% { opacity: 1; }
 }
 
-dice-roller .drop-dice-btn {
+dice-roller .drop-btn {
   margin-top: 12px;
   padding: 8px 16px;
   font-size: 0.85rem;
@@ -517,7 +528,7 @@ dice-roller .drop-dice-btn {
   border-radius: 6px;
 }
 
-dice-roller .drop-dice-btn:hover {
+dice-roller .drop-btn:hover {
   background: #dc2626;
 }
 

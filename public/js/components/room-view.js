@@ -22,6 +22,7 @@ class RoomView extends HTMLElement {
       </div>
       <div class="room-content">
         <div class="main-area">
+          <dice-config id="dice-config" style="display: none;"></dice-config>
           <dice-roller></dice-roller>
           <dice-history></dice-history>
         </div>
@@ -46,8 +47,12 @@ class RoomView extends HTMLElement {
   setHostStatus(isHost) {
     this._isHost = isHost;
     const badge = this.querySelector('#host-badge');
+    const config = this.querySelector('#dice-config');
     if (badge) {
       badge.style.display = isHost ? 'inline-block' : 'none';
+    }
+    if (config) {
+      config.style.display = isHost ? 'block' : 'none';
     }
   }
 

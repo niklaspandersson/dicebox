@@ -57,13 +57,14 @@ class DiceBoxApp {
     this.pendingRolls = new Set();
 
     // Local dice state (synced with room state)
-    this.diceConfig = { count: 1 };
+    this.diceSettings = { count: 1 };
     this.holderPeerId = null;
     this.holderUsername = null;
 
     // UI components
     this.roomJoin = document.querySelector('room-join');
     this.roomView = document.querySelector('room-view');
+    this.diceConfig = null;
     this.diceRoller = null;
     this.diceHistory = null;
     this.peerList = null;
@@ -517,7 +518,7 @@ class DiceBoxApp {
 
     // Display roll result locally and add to history
     if (this.diceRoller) {
-      this.diceRoller.displayExternalRoll(values);
+      this.diceRoller.showRoll(values);
     }
     if (this.diceHistory) {
       this.diceHistory.addRoll(roll);
@@ -557,7 +558,7 @@ class DiceBoxApp {
     this.myJoinOrder = yourJoinOrder;
 
     // Set dice config and holder state
-    this.diceConfig = diceConfig || { count: 1 };
+    this.diceSettings = diceConfig || { count: 1 };
     this.holderPeerId = holderPeerId || null;
     this.holderUsername = holderUsername || null;
 
@@ -609,7 +610,7 @@ class DiceBoxApp {
 
     // Display the roll result on the dice roller
     if (this.diceRoller) {
-      this.diceRoller.displayExternalRoll(values);
+      this.diceRoller.showRoll(values);
     }
 
     if (this.diceHistory) {
@@ -618,7 +619,7 @@ class DiceBoxApp {
   }
 
   handleDiceConfigMsg({ diceConfig }) {
-    this.diceConfig = diceConfig;
+    this.diceSettings = diceConfig;
     this.updateDiceRollerState();
   }
 
@@ -800,6 +801,7 @@ class DiceBoxApp {
     this.roomView.setHostStatus(this.isHost);
 
     // Get component references
+    this.diceConfig = this.roomView.querySelector('dice-config');
     this.diceRoller = this.roomView.querySelector('dice-roller');
     this.diceHistory = this.roomView.querySelector('dice-history');
     this.peerList = this.roomView.querySelector('peer-list');
@@ -810,9 +812,13 @@ class DiceBoxApp {
 
     // Initialize dice roller state (for host, client gets this from WELCOME)
     if (this.isHost) {
-      this.diceConfig = this.roomState.diceConfig;
+      this.diceSettings = this.roomState.diceConfig;
       this.holderPeerId = this.roomState.holderPeerId;
       this.holderUsername = this.roomState.holderUsername;
+      // Set the dice config UI
+      if (this.diceConfig) {
+        this.diceConfig.setCount(this.diceSettings.count);
+      }
     }
     this.updateDiceRollerState();
 
@@ -851,7 +857,7 @@ class DiceBoxApp {
   handleLocalDiceConfigChange({ count }) {
     if (!this.isHost) return; // Only host can change config
 
-    this.diceConfig = { count };
+    this.diceSettings = { count };
     this.roomState.setDiceConfig({ count });
 
     // Broadcast to all peers
@@ -886,7 +892,7 @@ class DiceBoxApp {
     if (!this.diceRoller) return;
 
     this.diceRoller.setConfig({
-      diceCount: this.diceConfig.count,
+      diceCount: this.diceSettings.count,
       holderPeerId: this.holderPeerId,
       holderUsername: this.holderUsername,
       myPeerId: this.peerId,
@@ -987,7 +993,7 @@ class DiceBoxApp {
     this.hostPeerId = null;
     this.roomState.clear();
     this.pendingRolls.clear();
-    this.diceConfig = { count: 1 };
+    this.diceSettings = { count: 1 };
     this.holderPeerId = null;
     this.holderUsername = null;
 
