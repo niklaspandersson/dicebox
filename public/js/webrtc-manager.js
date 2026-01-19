@@ -1,25 +1,45 @@
 /**
  * WebRTCManager - Handles peer-to-peer connections using WebRTC
  * Simplified for host-based room model - app controls connection initiation
+ *
+ * TURN Server Configuration:
+ * For production deployment, configure TURN servers to handle symmetric NAT traversal.
+ * TURN credentials can be:
+ * 1. Static: Set via webrtcManager.configure({ turnServers: [...] })
+ * 2. Dynamic: Fetched from server via /api/turn-credentials endpoint
+ *
+ * Example static configuration:
+ *   webrtcManager.configure({
+ *     turnServers: [{
+ *       urls: 'turn:turn.example.com:3478',
+ *       username: 'user',
+ *       credential: 'pass'
+ *     }]
+ *   });
+ *
+ * Popular TURN server options:
+ * - Twilio Network Traversal Service (paid)
+ * - Xirsys (free tier available)
+ * - coturn (self-hosted, open source)
+ * - Cloudflare Calls (beta)
  */
 import { signalingClient } from './signaling-client.js';
 
-// Extended ICE server list for better NAT traversal
-// Note: For production, consider adding TURN servers for symmetric NAT support
-// TURN servers require authentication and are typically paid services
-// Example TURN config: { urls: 'turn:turn.example.com:3478', username: 'user', credential: 'pass' }
-const ICE_SERVERS = [
+// Default STUN servers (free, public)
+const DEFAULT_STUN_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'stun:stun3.l.google.com:19302' },
   { urls: 'stun:stun4.l.google.com:19302' },
-  // Additional public STUN servers as fallbacks
   { urls: 'stun:stun.stunprotocol.org:3478' },
 ];
 
 // Connection timeout in milliseconds
 const CONNECTION_TIMEOUT = 30000;
+
+// TURN credential refresh interval (refresh 5 minutes before expiry)
+const TURN_CREDENTIAL_REFRESH_BUFFER = 5 * 60 * 1000;
 
 export class WebRTCManager extends EventTarget {
   constructor() {
@@ -28,7 +48,132 @@ export class WebRTCManager extends EventTarget {
     this.dataChannels = new Map();       // peerId -> RTCDataChannel
     this.pendingCandidates = new Map();  // peerId -> ICE candidates received before connection ready
     this.connectionTimeouts = new Map(); // peerId -> timeout ID
+
+    // ICE server configuration
+    this.stunServers = [...DEFAULT_STUN_SERVERS];
+    this.turnServers = [];
+    this.turnCredentialExpiry = null;
+    this.turnCredentialRefreshTimer = null;
+    this.turnCredentialsEndpoint = null;
+
     this.setupSignalingHandlers();
+  }
+
+  /**
+   * Configure WebRTC settings including TURN servers
+   * @param {Object} config Configuration object
+   * @param {Array} config.turnServers - Array of TURN server configs
+   * @param {Array} config.stunServers - Array of STUN server configs (optional, adds to defaults)
+   * @param {string} config.turnCredentialsEndpoint - URL to fetch dynamic TURN credentials
+   * @param {number} config.turnCredentialTTL - Credential TTL in seconds (for dynamic credentials)
+   */
+  configure(config = {}) {
+    if (config.stunServers) {
+      this.stunServers = [...DEFAULT_STUN_SERVERS, ...config.stunServers];
+    }
+
+    if (config.turnServers) {
+      this.turnServers = config.turnServers;
+      console.log(`Configured ${this.turnServers.length} TURN server(s)`);
+    }
+
+    if (config.turnCredentialsEndpoint) {
+      this.turnCredentialsEndpoint = config.turnCredentialsEndpoint;
+      // Fetch credentials immediately
+      this.refreshTurnCredentials();
+    }
+
+    this.dispatchEvent(new CustomEvent('configured', {
+      detail: {
+        stunCount: this.stunServers.length,
+        turnCount: this.turnServers.length,
+        hasDynamicCredentials: !!this.turnCredentialsEndpoint
+      }
+    }));
+  }
+
+  /**
+   * Fetch fresh TURN credentials from the server
+   * Server should return: { urls, username, credential, ttl }
+   */
+  async refreshTurnCredentials() {
+    if (!this.turnCredentialsEndpoint) return;
+
+    try {
+      const response = await fetch(this.turnCredentialsEndpoint);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const credentials = await response.json();
+
+      if (credentials.servers && Array.isArray(credentials.servers)) {
+        this.turnServers = credentials.servers;
+      } else if (credentials.urls) {
+        // Single server format
+        this.turnServers = [{
+          urls: credentials.urls,
+          username: credentials.username,
+          credential: credentials.credential
+        }];
+      }
+
+      // Schedule credential refresh before expiry
+      if (credentials.ttl) {
+        this.turnCredentialExpiry = Date.now() + (credentials.ttl * 1000);
+        this.scheduleTurnCredentialRefresh(credentials.ttl * 1000);
+      }
+
+      console.log(`TURN credentials refreshed, ${this.turnServers.length} server(s), expires in ${credentials.ttl}s`);
+
+      this.dispatchEvent(new CustomEvent('turn-credentials-refreshed', {
+        detail: { serverCount: this.turnServers.length, ttl: credentials.ttl }
+      }));
+
+    } catch (error) {
+      console.error('Failed to fetch TURN credentials:', error);
+      this.dispatchEvent(new CustomEvent('turn-credentials-error', { detail: { error } }));
+    }
+  }
+
+  scheduleTurnCredentialRefresh(ttlMs) {
+    if (this.turnCredentialRefreshTimer) {
+      clearTimeout(this.turnCredentialRefreshTimer);
+    }
+
+    // Refresh before expiry
+    const refreshIn = Math.max(ttlMs - TURN_CREDENTIAL_REFRESH_BUFFER, 60000);
+
+    this.turnCredentialRefreshTimer = setTimeout(() => {
+      this.refreshTurnCredentials();
+    }, refreshIn);
+  }
+
+  /**
+   * Get current ICE servers configuration
+   */
+  getIceServers() {
+    const servers = [...this.stunServers];
+
+    if (this.turnServers.length > 0) {
+      // Check if credentials are still valid
+      if (this.turnCredentialExpiry && Date.now() > this.turnCredentialExpiry) {
+        console.warn('TURN credentials expired, using STUN only');
+      } else {
+        servers.push(...this.turnServers);
+      }
+    }
+
+    return servers;
+  }
+
+  /**
+   * Check if TURN servers are configured and available
+   */
+  hasTurnServers() {
+    if (this.turnServers.length === 0) return false;
+    if (this.turnCredentialExpiry && Date.now() > this.turnCredentialExpiry) return false;
+    return true;
   }
 
   setupSignalingHandlers() {
@@ -118,7 +263,16 @@ export class WebRTCManager extends EventTarget {
     // Initialize pending candidates buffer for this peer
     this.pendingCandidates.set(peerId, []);
 
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    // Get current ICE servers (STUN + TURN if configured)
+    const iceServers = this.getIceServers();
+
+    const pc = new RTCPeerConnection({
+      iceServers,
+      // Prefer relay (TURN) if available for more reliable connections
+      // Change to 'all' if you want to try direct connections first
+      iceTransportPolicy: this.hasTurnServers() ? 'all' : 'all'
+    });
+
     this.peerConnections.set(peerId, pc);
 
     // Start connection timeout
@@ -137,6 +291,16 @@ export class WebRTCManager extends EventTarget {
       }
     };
 
+    // Track ICE gathering state for debugging
+    pc.onicegatheringstatechange = () => {
+      console.log(`ICE gathering state with ${peerId}: ${pc.iceGatheringState}`);
+      if (pc.iceGatheringState === 'complete') {
+        this.dispatchEvent(new CustomEvent('ice-gathering-complete', {
+          detail: { peerId }
+        }));
+      }
+    };
+
     pc.onconnectionstatechange = () => {
       console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
       this.dispatchEvent(new CustomEvent('connection-state-change', {
@@ -145,6 +309,7 @@ export class WebRTCManager extends EventTarget {
 
       if (pc.connectionState === 'connected') {
         this.clearConnectionTimeout(peerId);
+        this.logConnectionType(peerId, pc);
         this.dispatchEvent(new CustomEvent('peer-connected', { detail: { peerId } }));
       } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
         this.closePeerConnection(peerId);
@@ -181,6 +346,33 @@ export class WebRTCManager extends EventTarget {
     }
 
     return pc;
+  }
+
+  /**
+   * Log the connection type (direct vs relay) for debugging
+   */
+  async logConnectionType(peerId, pc) {
+    try {
+      const stats = await pc.getStats();
+      stats.forEach(report => {
+        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+          const localCandidate = stats.get(report.localCandidateId);
+          const remoteCandidate = stats.get(report.remoteCandidateId);
+
+          const localType = localCandidate?.candidateType || 'unknown';
+          const remoteType = remoteCandidate?.candidateType || 'unknown';
+
+          const isRelayed = localType === 'relay' || remoteType === 'relay';
+          console.log(`Connection to ${peerId}: ${isRelayed ? 'RELAYED (TURN)' : 'DIRECT'} (local: ${localType}, remote: ${remoteType})`);
+
+          this.dispatchEvent(new CustomEvent('connection-type-determined', {
+            detail: { peerId, isRelayed, localType, remoteType }
+          }));
+        }
+      });
+    } catch (e) {
+      // Stats not available, ignore
+    }
   }
 
   setupDataChannel(peerId, channel) {
@@ -341,6 +533,12 @@ export class WebRTCManager extends EventTarget {
     for (const peerId of peerIds) {
       this.closePeerConnection(peerId);
     }
+
+    // Clean up TURN credential refresh timer
+    if (this.turnCredentialRefreshTimer) {
+      clearTimeout(this.turnCredentialRefreshTimer);
+      this.turnCredentialRefreshTimer = null;
+    }
   }
 
   getConnectedPeers() {
@@ -352,6 +550,50 @@ export class WebRTCManager extends EventTarget {
   isConnectedTo(peerId) {
     const channel = this.dataChannels.get(peerId);
     return channel && channel.readyState === 'open';
+  }
+
+  /**
+   * Get connection statistics for a peer
+   */
+  async getConnectionStats(peerId) {
+    const pc = this.peerConnections.get(peerId);
+    if (!pc) return null;
+
+    try {
+      const stats = await pc.getStats();
+      const result = {
+        connectionType: 'unknown',
+        localCandidateType: null,
+        remoteCandidateType: null,
+        bytesReceived: 0,
+        bytesSent: 0,
+        packetsLost: 0,
+        roundTripTime: null
+      };
+
+      stats.forEach(report => {
+        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+          const localCandidate = stats.get(report.localCandidateId);
+          const remoteCandidate = stats.get(report.remoteCandidateId);
+
+          result.localCandidateType = localCandidate?.candidateType;
+          result.remoteCandidateType = remoteCandidate?.candidateType;
+          result.connectionType = (result.localCandidateType === 'relay' || result.remoteCandidateType === 'relay')
+            ? 'relay' : 'direct';
+          result.bytesReceived = report.bytesReceived || 0;
+          result.bytesSent = report.bytesSent || 0;
+          result.roundTripTime = report.currentRoundTripTime;
+        }
+
+        if (report.type === 'inbound-rtp') {
+          result.packetsLost += report.packetsLost || 0;
+        }
+      });
+
+      return result;
+    } catch (e) {
+      return null;
+    }
   }
 }
 

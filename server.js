@@ -6,6 +6,27 @@ const WebSocket = require('ws');
 
 const PORT = process.env.PORT || 3000;
 
+// TURN server configuration via environment variables
+// For coturn with time-limited credentials:
+//   TURN_URL=turn:turn.example.com:3478
+//   TURN_SECRET=your-shared-secret
+//   TURN_TTL=86400 (optional, default 24 hours)
+//
+// For static credentials:
+//   TURN_URL=turn:turn.example.com:3478
+//   TURN_USERNAME=username
+//   TURN_CREDENTIAL=password
+//
+// Multiple TURN URLs can be comma-separated:
+//   TURN_URL=turn:turn1.example.com:3478,turns:turn1.example.com:443
+const TURN_CONFIG = {
+  urls: process.env.TURN_URL ? process.env.TURN_URL.split(',').map(u => u.trim()) : null,
+  secret: process.env.TURN_SECRET || null,
+  username: process.env.TURN_USERNAME || null,
+  credential: process.env.TURN_CREDENTIAL || null,
+  ttl: parseInt(process.env.TURN_TTL, 10) || 86400, // 24 hours default
+};
+
 // MIME types for static file serving
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -27,9 +48,98 @@ const RATE_LIMIT = {
 const connectionsByIp = new Map();  // ip -> Set of ws connections
 const messageRates = new Map();     // peerId -> { count, windowStart }
 
-// Simple static file server
+/**
+ * Generate TURN credentials
+ * Supports two modes:
+ * 1. Time-limited credentials using HMAC (for coturn with --use-auth-secret)
+ * 2. Static credentials (username/password)
+ *
+ * For time-limited credentials (coturn):
+ * - Username format: "timestamp:random" where timestamp is expiry time
+ * - Credential: HMAC-SHA1(secret, username)
+ */
+function generateTurnCredentials() {
+  if (!TURN_CONFIG.urls) {
+    return null;
+  }
+
+  // Static credentials mode
+  if (TURN_CONFIG.username && TURN_CONFIG.credential) {
+    return {
+      servers: TURN_CONFIG.urls.map(url => ({
+        urls: url,
+        username: TURN_CONFIG.username,
+        credential: TURN_CONFIG.credential
+      })),
+      ttl: TURN_CONFIG.ttl
+    };
+  }
+
+  // Time-limited credentials mode (coturn with --use-auth-secret)
+  if (TURN_CONFIG.secret) {
+    const timestamp = Math.floor(Date.now() / 1000) + TURN_CONFIG.ttl;
+    const username = `${timestamp}:dicebox`;
+    const credential = crypto
+      .createHmac('sha1', TURN_CONFIG.secret)
+      .update(username)
+      .digest('base64');
+
+    return {
+      servers: TURN_CONFIG.urls.map(url => ({
+        urls: url,
+        username,
+        credential
+      })),
+      ttl: TURN_CONFIG.ttl
+    };
+  }
+
+  return null;
+}
+
+// Simple static file server with API endpoints
 const server = http.createServer((req, res) => {
-  let filePath = req.url === '/' ? '/index.html' : req.url;
+  // CORS headers for API endpoints
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  // API: Get TURN credentials
+  if (req.url === '/api/turn-credentials' && req.method === 'GET') {
+    const credentials = generateTurnCredentials();
+
+    if (!credentials) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'TURN not configured' }));
+      return;
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(credentials));
+    return;
+  }
+
+  // API: Health check
+  if (req.url === '/api/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      rooms: rooms.size,
+      peers: peers.size,
+      turnConfigured: !!TURN_CONFIG.urls
+    }));
+    return;
+  }
+
+  // Static file serving
+  let filePath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
   filePath = path.join(__dirname, 'public', filePath);
 
   const ext = path.extname(filePath);
@@ -377,4 +487,12 @@ setInterval(() => {
 server.listen(PORT, () => {
   console.log(`DiceBox server running on http://localhost:${PORT}`);
   console.log(`Minimal ICE broker ready (host-based rooms)`);
+
+  if (TURN_CONFIG.urls) {
+    const mode = TURN_CONFIG.secret ? 'time-limited' : 'static';
+    console.log(`TURN servers configured (${mode} credentials): ${TURN_CONFIG.urls.join(', ')}`);
+    console.log(`TURN credentials endpoint: /api/turn-credentials`);
+  } else {
+    console.log('TURN not configured (STUN only). Set TURN_URL environment variable to enable.');
+  }
 });
