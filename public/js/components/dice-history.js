@@ -60,13 +60,13 @@ class DiceHistory extends HTMLElement {
     listEl.innerHTML = this.history.map(roll => {
       const isSelf = roll.peerId === this.selfPeerId;
       const valuesStr = roll.values.join(', ');
-      const diceNotation = roll.count > 1 ? `${roll.count}d${roll.diceType}` : `d${roll.diceType}`;
+      const diceLabel = roll.count > 1 ? `${roll.count} dice` : '1 die';
 
       return `
         <div class="history-item">
           <div>
             <span class="username ${isSelf ? 'self' : ''}">${this.escapeHtml(roll.username)}</span>
-            <span class="roll-info">rolled ${diceNotation}</span>
+            <span class="roll-info">rolled ${diceLabel}</span>
           </div>
           <div class="roll-result">${roll.total}</div>
           ${roll.count > 1 ? `<div class="roll-values">[${valuesStr}]</div>` : ''}

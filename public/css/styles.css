@@ -363,14 +363,15 @@ dice-roller .die {
   height: 80px;
   background: linear-gradient(135deg, #ffffff, #e2e8f0);
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  font-weight: bold;
-  color: var(--background);
+  padding: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
+}
+
+dice-roller .die svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 dice-roller .die.rolling {
@@ -387,13 +388,17 @@ dice-roller .die.rolling {
 dice-roller .die-placeholder {
   width: 80px;
   height: 80px;
-  border: 3px dashed var(--surface-light);
+  background: linear-gradient(135deg, #ffffff, #e2e8f0);
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 2rem;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0.5;
+}
+
+dice-roller .die-placeholder svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 dice-roller .dice-controls {
@@ -407,27 +412,6 @@ dice-roller .dice-controls {
 dice-roller .dice-controls button {
   padding: 10px 16px;
   font-size: 0.9rem;
-}
-
-dice-roller .dice-selector {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-dice-roller .dice-selector button {
-  background: var(--surface-light);
-  padding: 8px 16px;
-  font-size: 0.85rem;
-}
-
-dice-roller .dice-selector button:hover {
-  background: var(--primary-color);
-}
-
-dice-roller .dice-selector button.selected {
-  background: var(--primary-color);
 }
 
 dice-roller .roll-total {
