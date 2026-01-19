@@ -401,23 +401,127 @@ dice-roller .die-placeholder svg {
   display: block;
 }
 
-dice-roller .dice-controls {
+/* Host dice configuration controls */
+dice-roller .host-dice-controls {
   display: flex;
-  gap: 12px;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 20px;
+  padding: 12px;
+  background: var(--surface-light);
+  border-radius: 8px;
 }
 
-dice-roller .dice-controls button {
-  padding: 10px 16px;
+dice-roller .host-dice-controls label {
+  color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+dice-roller .dice-config-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 6px;
+}
+
+dice-roller #dice-count {
+  font-size: 1.2rem;
+  font-weight: 600;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Dice display wrapper - clickable area */
+dice-roller .dice-display-wrapper {
+  cursor: pointer;
+  padding: 20px;
+  margin: -20px;
+  margin-bottom: 4px;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s ease;
+}
+
+dice-roller .dice-display-wrapper:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+dice-roller .dice-display-wrapper.holding {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+dice-roller .dice-display-wrapper.holding:hover {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+/* Holding state indicator */
+dice-roller .holding-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  gap: 12px;
+}
+
+dice-roller .holding-hand {
+  width: 60px;
+  height: 60px;
+  background: var(--warning);
+  border-radius: 50%;
+  position: relative;
+  animation: holdPulse 1.5s ease-in-out infinite;
+}
+
+dice-roller .holding-hand::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+@keyframes holdPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+dice-roller .holding-text {
+  font-size: 1.1rem;
+  color: var(--warning);
+  font-weight: 600;
+}
+
+dice-roller .holding-hint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Dice hint text */
+dice-roller .dice-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 12px;
 }
 
 dice-roller .roll-total {
   font-size: 1.5rem;
   color: var(--secondary-color);
   margin-top: 16px;
+  text-align: center;
 }
 
 /* Dice History Component */

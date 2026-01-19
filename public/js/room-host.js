@@ -10,6 +10,15 @@ export class RoomHost extends EventTarget {
     this.rollHistory = [];
     this.joinCounter = 0;
     this.maxHistorySize = 100;
+
+    // Dice configuration (host-controlled)
+    this.diceConfig = {
+      count: 1  // Number of d6 dice
+    };
+
+    // Who is currently holding the dice (null if no one)
+    this.holderPeerId = null;
+    this.holderUsername = null;
   }
 
   // Add a peer to the room
@@ -61,7 +70,10 @@ export class RoomHost extends EventTarget {
         username: data.username,
         joinOrder: data.joinOrder
       })),
-      rollHistory: this.rollHistory.slice(0, 50) // Send last 50 rolls
+      rollHistory: this.rollHistory.slice(0, 50), // Send last 50 rolls
+      diceConfig: this.diceConfig,
+      holderPeerId: this.holderPeerId,
+      holderUsername: this.holderUsername
     };
   }
 
@@ -69,6 +81,9 @@ export class RoomHost extends EventTarget {
   loadState(state) {
     this.peers.clear();
     this.rollHistory = state.rollHistory || [];
+    this.diceConfig = state.diceConfig || { count: 1 };
+    this.holderPeerId = state.holderPeerId || null;
+    this.holderUsername = state.holderUsername || null;
 
     // Find highest join order to continue from
     let maxJoinOrder = 0;
@@ -81,6 +96,23 @@ export class RoomHost extends EventTarget {
       maxJoinOrder = Math.max(maxJoinOrder, peer.joinOrder);
     }
     this.joinCounter = maxJoinOrder + 1;
+  }
+
+  // Set dice configuration (host only)
+  setDiceConfig(config) {
+    this.diceConfig = { ...this.diceConfig, ...config };
+  }
+
+  // Set who is holding the dice
+  setHolder(peerId, username) {
+    this.holderPeerId = peerId;
+    this.holderUsername = username;
+  }
+
+  // Clear the holder (after a roll)
+  clearHolder() {
+    this.holderPeerId = null;
+    this.holderUsername = null;
   }
 
   // Get the next host candidate (peer with lowest join order)
@@ -131,5 +163,8 @@ export class RoomHost extends EventTarget {
     this.peers.clear();
     this.rollHistory = [];
     this.joinCounter = 0;
+    this.diceConfig = { count: 1 };
+    this.holderPeerId = null;
+    this.holderUsername = null;
   }
 }
