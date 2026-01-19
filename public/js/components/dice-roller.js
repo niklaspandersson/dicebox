@@ -1,35 +1,40 @@
 /**
- * DiceRoller - Web Component for rolling d6 dice
+ * DiceRoller - Displays dice and handles grab/roll interaction
  *
- * New behavior:
- * - Host configures the dice count for the room
- * - Click to "hold" the dice (they become hidden)
- * - Click again to roll (dice become visible with results)
+ * Click to grab (dice hidden) → Click again to roll (dice visible)
  */
 class DiceRoller extends HTMLElement {
   constructor() {
     super();
-    this.diceType = 6;
     this.diceCount = 1;
     this.currentValues = [];
     this.isRolling = false;
 
-    // State from room
+    // Holding state
     this.holderPeerId = null;
     this.holderUsername = null;
     this.myPeerId = null;
     this.isHost = false;
-
-    // Bound handlers for proper cleanup
-    this.boundHandleClick = this.handleClick.bind(this);
-    this.boundKeyHandler = this.handleKeyPress.bind(this);
   }
 
-  // Generate SVG for a die face with proper pip arrangement
-  getDiceSvg(value, isRolling = false) {
-    const pipColor = '#0f172a';
+  connectedCallback() {
+    this.render();
+    this._keyHandler = (e) => {
+      if (e.key === 'r' && !e.target.matches('input')) {
+        this.handleClick();
+      }
+    };
+    document.addEventListener('keypress', this._keyHandler);
+  }
 
-    // Pip positions for a standard die (relative to 50x50 viewBox)
+  disconnectedCallback() {
+    if (this._keyHandler) {
+      document.removeEventListener('keypress', this._keyHandler);
+    }
+  }
+
+  getDiceSvg(value) {
+    const pipColor = '#0f172a';
     const positions = {
       topLeft: { cx: 14, cy: 14 },
       topRight: { cx: 36, cy: 14 },
@@ -39,8 +44,6 @@ class DiceRoller extends HTMLElement {
       bottomLeft: { cx: 14, cy: 36 },
       bottomRight: { cx: 36, cy: 36 }
     };
-
-    // Which pips to show for each face value
     const pipConfigs = {
       1: ['center'],
       2: ['topRight', 'bottomLeft'],
@@ -49,142 +52,60 @@ class DiceRoller extends HTMLElement {
       5: ['topLeft', 'topRight', 'center', 'bottomLeft', 'bottomRight'],
       6: ['topLeft', 'topRight', 'midLeft', 'midRight', 'bottomLeft', 'bottomRight']
     };
-
-    // For rolling animation, show a random face
-    const displayValue = isRolling ? Math.floor(Math.random() * 6) + 1 : value;
-
-    const pips = pipConfigs[displayValue].map(pos => {
+    const pips = pipConfigs[value].map(pos => {
       const p = positions[pos];
       return `<circle cx="${p.cx}" cy="${p.cy}" r="5" fill="${pipColor}"/>`;
     }).join('');
-
     return `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">${pips}</svg>`;
-  }
-
-  connectedCallback() {
-    this.render();
-    document.addEventListener('keypress', this.boundKeyHandler);
-  }
-
-  disconnectedCallback() {
-    document.removeEventListener('keypress', this.boundKeyHandler);
-  }
-
-  handleKeyPress(e) {
-    if (e.key === 'r' && !e.target.matches('input')) {
-      this.handleClick();
-    }
   }
 
   render() {
     const isHolding = this.holderPeerId !== null;
     const iAmHolder = this.myPeerId && this.holderPeerId === this.myPeerId;
+    const canDrop = this.isHost && isHolding && !iAmHolder;
 
     this.innerHTML = `
       <div class="card dice-area">
-        ${this.isHost ? this.renderHostControls() : ''}
-
-        <div class="dice-display-wrapper ${isHolding ? 'holding' : ''}" id="dice-click-area">
-          ${this.renderDiceDisplay(isHolding, iAmHolder)}
+        <div class="dice-display-wrapper ${isHolding ? 'holding' : ''}">
+          ${this.renderContent(isHolding, iAmHolder, canDrop)}
         </div>
-
-        <div class="roll-total" id="roll-total"></div>
-
-        <div class="dice-hint" id="dice-hint">
-          ${this.getHintText(isHolding, iAmHolder)}
-        </div>
+        <div class="roll-total"></div>
+        <div class="dice-hint">${this.getHint(isHolding, iAmHolder)}</div>
       </div>
     `;
 
-    this.attachEventListeners();
-  }
-
-  attachEventListeners() {
-    // Click on dice area to grab or roll
-    const clickArea = this.querySelector('#dice-click-area');
-    if (clickArea) {
-      clickArea.addEventListener('click', this.boundHandleClick);
-    }
-
-    // Host dice count controls
-    const addBtn = this.querySelector('#btn-add-die');
-    const removeBtn = this.querySelector('#btn-remove-die');
-
-    if (addBtn) {
-      addBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.diceCount < 10) {
-          this.diceCount++;
-          this.dispatchEvent(new CustomEvent('dice-config-changed', {
-            bubbles: true,
-            detail: { count: this.diceCount }
-          }));
-        }
-      });
-    }
-
-    if (removeBtn) {
-      removeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.diceCount > 1) {
-          this.diceCount--;
-          this.dispatchEvent(new CustomEvent('dice-config-changed', {
-            bubbles: true,
-            detail: { count: this.diceCount }
-          }));
-        }
-      });
-    }
-
-    // Drop button handler
-    const dropBtn = this.querySelector('#btn-drop-dice');
-    if (dropBtn) {
-      dropBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
+    // Attach click handler to the wrapper
+    this.querySelector('.dice-display-wrapper').onclick = (e) => {
+      if (e.target.closest('.drop-btn')) {
         this.dispatchEvent(new CustomEvent('dice-dropped', { bubbles: true }));
-      });
-    }
+      } else {
+        this.handleClick();
+      }
+    };
   }
 
-  renderHostControls() {
-    return `
-      <div class="host-dice-controls">
-        <label>Dice count:</label>
-        <button id="btn-remove-die" class="dice-config-btn" title="Remove die">-</button>
-        <span id="dice-count">${this.diceCount}</span>
-        <button id="btn-add-die" class="dice-config-btn" title="Add die">+</button>
-      </div>
-    `;
-  }
-
-  renderDiceDisplay(isHolding, iAmHolder) {
+  renderContent(isHolding, iAmHolder, canDrop) {
     if (isHolding) {
-      // Someone is holding - show holding state
-      const canDrop = this.isHost && !iAmHolder;
       return `
         <div class="dice-display holding-state">
           <div class="holding-indicator">
             <div class="holding-hand"></div>
             <div class="holding-text">${iAmHolder ? 'You are' : this.holderUsername + ' is'} holding...</div>
             ${iAmHolder ? '<div class="holding-hint">Click to roll!</div>' : ''}
-            ${canDrop ? '<button class="drop-dice-btn" id="btn-drop-dice">Drop dice</button>' : ''}
+            ${canDrop ? '<button class="drop-btn">Drop</button>' : ''}
           </div>
         </div>
       `;
     }
 
-    // No one holding - show dice (or placeholders)
     if (this.currentValues.length > 0) {
       return `
         <div class="dice-display">
-          ${this.currentValues.map(val =>
-            `<div class="die">${this.getDiceSvg(val)}</div>`
-          ).join('')}
+          ${this.currentValues.map(v => `<div class="die">${this.getDiceSvg(v)}</div>`).join('')}
         </div>
       `;
     }
 
-    // Show placeholder dice
     return `
       <div class="dice-display">
         ${Array(this.diceCount).fill(0).map(() =>
@@ -194,32 +115,25 @@ class DiceRoller extends HTMLElement {
     `;
   }
 
-  getHintText(isHolding, iAmHolder) {
+  getHint(isHolding, iAmHolder) {
     if (isHolding) {
-      if (iAmHolder) {
-        return 'Click to roll the dice';
-      }
-      return `Waiting for ${this.holderUsername} to roll...`;
+      return iAmHolder ? 'Click to roll the dice' : `Waiting for ${this.holderUsername} to roll...`;
     }
     return 'Click to grab the dice';
   }
 
-  handleClick(e) {
-    // Don't trigger grab/roll when clicking the drop button
-    if (e && e.target && e.target.id === 'btn-drop-dice') return;
-
+  handleClick() {
     if (this.isRolling) return;
 
     const iAmHolder = this.myPeerId && this.holderPeerId === this.myPeerId;
 
-    if (this.holderPeerId === null) {
-      // No one holding - grab the dice
+    if (!this.holderPeerId) {
+      // No one holding - grab
       this.dispatchEvent(new CustomEvent('dice-grabbed', { bubbles: true }));
     } else if (iAmHolder) {
-      // I'm holding - roll!
+      // I'm holding - roll
       this.roll();
     }
-    // If someone else is holding, ignore clicks
   }
 
   async roll() {
@@ -227,111 +141,67 @@ class DiceRoller extends HTMLElement {
     this.isRolling = true;
 
     const display = this.querySelector('.dice-display');
-    const totalEl = this.querySelector('#roll-total');
-    const hintEl = this.querySelector('#dice-hint');
+    const hint = this.querySelector('.dice-hint');
+    const total = this.querySelector('.roll-total');
 
-    if (!display) {
-      this.isRolling = false;
-      return;
-    }
-
-    // Show rolling animation with SVG dice
-    display.innerHTML = Array(this.diceCount).fill(0).map(() =>
-      `<div class="die rolling">${this.getDiceSvg(1, true)}</div>`
-    ).join('');
+    // Rolling animation
     display.classList.remove('holding-state');
-
-    if (hintEl) {
-      hintEl.textContent = 'Rolling...';
-    }
-
-    // Animate the dice during roll
-    const rollDuration = 500;
-    const frameInterval = 80;
-    let elapsed = 0;
-
-    const animateRoll = () => {
-      if (elapsed < rollDuration) {
-        display.querySelectorAll('.die').forEach(die => {
-          die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1);
-        });
-        elapsed += frameInterval;
-        setTimeout(animateRoll, frameInterval);
-      }
-    };
-    animateRoll();
-
-    // Wait for animation to complete
-    await new Promise(resolve => setTimeout(resolve, rollDuration));
-
-    // Generate random values
-    this.currentValues = Array(this.diceCount).fill(0).map(() =>
-      Math.floor(Math.random() * this.diceType) + 1
-    );
-
-    const total = this.currentValues.reduce((sum, val) => sum + val, 0);
-
-    // Display results with SVG dice
-    display.innerHTML = this.currentValues.map(val =>
-      `<div class="die">${this.getDiceSvg(val)}</div>`
+    display.innerHTML = Array(this.diceCount).fill(0).map(() =>
+      `<div class="die rolling">${this.getDiceSvg(1)}</div>`
     ).join('');
+    hint.textContent = 'Rolling...';
 
-    if (this.diceCount > 1) {
-      totalEl.textContent = `Total: ${total}`;
-    } else {
-      totalEl.textContent = '';
-    }
+    // Animate for 500ms
+    const animate = () => {
+      display.querySelectorAll('.die').forEach(die => {
+        die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1);
+      });
+    };
+    const interval = setInterval(animate, 80);
+    await new Promise(r => setTimeout(r, 500));
+    clearInterval(interval);
 
-    // Dispatch roll event
-    this.dispatchEvent(new CustomEvent('dice-rolled', {
-      bubbles: true,
-      detail: {
-        diceType: this.diceType,
-        count: this.diceCount,
-        values: this.currentValues,
-        total
-      }
-    }));
+    // Generate final values
+    this.currentValues = Array(this.diceCount).fill(0).map(() =>
+      Math.floor(Math.random() * 6) + 1
+    );
+    const sum = this.currentValues.reduce((a, b) => a + b, 0);
+
+    // Show result
+    display.innerHTML = this.currentValues.map(v =>
+      `<div class="die">${this.getDiceSvg(v)}</div>`
+    ).join('');
+    total.textContent = this.diceCount > 1 ? `Total: ${sum}` : '';
+    hint.textContent = 'Click to grab the dice';
 
     this.isRolling = false;
 
-    // Update hint (will be updated properly via setConfig)
-    if (hintEl) {
-      hintEl.textContent = 'Click to grab the dice';
-    }
+    // Emit roll event
+    this.dispatchEvent(new CustomEvent('dice-rolled', {
+      bubbles: true,
+      detail: { diceType: 6, count: this.diceCount, values: this.currentValues, total: sum }
+    }));
   }
 
-  // Called by app.js to update state
+  // External API
   setConfig({ diceCount, holderPeerId, holderUsername, myPeerId, isHost }) {
     this.diceCount = diceCount;
     this.holderPeerId = holderPeerId;
     this.holderUsername = holderUsername;
     this.myPeerId = myPeerId;
     this.isHost = isHost;
-
-    // Always re-render to ensure UI matches state
     this.render();
   }
 
-  // Display a roll from another player
-  displayExternalRoll(values) {
+  showRoll(values) {
     this.currentValues = values;
     const display = this.querySelector('.dice-display');
-    const totalEl = this.querySelector('#roll-total');
-
+    const total = this.querySelector('.roll-total');
     if (!display) return;
 
     display.classList.remove('holding-state');
-    display.innerHTML = values.map(val =>
-      `<div class="die">${this.getDiceSvg(val)}</div>`
-    ).join('');
-
-    if (values.length > 1) {
-      const total = values.reduce((sum, val) => sum + val, 0);
-      totalEl.textContent = `Total: ${total}`;
-    } else {
-      totalEl.textContent = '';
-    }
+    display.innerHTML = values.map(v => `<div class="die">${this.getDiceSvg(v)}</div>`).join('');
+    total.textContent = values.length > 1 ? `Total: ${values.reduce((a, b) => a + b, 0)}` : '';
   }
 }
 
