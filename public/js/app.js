@@ -331,7 +331,7 @@ class DiceBoxApp {
     this.roomId = roomId;
     this.username = username;
     this.isHost = true;
-    this.hostPeerId = this.peerId;
+    this.hostPeerId = this.getEffectiveId();
     this.myJoinOrder = 0;
 
     // Initialize room state
@@ -813,9 +813,9 @@ class DiceBoxApp {
     this.diceHistory = this.roomView.querySelector('dice-history');
     this.peerList = this.roomView.querySelector('peer-list');
 
-    // Set up peer list with self
-    this.peerList.setSelf(this.peerId, this.username);
-    this.diceHistory.peerId = this.peerId;
+    // Set up peer list with self (use effective ID for offline support)
+    this.peerList.setSelf(this.getEffectiveId(), this.username);
+    this.diceHistory.peerId = this.getEffectiveId();
 
     // Initialize dice roller state (for host, client gets this from WELCOME)
     if (this.isHost) {
@@ -911,14 +911,14 @@ class DiceBoxApp {
 
   handleLocalDiceRoll({ diceType, count, values, total }) {
     // Generate a unique roll ID for duplicate prevention
-    const rollId = `${this.peerId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const rollId = `${this.getEffectiveId()}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Clear holder since we rolled
     this.holderPeerId = null;
     this.holderUsername = null;
 
     const roll = {
-      peerId: this.peerId,
+      peerId: this.getEffectiveId(),
       username: this.username,
       diceType,
       count,
