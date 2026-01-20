@@ -34,8 +34,17 @@ body {
 }
 
 header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 40px;
+}
+
+header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 header h1 {
@@ -44,11 +53,64 @@ header h1 {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  margin: 0;
+  transition: font-size 0.2s ease;
 }
 
 header .tagline {
   color: var(--text-muted);
   font-size: 1.1rem;
+  transition: opacity 0.2s ease;
+}
+
+header .room-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+header .room-info .room-id {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+header .room-info .room-id span {
+  color: var(--secondary-color);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+header .room-info .host-badge {
+  background: var(--warning);
+  color: var(--background);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+header .btn-leave {
+  background: var(--danger);
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+header .btn-leave:hover {
+  background: #dc2626;
+}
+
+/* Compact header when in room */
+#app.in-room header {
+  margin-bottom: 20px;
+}
+
+#app.in-room header h1 {
+  font-size: 1.5rem;
+}
+
+#app.in-room header .tagline {
+  display: none;
 }
 
 /* Common button styles */
@@ -268,51 +330,6 @@ room-view {
 
 room-view.active {
   display: block;
-}
-
-room-view .room-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--surface-light);
-}
-
-room-view .room-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-room-view .room-id {
-  font-size: 1.2rem;
-  color: var(--text-muted);
-}
-
-room-view .room-id span {
-  color: var(--secondary-color);
-  font-weight: 600;
-  font-size: 1.4rem;
-  letter-spacing: 0.1em;
-}
-
-room-view .host-badge {
-  background: var(--warning);
-  color: var(--background);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-room-view .btn-leave {
-  background: var(--danger);
-}
-
-room-view .btn-leave:hover {
-  background: #dc2626;
 }
 
 room-view .room-content {

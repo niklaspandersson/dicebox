@@ -9,8 +9,17 @@
 <body>
   <div id="app">
     <header>
-      <h1>DiceBox</h1>
-      <p class="tagline">Roll dice with friends in real-time</p>
+      <div class="header-left">
+        <h1>DiceBox</h1>
+        <p class="tagline">Roll dice with friends in real-time</p>
+        <div class="room-info" id="header-room-info" style="display: none;">
+          <span class="room-id">Room: <span id="header-room-id"></span></span>
+          <span class="host-badge" id="header-host-badge" style="display: none;">HOST</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn-leave" id="header-leave-btn" style="display: none;">Leave</button>
+      </div>
     </header>
 
     <main>
