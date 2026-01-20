@@ -22,10 +22,21 @@ class DiceConfig extends HTMLElement {
       { id: 'set-1', count: 2, color: '#6366f1' }
     ];
     this.nextSetId = 2;
+    this._listenersAttached = false;
+    this._boundDocClickHandler = null;
   }
 
   connectedCallback() {
     this.render();
+    this.attachEventListeners();
+  }
+
+  disconnectedCallback() {
+    // Clean up document listener when component is removed
+    if (this._boundDocClickHandler) {
+      document.removeEventListener('click', this._boundDocClickHandler);
+      this._boundDocClickHandler = null;
+    }
   }
 
   render() {
@@ -40,8 +51,6 @@ class DiceConfig extends HTMLElement {
         </div>
       </div>
     `;
-
-    this.attachEventListeners();
   }
 
   renderDiceSet(set, index) {
@@ -74,52 +83,59 @@ class DiceConfig extends HTMLElement {
   }
 
   attachEventListeners() {
-    // Add set button
-    this.querySelector('.add-set-btn')?.addEventListener('click', () => {
-      this.addDiceSet();
-    });
+    // Only attach listeners once
+    if (this._listenersAttached) return;
+    this._listenersAttached = true;
 
-    // Handle all button clicks via delegation
+    // Handle all clicks via delegation on the component
     this.addEventListener('click', (e) => {
+      // Handle color option selection first (highest priority)
+      const colorOption = e.target.closest('.color-option');
+      if (colorOption) {
+        e.stopPropagation();
+        const color = colorOption.dataset.color;
+        const dropdown = colorOption.closest('.color-dropdown');
+        const setId = dropdown.dataset.setId;
+        this.updateColor(setId, color);
+        return;
+      }
+
+      // Handle add set button
+      if (e.target.closest('.add-set-btn')) {
+        this.addDiceSet();
+        return;
+      }
+
+      // Handle action buttons (increase, decrease, remove, color toggle)
       const btn = e.target.closest('[data-action]');
-      if (!btn) return;
+      if (btn) {
+        const action = btn.dataset.action;
+        const setId = btn.dataset.setId;
 
-      const action = btn.dataset.action;
-      const setId = btn.dataset.setId;
-
-      switch (action) {
-        case 'increase':
-          this.updateCount(setId, 1);
-          break;
-        case 'decrease':
-          this.updateCount(setId, -1);
-          break;
-        case 'remove':
-          this.removeDiceSet(setId);
-          break;
-        case 'color':
-          this.toggleColorDropdown(setId);
-          break;
+        switch (action) {
+          case 'increase':
+            this.updateCount(setId, 1);
+            break;
+          case 'decrease':
+            this.updateCount(setId, -1);
+            break;
+          case 'remove':
+            this.removeDiceSet(setId);
+            break;
+          case 'color':
+            this.toggleColorDropdown(setId);
+            break;
+        }
       }
     });
 
-    // Handle color selection
-    this.querySelectorAll('.color-option').forEach(opt => {
-      opt.addEventListener('click', (e) => {
-        const color = opt.dataset.color;
-        const dropdown = opt.closest('.color-dropdown');
-        const setId = dropdown.dataset.setId;
-        this.updateColor(setId, color);
-        e.stopPropagation();
-      });
-    });
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', (e) => {
+    // Close dropdowns when clicking outside - store reference for cleanup
+    this._boundDocClickHandler = (e) => {
       if (!e.target.closest('.color-picker')) {
         this.closeAllDropdowns();
       }
-    });
+    };
+    document.addEventListener('click', this._boundDocClickHandler);
   }
 
   toggleColorDropdown(setId) {
