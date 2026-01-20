@@ -45,7 +45,20 @@ header .header-left {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  min-width: 0;
+}
+
+header .header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+header .host-crown {
+  color: var(--warning);
+  display: flex;
+  align-items: center;
 }
 
 header .header-right {
@@ -104,11 +117,10 @@ header .tagline {
 header .room-info {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
 header .room-info .room-id {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
@@ -116,16 +128,6 @@ header .room-info .room-id span {
   color: var(--secondary-color);
   font-weight: 600;
   letter-spacing: 0.05em;
-}
-
-header .room-info .host-badge {
-  background: var(--warning);
-  color: var(--background);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
 }
 
 header .btn-settings {
@@ -143,13 +145,19 @@ header .btn-settings:hover {
 }
 
 header .btn-leave {
-  background: var(--danger);
-  padding: 8px 16px;
-  font-size: 0.9rem;
+  background: transparent;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
 }
 
 header .btn-leave:hover {
-  background: #dc2626;
+  background: var(--surface-light);
+  color: var(--danger);
+  transform: none;
 }
 
 /* Modal styles */
@@ -239,22 +247,32 @@ header .btn-leave:hover {
 }
 
 #app.in-room header .header-left {
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+#app.in-room header .header-title-row {
+  gap: 6px;
 }
 
 #app.in-room header .header-right {
   position: static;
   display: flex;
+  flex-shrink: 0;
 }
 
 #app.in-room header h1 {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 #app.in-room header .tagline {
   display: none;
+}
+
+#app.in-room header .room-info .room-id {
+  font-size: 0.8rem;
 }
 
 /* Common button styles */
@@ -481,23 +499,15 @@ dice-roller .dice-set {
   border: 3px solid transparent;
   transition: border-color 0.2s ease, background 0.2s ease;
   cursor: pointer;
+  background: var(--set-bg);
 }
 
 dice-roller .dice-set:hover {
-  background: var(--set-bg);
+  filter: brightness(1.1);
 }
 
 dice-roller .dice-set.held {
-  background: var(--set-bg);
-}
-
-dice-roller .dice-set-indicator {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  filter: brightness(1.15);
 }
 
 dice-roller .holder-info {
@@ -523,12 +533,11 @@ dice-roller .dice-display {
 dice-roller .die {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #ffffff, #e2e8f0);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(226, 232, 240, 0.85));
   border-radius: 10px;
   padding: 8px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
-  border: 2px solid var(--die-color, transparent);
 }
 
 dice-roller .die svg {
@@ -551,12 +560,11 @@ dice-roller .die.rolling {
 dice-roller .die-placeholder {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #ffffff, #e2e8f0);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(226, 232, 240, 0.6));
   border-radius: 10px;
   padding: 8px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-  opacity: 0.5;
-  border: 2px dashed var(--die-color, var(--text-muted));
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
 }
 
 dice-roller .die-placeholder svg {

@@ -102,7 +102,6 @@ class DiceRoller extends HTMLElement {
       <div class="dice-set card ${isHeld ? 'held' : ''} ${iAmHolder ? 'my-hold' : ''}"
            data-set-id="${set.id}"
            style="--set-color: ${set.color}; --set-bg: ${bgColor}; border-color: ${borderColor}">
-        <div class="dice-set-indicator" style="background: ${set.color}"></div>
         ${isHeld ? `
           <div class="holder-info">
             <span class="holder-name">${iAmHolder ? 'You' : holder.username}</span>
@@ -110,9 +109,9 @@ class DiceRoller extends HTMLElement {
         ` : ''}
         <div class="dice-display">
           ${hasValues && !isHeld ?
-            values.map(v => `<div class="die" style="--die-color: ${set.color}">${this.getDiceSvg(v)}</div>`).join('') :
+            values.map(v => `<div class="die">${this.getDiceSvg(v)}</div>`).join('') :
             Array(set.count).fill(0).map(() =>
-              `<div class="die-placeholder" style="--die-color: ${set.color}">${this.getDiceSvg(1)}</div>`
+              `<div class="die-placeholder">${this.getDiceSvg(1)}</div>`
             ).join('')
           }
         </div>
@@ -198,7 +197,7 @@ class DiceRoller extends HTMLElement {
     displays.forEach((display, index) => {
       const set = this.diceSets[index];
       display.innerHTML = Array(set.count).fill(0).map(() =>
-        `<div class="die rolling" style="--die-color: ${set.color}">${this.getDiceSvg(1)}</div>`
+        `<div class="die rolling">${this.getDiceSvg(1)}</div>`
       ).join('');
     });
 
@@ -231,7 +230,7 @@ class DiceRoller extends HTMLElement {
       const set = this.diceSets[index];
       const values = rollResults[set.id];
       display.innerHTML = values.map(v =>
-        `<div class="die" style="--die-color: ${set.color}">${this.getDiceSvg(v)}</div>`
+        `<div class="die">${this.getDiceSvg(v)}</div>`
       ).join('');
     });
 
@@ -276,7 +275,7 @@ class DiceRoller extends HTMLElement {
         const display = setEl.querySelector('.dice-display');
         if (display && values.length > 0) {
           display.innerHTML = values.map(v =>
-            `<div class="die" style="--die-color: ${set.color}">${this.getDiceSvg(v)}</div>`
+            `<div class="die">${this.getDiceSvg(v)}</div>`
           ).join('');
         }
       }

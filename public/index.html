@@ -10,11 +10,17 @@
   <div id="app">
     <header>
       <div class="header-left">
-        <h1>DiceBox</h1>
+        <div class="header-title-row">
+          <h1>DiceBox</h1>
+          <span class="host-crown" id="header-host-badge" style="display: none;" title="You are the host">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v2H5v-2z"/>
+            </svg>
+          </span>
+        </div>
         <p class="tagline">Roll dice with friends in real-time</p>
         <div class="room-info" id="header-room-info" style="display: none;">
-          <span class="room-id">Room: <span id="header-room-id"></span></span>
-          <span class="host-badge" id="header-host-badge" style="display: none;">HOST</span>
+          <span class="room-id">Room <span id="header-room-id"></span></span>
         </div>
       </div>
       <div class="header-right">
@@ -26,7 +32,11 @@
             <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
           </svg>
         </button>
-        <button class="btn-leave" id="header-leave-btn" style="display: none;">Leave</button>
+        <button class="btn-leave" id="header-leave-btn" style="display: none;" title="Leave room">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
       </div>
     </header>
 
