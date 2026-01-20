@@ -679,15 +679,13 @@ dice-config .color-dropdown-arrow {
 
 dice-config .color-dropdown {
   display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
+  position: fixed;
   margin-top: 4px;
   padding: 8px;
   background: var(--surface);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  z-index: 100;
+  z-index: 1100;
   flex-wrap: wrap;
   width: 140px;
   gap: 6px;

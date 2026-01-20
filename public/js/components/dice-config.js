@@ -140,9 +140,14 @@ class DiceConfig extends HTMLElement {
 
   toggleColorDropdown(setId) {
     const dropdown = this.querySelector(`.color-dropdown[data-set-id="${setId}"]`);
+    const btn = this.querySelector(`.color-btn[data-set-id="${setId}"]`);
     const wasOpen = dropdown.classList.contains('open');
     this.closeAllDropdowns();
-    if (!wasOpen) {
+    if (!wasOpen && btn) {
+      // Position the dropdown relative to the button
+      const rect = btn.getBoundingClientRect();
+      dropdown.style.left = `${rect.left}px`;
+      dropdown.style.top = `${rect.bottom + 4}px`;
       dropdown.classList.add('open');
     }
   }
