@@ -50,12 +50,6 @@ class RoomJoin extends HTMLElement {
 
   render() {
     this.innerHTML = `
-      <div class="server-banner" id="server-banner" style="display: none;">
-        <span class="banner-icon">&#9888;</span>
-        <span class="banner-text">No server connection - multiplayer unavailable</span>
-        <button class="banner-dismiss" id="banner-dismiss" aria-label="Dismiss">&times;</button>
-      </div>
-
       <div class="card join-form" id="join-form">
         <div class="form-group">
           <label for="username">Your Name</label>
@@ -89,7 +83,6 @@ class RoomJoin extends HTMLElement {
     const createBtn = this.querySelector('#btn-create');
     const joinBtn = this.querySelector('#btn-join');
     const usernameInput = this.querySelector('#username');
-    const dismissBtn = this.querySelector('#banner-dismiss');
 
     createBtn.addEventListener('click', () => this.handleCreate());
     joinBtn.addEventListener('click', () => this.handleJoin());
@@ -105,11 +98,6 @@ class RoomJoin extends HTMLElement {
       if (e.key === 'Enter') {
         this.handleCreate();
       }
-    });
-
-    // Dismiss banner
-    dismissBtn.addEventListener('click', () => {
-      this.querySelector('#server-banner').style.display = 'none';
     });
 
     // Focus username on load
@@ -216,26 +204,39 @@ class RoomJoin extends HTMLElement {
     }));
   }
 
+  // Update the header connection indicator
+  updateConnectionIndicator(state) {
+    const indicator = document.getElementById('connection-indicator');
+    if (!indicator) return;
+
+    indicator.classList.remove('connected', 'disconnected');
+    if (state === 'connected') {
+      indicator.classList.add('connected');
+      indicator.title = 'Connected to server';
+    } else if (state === 'disconnected') {
+      indicator.classList.add('disconnected');
+      indicator.title = 'Disconnected - multiplayer unavailable';
+    } else {
+      indicator.title = 'Connecting...';
+    }
+  }
+
   // Called when successfully connected to server
   setConnected() {
     this._serverConnected = true;
-    const bannerEl = this.querySelector('#server-banner');
-    if (bannerEl) bannerEl.style.display = 'none';
+    this.updateConnectionIndicator('connected');
   }
 
   // Called when connection fails
   setDisconnected() {
     this._serverConnected = false;
-    const bannerEl = this.querySelector('#server-banner');
-    if (bannerEl) bannerEl.style.display = 'flex';
+    this.updateConnectionIndicator('disconnected');
   }
 
   // Called when attempting to connect
   setConnecting() {
     this._serverConnected = false;
-    // Don't show banner while still trying to connect
-    const bannerEl = this.querySelector('#server-banner');
-    if (bannerEl) bannerEl.style.display = 'none';
+    this.updateConnectionIndicator('connecting');
   }
 }
 

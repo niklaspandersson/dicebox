@@ -112,7 +112,29 @@ class DiceBoxApp {
     }
   }
 
+  updateConnectionIndicator(state) {
+    const indicator = document.getElementById('connection-indicator');
+    if (!indicator) return;
+
+    indicator.classList.remove('connected', 'disconnected');
+    if (state === 'connected') {
+      indicator.classList.add('connected');
+      indicator.title = 'Connected to server';
+    } else if (state === 'disconnected') {
+      indicator.classList.add('disconnected');
+      indicator.title = 'Disconnected - multiplayer unavailable';
+    } else {
+      indicator.title = 'Connecting...';
+    }
+  }
+
   showStatus(text, type = 'connected') {
+    // Update the header indicator
+    this.updateConnectionIndicator(type);
+
+    // Only show toast for non-error transient messages
+    if (type === 'disconnected') return;
+
     let status = document.querySelector('.connection-status');
     if (!status) {
       status = document.createElement('div');
@@ -191,6 +213,7 @@ class DiceBoxApp {
     // Connection state events
     signalingClient.addEventListener('connected', () => {
       this.serverConnected = true;
+      this.updateConnectionIndicator('connected');
       if (this.roomJoin && this.roomJoin.style.display !== 'none') {
         this.roomJoin.setConnected();
       }
@@ -200,13 +223,11 @@ class DiceBoxApp {
       const { wasHost, previousRoomId } = e.detail || {};
       console.log('Disconnected from signaling server');
       this.serverConnected = false;
+      this.updateConnectionIndicator('disconnected');
 
-      // If we're in the lobby, show the error
+      // If we're in the lobby, also update room-join component
       if (this.roomJoin && this.roomJoin.style.display !== 'none') {
         this.roomJoin.setDisconnected();
-      } else {
-        // If we're in a room, show a status message
-        this.showStatus('Disconnected from server', 'disconnected');
       }
     });
 
@@ -215,18 +236,18 @@ class DiceBoxApp {
       console.log('Reconnected to signaling server with new peer ID:', e.detail.peerId);
       this.peerId = e.detail.peerId;
       this.serverConnected = true;
+      this.updateConnectionIndicator('connected');
 
       if (this.roomId && this.isHost) {
         // Re-register as host after reconnection
         console.log('Re-registering as host for room:', this.roomId);
         signalingClient.registerHost(this.roomId);
       }
-
-      this.showStatus('Reconnected to server', 'connected');
     });
 
     signalingClient.addEventListener('reconnect-failed', () => {
       console.log('Reconnection failed');
+      this.updateConnectionIndicator('disconnected');
       if (this.roomJoin && this.roomJoin.style.display !== 'none') {
         this.roomJoin.setDisconnected();
       }

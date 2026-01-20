@@ -48,7 +48,38 @@ header .header-left {
 }
 
 header .header-right {
-  display: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Connection indicator */
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: help;
+}
+
+.connection-indicator .indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--warning);
+  animation: pulse 1s infinite;
+  transition: background 0.3s ease;
+}
+
+.connection-indicator.connected .indicator-dot {
+  background: var(--secondary-color);
+  animation: none;
+}
+
+.connection-indicator.disconnected .indicator-dot {
+  background: var(--danger);
+  animation: pulse 1.5s infinite;
 }
 
 header h1 {
@@ -118,7 +149,7 @@ header .btn-leave:hover {
 }
 
 #app.in-room header .header-right {
-  display: block;
+  display: flex;
 }
 
 #app.in-room header h1 {
@@ -297,46 +328,6 @@ room-join .btn-join {
 
 room-join .btn-join:hover {
   background: var(--primary-color);
-}
-
-/* Server Warning Banner */
-room-join .server-banner {
-  max-width: 400px;
-  margin: 0 auto 16px;
-  padding: 10px 16px;
-  background: var(--surface);
-  border: 1px solid var(--warning);
-  border-radius: var(--border-radius);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.85rem;
-}
-
-room-join .server-banner .banner-icon {
-  color: var(--warning);
-  font-size: 1.1rem;
-}
-
-room-join .server-banner .banner-text {
-  flex: 1;
-  color: var(--text-muted);
-}
-
-room-join .server-banner .banner-dismiss {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.2rem;
-  padding: 0 4px;
-  cursor: pointer;
-  line-height: 1;
-}
-
-room-join .server-banner .banner-dismiss:hover {
-  color: var(--text);
-  background: transparent;
-  transform: none;
 }
 
 /* Room View */
