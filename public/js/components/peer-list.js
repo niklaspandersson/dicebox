@@ -7,6 +7,7 @@ class PeerList extends HTMLElement {
     this.peers = new Map();
     this.selfPeerId = null;
     this.selfUsername = null;
+    this.holderPeerId = null;
   }
 
   connectedCallback() {
@@ -37,6 +38,11 @@ class PeerList extends HTMLElement {
     this.renderPeers();
   }
 
+  setHolder(peerId) {
+    this.holderPeerId = peerId;
+    this.renderPeers();
+  }
+
   render() {
     this.innerHTML = `
       <div class="card">
@@ -59,13 +65,20 @@ class PeerList extends HTMLElement {
         peerId: this.selfPeerId,
         username: this.selfUsername,
         status: 'connected',
-        isSelf: true
+        isSelf: true,
+        isHolder: this.holderPeerId === this.selfPeerId
       });
     }
 
     // Add other peers
     for (const [peerId, { username, status }] of this.peers) {
-      allPeers.push({ peerId, username, status, isSelf: false });
+      allPeers.push({
+        peerId,
+        username,
+        status,
+        isSelf: false,
+        isHolder: this.holderPeerId === peerId
+      });
     }
 
     if (allPeers.length === 0) {
@@ -73,10 +86,10 @@ class PeerList extends HTMLElement {
       return;
     }
 
-    content.innerHTML = allPeers.map(({ username, status, isSelf }) => `
-      <div class="peer-item">
+    content.innerHTML = allPeers.map(({ username, status, isSelf, isHolder }) => `
+      <div class="peer-item ${isHolder ? 'holding' : ''}">
         <div class="peer-avatar ${isSelf ? 'self' : ''}">${this.getInitials(username)}</div>
-        <div class="peer-name ${isSelf ? 'self' : ''}">${this.escapeHtml(username)}</div>
+        <div class="peer-name ${isSelf ? 'self' : ''}">${this.escapeHtml(username)}${isHolder ? ' &#127922;' : ''}</div>
         <div class="peer-status ${status === 'connecting' ? 'connecting' : ''}"></div>
       </div>
     `).join('');
@@ -100,6 +113,7 @@ class PeerList extends HTMLElement {
     this.peers.clear();
     this.selfPeerId = null;
     this.selfUsername = null;
+    this.holderPeerId = null;
     this.renderPeers();
   }
 }

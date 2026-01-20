@@ -632,6 +632,12 @@ peer-list .peer-item {
   padding: 6px 12px 6px 6px;
   background: var(--surface-light);
   border-radius: 20px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+peer-list .peer-item.holding {
+  border-color: var(--warning);
 }
 
 peer-list .peer-avatar {

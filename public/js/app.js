@@ -907,6 +907,11 @@ class DiceBoxApp {
       myPeerId: this.getEffectiveId(),
       isHost: this.isHost
     });
+
+    // Update peer list to show who's holding
+    if (this.peerList) {
+      this.peerList.setHolder(this.holderPeerId);
+    }
   }
 
   handleLocalDiceRoll({ diceType, count, values, total }) {
