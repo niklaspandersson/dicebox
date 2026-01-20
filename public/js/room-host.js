@@ -11,14 +11,15 @@ export class RoomHost extends EventTarget {
     this.joinCounter = 0;
     this.maxHistorySize = 100;
 
-    // Dice configuration (host-controlled)
+    // Dice configuration (host-controlled) - multiple dice sets with colors
     this.diceConfig = {
-      count: 1  // Number of d6 dice
+      diceSets: [
+        { id: 'set-1', count: 2, color: '#6366f1' }  // Default: 2 purple dice
+      ]
     };
 
-    // Who is currently holding the dice (null if no one)
-    this.holderPeerId = null;
-    this.holderUsername = null;
+    // Who is holding each dice set: setId -> { peerId, username }
+    this.holders = new Map();
   }
 
   // Add a peer to the room
@@ -72,8 +73,7 @@ export class RoomHost extends EventTarget {
       })),
       rollHistory: this.rollHistory.slice(0, 50), // Send last 50 rolls
       diceConfig: this.diceConfig,
-      holderPeerId: this.holderPeerId,
-      holderUsername: this.holderUsername
+      holders: Array.from(this.holders.entries()) // Convert Map to array for serialization
     };
   }
 
@@ -81,9 +81,23 @@ export class RoomHost extends EventTarget {
   loadState(state) {
     this.peers.clear();
     this.rollHistory = state.rollHistory || [];
-    this.diceConfig = state.diceConfig || { count: 1 };
-    this.holderPeerId = state.holderPeerId || null;
-    this.holderUsername = state.holderUsername || null;
+    // Handle both old format (count) and new format (diceSets)
+    if (state.diceConfig && state.diceConfig.diceSets) {
+      this.diceConfig = state.diceConfig;
+    } else {
+      // Migrate from old format
+      this.diceConfig = {
+        diceSets: [{ id: 'set-1', count: state.diceConfig?.count || 2, color: '#6366f1' }]
+      };
+    }
+
+    // Load holders map
+    this.holders.clear();
+    if (state.holders) {
+      for (const [setId, holder] of state.holders) {
+        this.holders.set(setId, holder);
+      }
+    }
 
     // Find highest join order to continue from
     let maxJoinOrder = 0;
@@ -100,19 +114,43 @@ export class RoomHost extends EventTarget {
 
   // Set dice configuration (host only)
   setDiceConfig(config) {
-    this.diceConfig = { ...this.diceConfig, ...config };
+    this.diceConfig = config;
   }
 
-  // Set who is holding the dice
-  setHolder(peerId, username) {
-    this.holderPeerId = peerId;
-    this.holderUsername = username;
+  // Set who is holding a specific dice set
+  setHolder(setId, peerId, username) {
+    this.holders.set(setId, { peerId, username });
   }
 
-  // Clear the holder (after a roll)
-  clearHolder() {
-    this.holderPeerId = null;
-    this.holderUsername = null;
+  // Clear a specific holder (after they roll)
+  clearHolder(setId) {
+    this.holders.delete(setId);
+  }
+
+  // Clear all holders
+  clearAllHolders() {
+    this.holders.clear();
+  }
+
+  // Get holder for a specific set
+  getHolder(setId) {
+    return this.holders.get(setId) || null;
+  }
+
+  // Check if all sets are held
+  allSetsHeld() {
+    return this.diceConfig.diceSets.every(set => this.holders.has(set.id));
+  }
+
+  // Get list of sets held by a specific peer
+  getSetsHeldByPeer(peerId) {
+    const sets = [];
+    for (const [setId, holder] of this.holders) {
+      if (holder.peerId === peerId) {
+        sets.push(setId);
+      }
+    }
+    return sets;
   }
 
   // Get the next host candidate (peer with lowest join order)
@@ -163,8 +201,9 @@ export class RoomHost extends EventTarget {
     this.peers.clear();
     this.rollHistory = [];
     this.joinCounter = 0;
-    this.diceConfig = { count: 1 };
-    this.holderPeerId = null;
-    this.holderUsername = null;
+    this.diceConfig = {
+      diceSets: [{ id: 'set-1', count: 2, color: '#6366f1' }]
+    };
+    this.holders.clear();
   }
 }

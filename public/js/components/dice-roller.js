@@ -1,18 +1,24 @@
 /**
- * DiceRoller - Displays dice and handles grab/roll interaction
+ * DiceRoller - Displays multiple dice sets with per-set grab/roll interaction
  *
- * Click to grab (dice hidden) → Click again to roll (dice visible)
+ * Each dice set is displayed in its own area with its color
+ * Click a set to grab it -> When all sets are held, any holder can roll
  */
 class DiceRoller extends HTMLElement {
   constructor() {
     super();
-    this.diceCount = 1;
-    this.currentValues = [];
+    // Dice configuration: array of { id, count, color }
+    this.diceSets = [{ id: 'set-1', count: 2, color: '#6366f1' }];
+
+    // Current values per set: { setId: [values] }
+    this.currentValues = {};
+
+    // Rolling state
     this.isRolling = false;
 
-    // Holding state
-    this.holderPeerId = null;
-    this.holderUsername = null;
+    // Holder per set: { setId: { peerId, username } }
+    this.holders = new Map();
+
     this.myPeerId = null;
     this.isHost = false;
   }
@@ -21,7 +27,7 @@ class DiceRoller extends HTMLElement {
     this.render();
     this._keyHandler = (e) => {
       if (e.key === 'r' && !e.target.matches('input')) {
-        this.handleClick();
+        this.handleRollKey();
       }
     };
     document.addEventListener('keypress', this._keyHandler);
@@ -33,8 +39,7 @@ class DiceRoller extends HTMLElement {
     }
   }
 
-  getDiceSvg(value) {
-    const pipColor = '#0f172a';
+  getDiceSvg(value, pipColor = '#0f172a') {
     const positions = {
       topLeft: { cx: 14, cy: 14 },
       topRight: { cx: 36, cy: 14 },
@@ -60,86 +65,147 @@ class DiceRoller extends HTMLElement {
   }
 
   render() {
-    const isHolding = this.holderPeerId !== null;
-    const iAmHolder = this.myPeerId && this.holderPeerId === this.myPeerId;
-    const canDrop = this.isHost && isHolding && !iAmHolder;
+    const allHeld = this.allSetsHeld();
+    const canRoll = allHeld && this.iAmHoldingAny();
+    const canDrop = this.isHost && this.holders.size > 0;
 
     this.innerHTML = `
-      <div class="card dice-area ${isHolding ? 'holding' : ''}">
-        ${this.renderContent(isHolding, iAmHolder, canDrop)}
+      <div class="dice-roller-container">
+        <div class="dice-sets-area ${allHeld ? 'all-held' : ''}">
+          ${this.diceSets.map(set => this.renderDiceSet(set)).join('')}
+        </div>
+        ${allHeld ? `
+          <div class="roll-prompt">
+            ${canRoll ? '<div class="roll-hint">All dice held! Click to roll or press R</div>' :
+                       '<div class="roll-hint waiting">Waiting for roll...</div>'}
+          </div>
+        ` : ''}
+        ${canDrop ? '<button class="drop-all-btn">Drop All</button>' : ''}
       </div>
     `;
 
-    // Attach click handler to the dice area
-    this.querySelector('.dice-area').onclick = (e) => {
-      if (e.target.closest('.drop-btn')) {
-        this.dispatchEvent(new CustomEvent('dice-dropped', { bubbles: true }));
-      } else {
-        this.handleClick();
-      }
-    };
+    this.attachEventListeners();
   }
 
-  renderContent(isHolding, iAmHolder, canDrop) {
-    if (isHolding) {
-      return `
-        <div class="dice-display holding-state">
-          <div class="holding-indicator">
-            <div class="holding-hand"></div>
-            <div class="holding-text">${iAmHolder ? 'You are' : this.holderUsername + ' is'} holding...</div>
-            ${iAmHolder ? '<div class="holding-hint">Click to roll!</div>' : ''}
-            ${canDrop ? '<button class="drop-btn">Drop</button>' : ''}
-          </div>
-        </div>
-      `;
-    }
+  renderDiceSet(set) {
+    const holder = this.holders.get(set.id);
+    const isHeld = holder !== undefined;
+    const iAmHolder = isHeld && holder.peerId === this.myPeerId;
+    const values = this.currentValues[set.id] || [];
+    const hasValues = values.length > 0;
 
-    if (this.currentValues.length > 0) {
-      return `
-        <div class="dice-display">
-          ${this.currentValues.map(v => `<div class="die">${this.getDiceSvg(v)}</div>`).join('')}
-        </div>
-      `;
-    }
+    // Generate a slightly lighter color for the background
+    const bgColor = this.hexToRgba(set.color, 0.15);
+    const borderColor = isHeld ? set.color : 'transparent';
 
     return `
-      <div class="dice-display">
-        ${Array(this.diceCount).fill(0).map(() =>
-          `<div class="die-placeholder">${this.getDiceSvg(1)}</div>`
-        ).join('')}
+      <div class="dice-set card ${isHeld ? 'held' : ''} ${iAmHolder ? 'my-hold' : ''}"
+           data-set-id="${set.id}"
+           style="--set-color: ${set.color}; --set-bg: ${bgColor}; border-color: ${borderColor}">
+        <div class="dice-set-indicator" style="background: ${set.color}"></div>
+        ${isHeld ? `
+          <div class="holder-info">
+            <span class="holder-name">${iAmHolder ? 'You' : holder.username}</span>
+          </div>
+        ` : ''}
+        <div class="dice-display">
+          ${hasValues && !isHeld ?
+            values.map(v => `<div class="die" style="--die-color: ${set.color}">${this.getDiceSvg(v)}</div>`).join('') :
+            Array(set.count).fill(0).map(() =>
+              `<div class="die-placeholder" style="--die-color: ${set.color}">${this.getDiceSvg(1)}</div>`
+            ).join('')
+          }
+        </div>
+        ${!isHeld ? '<div class="grab-hint">Click to grab</div>' : ''}
       </div>
     `;
   }
 
-  handleClick() {
+  hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  attachEventListeners() {
+    // Handle dice set clicks
+    this.querySelectorAll('.dice-set').forEach(setEl => {
+      setEl.addEventListener('click', (e) => {
+        if (e.target.closest('.drop-all-btn')) return;
+        const setId = setEl.dataset.setId;
+        this.handleSetClick(setId);
+      });
+    });
+
+    // Handle drop all button
+    this.querySelector('.drop-all-btn')?.addEventListener('click', () => {
+      this.dispatchEvent(new CustomEvent('dice-dropped', { bubbles: true }));
+    });
+
+    // Handle roll area click when all sets held
+    if (this.allSetsHeld() && this.iAmHoldingAny()) {
+      this.querySelector('.dice-sets-area')?.addEventListener('click', (e) => {
+        if (!e.target.closest('.dice-set')) {
+          this.roll();
+        }
+      });
+    }
+  }
+
+  handleSetClick(setId) {
     if (this.isRolling) return;
 
-    const iAmHolder = this.myPeerId && this.holderPeerId === this.myPeerId;
+    const holder = this.holders.get(setId);
+    const isHeld = holder !== undefined;
 
-    if (!this.holderPeerId) {
-      // No one holding - grab
-      this.dispatchEvent(new CustomEvent('dice-grabbed', { bubbles: true }));
-    } else if (iAmHolder) {
-      // I'm holding - roll
+    if (!isHeld) {
+      // Set not held - grab it
+      this.dispatchEvent(new CustomEvent('dice-grabbed', {
+        bubbles: true,
+        detail: { setId }
+      }));
+    } else if (this.allSetsHeld() && this.iAmHoldingAny()) {
+      // All sets held and I'm holding at least one - roll
       this.roll();
     }
+  }
+
+  handleRollKey() {
+    if (this.isRolling) return;
+    if (this.allSetsHeld() && this.iAmHoldingAny()) {
+      this.roll();
+    }
+  }
+
+  allSetsHeld() {
+    return this.diceSets.every(set => this.holders.has(set.id));
+  }
+
+  iAmHoldingAny() {
+    for (const [setId, holder] of this.holders) {
+      if (holder.peerId === this.myPeerId) return true;
+    }
+    return false;
   }
 
   async roll() {
     if (this.isRolling) return;
     this.isRolling = true;
 
-    const display = this.querySelector('.dice-display');
-
-    // Rolling animation
-    display.classList.remove('holding-state');
-    display.innerHTML = Array(this.diceCount).fill(0).map(() =>
-      `<div class="die rolling">${this.getDiceSvg(1)}</div>`
-    ).join('');
+    // Animate all dice sets
+    const displays = this.querySelectorAll('.dice-display');
+    displays.forEach((display, index) => {
+      const set = this.diceSets[index];
+      display.innerHTML = Array(set.count).fill(0).map(() =>
+        `<div class="die rolling" style="--die-color: ${set.color}">${this.getDiceSvg(1)}</div>`
+      ).join('');
+    });
 
     // Animate for 500ms
     const animate = () => {
-      display.querySelectorAll('.die').forEach(die => {
+      this.querySelectorAll('.die.rolling').forEach(die => {
+        const color = die.style.getPropertyValue('--die-color');
         die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1);
       });
     };
@@ -147,43 +213,74 @@ class DiceRoller extends HTMLElement {
     await new Promise(r => setTimeout(r, 500));
     clearInterval(interval);
 
-    // Generate final values
-    this.currentValues = Array(this.diceCount).fill(0).map(() =>
-      Math.floor(Math.random() * 6) + 1
-    );
-    const sum = this.currentValues.reduce((a, b) => a + b, 0);
+    // Generate final values for each set
+    const rollResults = {};
+    let totalSum = 0;
 
-    // Show result
-    display.innerHTML = this.currentValues.map(v =>
-      `<div class="die">${this.getDiceSvg(v)}</div>`
-    ).join('');
+    this.diceSets.forEach(set => {
+      const values = Array(set.count).fill(0).map(() =>
+        Math.floor(Math.random() * 6) + 1
+      );
+      rollResults[set.id] = values;
+      this.currentValues[set.id] = values;
+      totalSum += values.reduce((a, b) => a + b, 0);
+    });
+
+    // Show results
+    displays.forEach((display, index) => {
+      const set = this.diceSets[index];
+      const values = rollResults[set.id];
+      display.innerHTML = values.map(v =>
+        `<div class="die" style="--die-color: ${set.color}">${this.getDiceSvg(v)}</div>`
+      ).join('');
+    });
 
     this.isRolling = false;
 
-    // Emit roll event
+    // Emit roll event with per-set results
     this.dispatchEvent(new CustomEvent('dice-rolled', {
       bubbles: true,
-      detail: { diceType: 6, count: this.diceCount, values: this.currentValues, total: sum }
+      detail: {
+        diceType: 6,
+        rollResults,  // { setId: [values] }
+        total: totalSum,
+        holders: Array.from(this.holders.entries()) // Who held what
+      }
     }));
   }
 
   // External API
-  setConfig({ diceCount, holderPeerId, holderUsername, myPeerId, isHost }) {
-    this.diceCount = diceCount;
-    this.holderPeerId = holderPeerId;
-    this.holderUsername = holderUsername;
+  setConfig({ diceSets, holders, myPeerId, isHost }) {
+    this.diceSets = diceSets || [{ id: 'set-1', count: 2, color: '#6366f1' }];
     this.myPeerId = myPeerId;
     this.isHost = isHost;
+
+    // Convert holders array back to Map
+    this.holders.clear();
+    if (holders) {
+      for (const [setId, holder] of holders) {
+        this.holders.set(setId, holder);
+      }
+    }
+
     this.render();
   }
 
-  showRoll(values) {
-    this.currentValues = values;
-    const display = this.querySelector('.dice-display');
-    if (!display) return;
-
-    display.classList.remove('holding-state');
-    display.innerHTML = values.map(v => `<div class="die">${this.getDiceSvg(v)}</div>`).join('');
+  showRoll(rollResults) {
+    // rollResults: { setId: [values] }
+    this.currentValues = rollResults;
+    this.diceSets.forEach(set => {
+      const values = rollResults[set.id] || [];
+      const setEl = this.querySelector(`.dice-set[data-set-id="${set.id}"]`);
+      if (setEl) {
+        const display = setEl.querySelector('.dice-display');
+        if (display && values.length > 0) {
+          display.innerHTML = values.map(v =>
+            `<div class="die" style="--die-color: ${set.color}">${this.getDiceSvg(v)}</div>`
+          ).join('');
+        }
+      }
+    });
   }
 }
 

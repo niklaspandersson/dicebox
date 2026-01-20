@@ -5,6 +5,7 @@ class RoomView extends HTMLElement {
   constructor() {
     super();
     this._isHost = false;
+    this._modalOpen = false;
   }
 
   connectedCallback() {
@@ -16,9 +17,19 @@ class RoomView extends HTMLElement {
       <div class="room-content">
         <peer-list></peer-list>
         <div class="main-area">
-          <dice-config id="dice-config" style="display: none;"></dice-config>
           <dice-roller></dice-roller>
           <dice-history></dice-history>
+        </div>
+      </div>
+
+      <!-- Dice Config Modal -->
+      <div class="modal-overlay" id="dice-config-modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Dice Settings</h2>
+            <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+          </div>
+          <dice-config id="dice-config"></dice-config>
         </div>
       </div>
     `;
@@ -29,6 +40,54 @@ class RoomView extends HTMLElement {
       leaveBtn.onclick = () => {
         this.dispatchEvent(new CustomEvent('leave-room', { bubbles: true }));
       };
+    }
+
+    // Set up settings button handler
+    const settingsBtn = document.getElementById('header-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.onclick = () => this.toggleModal();
+    }
+
+    // Set up modal close handlers
+    const modal = this.querySelector('#dice-config-modal');
+    const closeBtn = this.querySelector('#modal-close-btn');
+
+    closeBtn?.addEventListener('click', () => this.closeModal());
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.closeModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this._modalOpen) {
+        this.closeModal();
+      }
+    });
+  }
+
+  toggleModal() {
+    if (this._modalOpen) {
+      this.closeModal();
+    } else {
+      this.openModal();
+    }
+  }
+
+  openModal() {
+    const modal = this.querySelector('#dice-config-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      this._modalOpen = true;
+    }
+  }
+
+  closeModal() {
+    const modal = this.querySelector('#dice-config-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      this._modalOpen = false;
     }
   }
 
@@ -42,12 +101,12 @@ class RoomView extends HTMLElement {
   setHostStatus(isHost) {
     this._isHost = isHost;
     const badge = document.getElementById('header-host-badge');
-    const config = this.querySelector('#dice-config');
+    const settingsBtn = document.getElementById('header-settings-btn');
     if (badge) {
       badge.style.display = isHost ? 'inline-block' : 'none';
     }
-    if (config) {
-      config.style.display = isHost ? 'block' : 'none';
+    if (settingsBtn) {
+      settingsBtn.style.display = isHost ? 'flex' : 'none';
     }
   }
 
@@ -61,11 +120,16 @@ class RoomView extends HTMLElement {
 
   hide() {
     this.classList.remove('active');
+    this.closeModal();
     // Hide room info, show tagline
     document.getElementById('app').classList.remove('in-room');
     document.getElementById('header-room-info').style.display = 'none';
     document.getElementById('header-leave-btn').style.display = 'none';
     document.getElementById('header-host-badge').style.display = 'none';
+    const settingsBtn = document.getElementById('header-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.style.display = 'none';
+    }
   }
 }
 

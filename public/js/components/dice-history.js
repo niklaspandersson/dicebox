@@ -1,5 +1,6 @@
 /**
  * DiceHistory - Web Component for displaying roll history
+ * Shows each dice set with its holder and color
  */
 class DiceHistory extends HTMLElement {
   constructor() {
@@ -54,18 +55,16 @@ class DiceHistory extends HTMLElement {
     `;
   }
 
-  addRoll({ username, peerId, diceType, count, values, total }) {
-    const roll = {
-      username,
-      peerId,
-      diceType,
-      count,
-      values,
-      total,
-      timestamp: Date.now()
-    };
+  /**
+   * Add a roll to history
+   * New format: { setResults: [{ setId, color, values, holderId, holderUsername }], total, rollId, timestamp }
+   * Legacy format: { username, peerId, values, total }
+   */
+  addRoll(roll) {
+    // Normalize roll format
+    const normalizedRoll = this.normalizeRoll(roll);
 
-    this.history.unshift(roll);
+    this.history.unshift(normalizedRoll);
 
     // Keep history limited
     if (this.history.length > this.maxItems) {
@@ -73,6 +72,32 @@ class DiceHistory extends HTMLElement {
     }
 
     this.renderHistory();
+  }
+
+  normalizeRoll(roll) {
+    // New multi-set format
+    if (roll.setResults) {
+      return {
+        setResults: roll.setResults,
+        total: roll.total,
+        rollId: roll.rollId,
+        timestamp: roll.timestamp || Date.now()
+      };
+    }
+
+    // Legacy single-set format - convert to new format
+    return {
+      setResults: [{
+        setId: 'set-1',
+        color: '#6366f1',
+        values: roll.values || [],
+        holderId: roll.peerId,
+        holderUsername: roll.username
+      }],
+      total: roll.total || (roll.values || []).reduce((a, b) => a + b, 0),
+      rollId: roll.rollId,
+      timestamp: roll.timestamp || Date.now()
+    };
   }
 
   renderHistory() {
@@ -83,19 +108,66 @@ class DiceHistory extends HTMLElement {
       return;
     }
 
-    listEl.innerHTML = this.history.map(roll => {
-      const isSelf = roll.peerId === this.selfPeerId;
-      const diceHtml = roll.values.map(v =>
-        `<span class="history-die">${this.getDiceSvg(v)}</span>`
+    listEl.innerHTML = this.history.map(roll => this.renderRollEntry(roll)).join('');
+  }
+
+  renderRollEntry(roll) {
+    // Group set results by holder for cleaner display
+    const holderGroups = new Map();
+
+    for (const setResult of roll.setResults) {
+      const holderId = setResult.holderId;
+      if (!holderGroups.has(holderId)) {
+        holderGroups.set(holderId, {
+          username: setResult.holderUsername,
+          sets: []
+        });
+      }
+      holderGroups.get(holderId).sets.push(setResult);
+    }
+
+    // If single holder, use compact format
+    if (holderGroups.size === 1) {
+      const [holderId, group] = holderGroups.entries().next().value;
+      const isSelf = holderId === this.selfPeerId;
+
+      const diceHtml = roll.setResults.map(setResult => `
+        <span class="history-dice-group" style="--group-color: ${setResult.color}">
+          ${setResult.values.map(v =>
+            `<span class="history-die" style="border-color: ${setResult.color}">${this.getDiceSvg(v)}</span>`
+          ).join('')}
+        </span>
+      `).join('');
+
+      return `
+        <div class="history-item single-holder">
+          <span class="username ${isSelf ? 'self' : ''}">${this.escapeHtml(group.username)}</span>
+          <span class="history-dice">${diceHtml}</span>
+        </div>
+      `;
+    }
+
+    // Multiple holders - show each set/holder pair
+    const setEntries = roll.setResults.map(setResult => {
+      const isSelf = setResult.holderId === this.selfPeerId;
+      const diceHtml = setResult.values.map(v =>
+        `<span class="history-die" style="border-color: ${setResult.color}">${this.getDiceSvg(v)}</span>`
       ).join('');
 
       return `
-        <div class="history-item">
-          <span class="username ${isSelf ? 'self' : ''}">${this.escapeHtml(roll.username)}</span>
+        <div class="history-set-entry">
+          <span class="set-indicator" style="background: ${setResult.color}"></span>
+          <span class="username ${isSelf ? 'self' : ''}">${this.escapeHtml(setResult.holderUsername)}</span>
           <span class="history-dice">${diceHtml}</span>
         </div>
       `;
     }).join('');
+
+    return `
+      <div class="history-item multi-holder">
+        ${setEntries}
+      </div>
+    `;
   }
 
   escapeHtml(text) {
