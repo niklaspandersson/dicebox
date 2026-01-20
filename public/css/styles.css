@@ -35,16 +35,20 @@ body {
 
 header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
   margin-bottom: 40px;
 }
 
 header .header-left {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 8px;
+}
+
+header .header-right {
+  display: none;
 }
 
 header h1 {
@@ -60,7 +64,6 @@ header h1 {
 header .tagline {
   color: var(--text-muted);
   font-size: 1.1rem;
-  transition: opacity 0.2s ease;
 }
 
 header .room-info {
@@ -102,7 +105,20 @@ header .btn-leave:hover {
 
 /* Compact header when in room */
 #app.in-room header {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+#app.in-room header .header-left {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+#app.in-room header .header-right {
+  display: block;
 }
 
 #app.in-room header h1 {
