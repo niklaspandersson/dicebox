@@ -34,6 +34,8 @@ const MIGRATION_CONFIG = {
 
 class DiceBoxApp {
   constructor() {
+    // Generate a local ID for offline use; will be replaced by server-assigned peerId
+    this.localId = 'local-' + Math.random().toString(36).substring(2, 10);
     this.peerId = null;
     this.username = null;
     this.roomId = null;
@@ -81,6 +83,11 @@ class DiceBoxApp {
     }
 
     await this.connectToSignalingServer();
+  }
+
+  // Returns peerId if connected, otherwise localId for offline operation
+  getEffectiveId() {
+    return this.peerId || this.localId;
   }
 
   async connectToSignalingServer() {
@@ -834,16 +841,18 @@ class DiceBoxApp {
       return;
     }
 
+    const myId = this.getEffectiveId();
+
     if (this.isHost) {
       // Host grabs immediately
-      this.roomState.setHolder(this.peerId, this.username);
-      this.holderPeerId = this.peerId;
+      this.roomState.setHolder(myId, this.username);
+      this.holderPeerId = myId;
       this.holderUsername = this.username;
 
       // Broadcast to all peers
       this.roomState.broadcast({
         type: MSG.DICE_HELD,
-        holderPeerId: this.peerId,
+        holderPeerId: myId,
         holderUsername: this.username
       });
 
@@ -895,7 +904,7 @@ class DiceBoxApp {
       diceCount: this.diceSettings.count,
       holderPeerId: this.holderPeerId,
       holderUsername: this.holderUsername,
-      myPeerId: this.peerId,
+      myPeerId: this.getEffectiveId(),
       isHost: this.isHost
     });
   }
