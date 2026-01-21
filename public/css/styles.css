@@ -131,22 +131,9 @@ header .room-info .room-id span {
 }
 
 header .btn-settings {
-  background: var(--surface-light);
-  padding: 8px;
-  font-size: 0.9rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-header .btn-settings:hover {
-  background: var(--primary-color);
-}
-
-header .btn-leave {
   background: transparent;
   padding: 8px;
+  font-size: 0.9rem;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -154,9 +141,24 @@ header .btn-leave {
   color: var(--text-muted);
 }
 
-header .btn-leave:hover {
+header .btn-settings:hover {
   background: var(--surface-light);
-  color: var(--danger);
+  color: var(--primary-color);
+  transform: none;
+}
+
+header .btn-leave {
+  background: var(--surface-light);
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+header .btn-leave:hover {
+  background: var(--danger);
+  color: white;
   transform: none;
 }
 

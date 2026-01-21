@@ -84,6 +84,12 @@ class RoomJoin extends HTMLElement {
     const joinBtn = this.querySelector('#btn-join');
     const usernameInput = this.querySelector('#username');
 
+    // Pre-fill username from localStorage if available
+    const savedUsername = localStorage.getItem('dicebox-username');
+    if (savedUsername) {
+      usernameInput.value = savedUsername;
+    }
+
     createBtn.addEventListener('click', () => this.handleCreate());
     joinBtn.addEventListener('click', () => this.handleJoin());
 
@@ -159,6 +165,9 @@ class RoomJoin extends HTMLElement {
       return;
     }
 
+    // Save username to localStorage
+    localStorage.setItem('dicebox-username', username);
+
     // Reset join mode if active
     this.resetJoinMode();
 
@@ -194,6 +203,9 @@ class RoomJoin extends HTMLElement {
       this.querySelector('#btn-join').textContent = 'Enter Room';
       return;
     }
+
+    // Save username to localStorage
+    localStorage.setItem('dicebox-username', username);
 
     // Room ID input is visible, get room ID from dice and join
     const roomId = this.getRoomIdFromDice();
