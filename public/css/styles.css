@@ -1083,11 +1083,14 @@ peer-list .empty-message {
   dice-roller .dice-set {
     padding: 12px;
     min-width: 120px;
+    max-width: none;
+    width: 100%;
   }
 
   /* On mobile, dice sets stack vertically - adjust corners */
   dice-roller .dice-sets-area {
     flex-direction: column;
+    width: 100%;
   }
 
   dice-roller .dice-set:first-child {
