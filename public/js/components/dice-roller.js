@@ -8,7 +8,7 @@ class DiceRoller extends HTMLElement {
   constructor() {
     super();
     // Dice configuration: array of { id, count, color }
-    this.diceSets = [{ id: 'set-1', count: 2, color: '#6366f1' }];
+    this.diceSets = [{ id: 'set-1', count: 2, color: '#ffffff' }];
 
     // Current values per set: { setId: [values] }
     this.currentValues = {};
@@ -37,6 +37,15 @@ class DiceRoller extends HTMLElement {
     if (this._keyHandler) {
       document.removeEventListener('keypress', this._keyHandler);
     }
+  }
+
+  // Get appropriate pip color based on dice background
+  getPipColor(diceColor) {
+    // White or very light colors get black pips, others get white
+    if (diceColor === '#ffffff' || diceColor === '#eab308') {
+      return '#0f172a';
+    }
+    return '#ffffff';
   }
 
   getDiceSvg(value, pipColor = '#0f172a') {
@@ -97,6 +106,7 @@ class DiceRoller extends HTMLElement {
     // Generate a slightly lighter color for the background
     const bgColor = this.hexToRgba(set.color, 0.15);
     const borderColor = isHeld ? set.color : 'transparent';
+    const pipColor = this.getPipColor(set.color);
 
     return `
       <div class="dice-set card ${isHeld ? 'held' : ''} ${iAmHolder ? 'my-hold' : ''}"
@@ -109,9 +119,9 @@ class DiceRoller extends HTMLElement {
         ` : ''}
         <div class="dice-display">
           ${hasValues && !isHeld ?
-            values.map(v => `<div class="die">${this.getDiceSvg(v, '#ffffff')}</div>`).join('') :
+            values.map(v => `<div class="die">${this.getDiceSvg(v, pipColor)}</div>`).join('') :
             Array(set.count).fill(0).map(() =>
-              `<div class="die-placeholder">${this.getDiceSvg(1, '#ffffff')}</div>`
+              `<div class="die-placeholder">${this.getDiceSvg(1, pipColor)}</div>`
             ).join('')
           }
         </div>
@@ -196,15 +206,17 @@ class DiceRoller extends HTMLElement {
     const displays = this.querySelectorAll('.dice-display');
     displays.forEach((display, index) => {
       const set = this.diceSets[index];
+      const pipColor = this.getPipColor(set.color);
       display.innerHTML = Array(set.count).fill(0).map(() =>
-        `<div class="die rolling">${this.getDiceSvg(1, '#ffffff')}</div>`
+        `<div class="die rolling" data-pip-color="${pipColor}">${this.getDiceSvg(1, pipColor)}</div>`
       ).join('');
     });
 
     // Animate for 500ms
     const animate = () => {
       this.querySelectorAll('.die.rolling').forEach(die => {
-        die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1, '#ffffff');
+        const pipColor = die.dataset.pipColor || '#ffffff';
+        die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1, pipColor);
       });
     };
     const interval = setInterval(animate, 80);
@@ -227,9 +239,10 @@ class DiceRoller extends HTMLElement {
     // Show results
     displays.forEach((display, index) => {
       const set = this.diceSets[index];
+      const pipColor = this.getPipColor(set.color);
       const values = rollResults[set.id];
       display.innerHTML = values.map(v =>
-        `<div class="die">${this.getDiceSvg(v, '#ffffff')}</div>`
+        `<div class="die">${this.getDiceSvg(v, pipColor)}</div>`
       ).join('');
     });
 
@@ -249,7 +262,7 @@ class DiceRoller extends HTMLElement {
 
   // External API
   setConfig({ diceSets, holders, myPeerId, isHost }) {
-    this.diceSets = diceSets || [{ id: 'set-1', count: 2, color: '#6366f1' }];
+    this.diceSets = diceSets || [{ id: 'set-1', count: 2, color: '#ffffff' }];
     this.myPeerId = myPeerId;
     this.isHost = isHost;
 
@@ -273,8 +286,9 @@ class DiceRoller extends HTMLElement {
       if (setEl) {
         const display = setEl.querySelector('.dice-display');
         if (display && values.length > 0) {
+          const pipColor = this.getPipColor(set.color);
           display.innerHTML = values.map(v =>
-            `<div class="die">${this.getDiceSvg(v, '#ffffff')}</div>`
+            `<div class="die">${this.getDiceSvg(v, pipColor)}</div>`
           ).join('');
         }
       }

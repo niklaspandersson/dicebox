@@ -14,7 +14,7 @@ export class RoomHost extends EventTarget {
     // Dice configuration (host-controlled) - multiple dice sets with colors
     this.diceConfig = {
       diceSets: [
-        { id: 'set-1', count: 2, color: '#6366f1' }  // Default: 2 purple dice
+        { id: 'set-1', count: 2, color: '#ffffff' }  // Default: 2 white dice
       ]
     };
 
@@ -87,7 +87,7 @@ export class RoomHost extends EventTarget {
     } else {
       // Migrate from old format
       this.diceConfig = {
-        diceSets: [{ id: 'set-1', count: state.diceConfig?.count || 2, color: '#6366f1' }]
+        diceSets: [{ id: 'set-1', count: state.diceConfig?.count || 2, color: '#ffffff' }]
       };
     }
 
@@ -202,7 +202,7 @@ export class RoomHost extends EventTarget {
     this.rollHistory = [];
     this.joinCounter = 0;
     this.diceConfig = {
-      diceSets: [{ id: 'set-1', count: 2, color: '#6366f1' }]
+      diceSets: [{ id: 'set-1', count: 2, color: '#ffffff' }]
     };
     this.holders.clear();
   }

@@ -60,7 +60,7 @@ class DiceBoxApp {
 
     // Local dice state (synced with room state)
     this.diceSettings = {
-      diceSets: [{ id: 'set-1', count: 2, color: '#6366f1' }]
+      diceSets: [{ id: 'set-1', count: 2, color: '#ffffff' }]
     };
     // Holders map: setId -> { peerId, username }
     this.holders = new Map();
@@ -601,7 +601,7 @@ class DiceBoxApp {
     } else {
       // Migrate from old format
       this.diceSettings = {
-        diceSets: [{ id: 'set-1', count: diceConfig?.count || 2, color: '#6366f1' }]
+        diceSets: [{ id: 'set-1', count: diceConfig?.count || 2, color: '#ffffff' }]
       };
     }
 
@@ -682,7 +682,7 @@ class DiceBoxApp {
       this.diceSettings = diceConfig;
     } else {
       this.diceSettings = {
-        diceSets: [{ id: 'set-1', count: diceConfig?.count || 2, color: '#6366f1' }]
+        diceSets: [{ id: 'set-1', count: diceConfig?.count || 2, color: '#ffffff' }]
       };
     }
     // Clear holders when config changes
@@ -1099,7 +1099,7 @@ class DiceBoxApp {
     this.roomState.clear();
     this.pendingRolls.clear();
     this.diceSettings = {
-      diceSets: [{ id: 'set-1', count: 2, color: '#6366f1' }]
+      diceSets: [{ id: 'set-1', count: 2, color: '#ffffff' }]
     };
     this.holders.clear();
 
