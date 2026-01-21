@@ -23,7 +23,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--background);
   color: var(--text);
-  min-height: 100vh;
+  min-height: 100dvh;
   line-height: 1.6;
 }
 
@@ -996,4 +996,53 @@ peer-list .empty-message {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Mobile responsive styles */
+@media (max-width: 480px) {
+  #app {
+    padding: 12px;
+  }
+
+  header {
+    margin-bottom: 24px;
+  }
+
+  header h1 {
+    font-size: 2.5rem;
+  }
+
+  header .tagline {
+    font-size: 1rem;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  room-join .room-dice {
+    width: 52px;
+    height: 52px;
+  }
+
+  room-join .dice-input-container {
+    gap: 8px;
+  }
+
+  room-join .btn-create,
+  room-join .btn-join {
+    padding: 14px;
+    font-size: 1rem;
+  }
+
+  dice-roller .die,
+  dice-roller .die-placeholder {
+    width: 52px;
+    height: 52px;
+  }
+
+  dice-roller .dice-set {
+    padding: 12px;
+    min-width: 120px;
+  }
 }
