@@ -915,7 +915,7 @@ peer-list .peer-item {
 }
 
 peer-list .peer-item.holding {
-  border-color: var(--warning);
+  /* border-color set inline to match dice set color */
 }
 
 peer-list .peer-item.can-drop {

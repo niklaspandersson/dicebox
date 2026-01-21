@@ -7,8 +7,8 @@ class PeerList extends HTMLElement {
     this.peers = new Map();
     this.selfPeerId = null;
     this.selfUsername = null;
-    // Set of peer IDs that are holding dice
-    this.holderPeerIds = new Set();
+    // Map of peer IDs to dice set color
+    this.holderInfo = new Map();
   }
 
   connectedCallback() {
@@ -39,8 +39,8 @@ class PeerList extends HTMLElement {
     this.renderPeers();
   }
 
-  setHolders(holderPeerIds) {
-    this.holderPeerIds = new Set(holderPeerIds);
+  setHolders(holderInfo) {
+    this.holderInfo = new Map(holderInfo);
     this.renderPeers();
   }
 
@@ -67,7 +67,8 @@ class PeerList extends HTMLElement {
         username: this.selfUsername,
         status: 'connected',
         isSelf: true,
-        isHolder: this.holderPeerIds.has(this.selfPeerId)
+        isHolder: this.holderInfo.has(this.selfPeerId),
+        holderColor: this.holderInfo.get(this.selfPeerId)
       });
     }
 
@@ -78,7 +79,8 @@ class PeerList extends HTMLElement {
         username,
         status,
         isSelf: false,
-        isHolder: this.holderPeerIds.has(peerId)
+        isHolder: this.holderInfo.has(peerId),
+        holderColor: this.holderInfo.get(peerId)
       });
     }
 
@@ -87,11 +89,12 @@ class PeerList extends HTMLElement {
       return;
     }
 
-    content.innerHTML = allPeers.map(({ peerId, username, status, isSelf, isHolder }) => `
+    content.innerHTML = allPeers.map(({ peerId, username, status, isSelf, isHolder, holderColor }) => `
       <div class="peer-item ${isHolder ? 'holding' : ''} ${isSelf && isHolder ? 'can-drop' : ''}"
            data-peer-id="${peerId}"
            data-is-self="${isSelf}"
-           data-is-holder="${isHolder}">
+           data-is-holder="${isHolder}"
+           style="${isHolder ? `border-color: ${holderColor}` : ''}">
         <div class="peer-avatar-container">
           <div class="peer-avatar ${isSelf ? 'self' : ''} ${isHolder ? 'holding' : ''}">${this.getInitials(username)}</div>
           ${isHolder ? '<div class="peer-dice-icon">&#127922;</div>' : ''}
@@ -127,7 +130,7 @@ class PeerList extends HTMLElement {
     this.peers.clear();
     this.selfPeerId = null;
     this.selfUsername = null;
-    this.holderPeerIds.clear();
+    this.holderInfo.clear();
     this.renderPeers();
   }
 }

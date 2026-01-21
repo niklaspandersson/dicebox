@@ -1039,13 +1039,17 @@ class DiceBoxApp {
       isHost: this.isHost
     });
 
-    // Update peer list to show who's holding
+    // Update peer list to show who's holding (with dice set colors)
     if (this.peerList) {
-      const holderPeerIds = new Set();
-      for (const holder of this.holders.values()) {
-        holderPeerIds.add(holder.peerId);
+      const holderInfo = new Map(); // peerId -> color
+      for (const [setId, holder] of this.holders) {
+        if (!holderInfo.has(holder.peerId)) {
+          // Find the color for this dice set
+          const set = this.diceSettings.diceSets.find(s => s.id === setId);
+          holderInfo.set(holder.peerId, set?.color || '#f59e0b');
+        }
       }
-      this.peerList.setHolders(holderPeerIds);
+      this.peerList.setHolders(holderInfo);
     }
   }
 
