@@ -5,6 +5,7 @@
 
 // Predefined color palette
 const DICE_COLORS = [
+  { name: 'White', hex: '#ffffff' },
   { name: 'Purple', hex: '#6366f1' },
   { name: 'Green', hex: '#10b981' },
   { name: 'Orange', hex: '#f59e0b' },
@@ -19,7 +20,7 @@ class DiceConfig extends HTMLElement {
   constructor() {
     super();
     this.diceSets = [
-      { id: 'set-1', count: 2, color: '#6366f1' }
+      { id: 'set-1', count: 2, color: '#ffffff' }
     ];
     this.nextSetId = 2;
     this._listenersAttached = false;
@@ -230,7 +231,7 @@ class DiceConfig extends HTMLElement {
       this.nextSetId = maxId + 1;
     } else if (config.count !== undefined) {
       // Legacy support: convert old format
-      this.diceSets = [{ id: 'set-1', count: config.count, color: '#6366f1' }];
+      this.diceSets = [{ id: 'set-1', count: config.count, color: '#ffffff' }];
     }
     this.render();
   }

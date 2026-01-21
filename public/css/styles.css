@@ -826,12 +826,10 @@ dice-history .history-dice-group {
 dice-history .history-die {
   width: 24px;
   height: 24px;
-  background: linear-gradient(135deg, #ffffff, #e2e8f0);
   border-radius: 4px;
   padding: 2px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   display: inline-flex;
-  border: 2px solid transparent;
 }
 
 dice-history .history-die svg {
