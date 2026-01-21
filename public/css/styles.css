@@ -926,6 +926,25 @@ peer-list .peer-item.can-drop:hover {
   background: var(--surface);
 }
 
+peer-list .peer-avatar-container {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+
+peer-list .peer-dice-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  z-index: 1;
+}
+
+peer-list .peer-avatar.holding {
+  opacity: 0.08;
+}
+
 peer-list .peer-avatar {
   width: 28px;
   height: 28px;

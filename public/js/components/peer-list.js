@@ -92,8 +92,11 @@ class PeerList extends HTMLElement {
            data-peer-id="${peerId}"
            data-is-self="${isSelf}"
            data-is-holder="${isHolder}">
-        <div class="peer-avatar ${isSelf ? 'self' : ''}">${this.getInitials(username)}</div>
-        <div class="peer-name ${isSelf ? 'self' : ''}">${this.escapeHtml(username)}${isHolder ? ' &#127922;' : ''}</div>
+        <div class="peer-avatar-container">
+          <div class="peer-avatar ${isSelf ? 'self' : ''} ${isHolder ? 'holding' : ''}">${this.getInitials(username)}</div>
+          ${isHolder ? '<div class="peer-dice-icon">&#127922;</div>' : ''}
+        </div>
+        <div class="peer-name ${isSelf ? 'self' : ''}">${this.escapeHtml(username)}</div>
         <div class="peer-status ${status === 'connecting' ? 'connecting' : ''}"></div>
       </div>
     `).join('');
