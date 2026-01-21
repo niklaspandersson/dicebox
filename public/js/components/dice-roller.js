@@ -287,7 +287,18 @@ class DiceRoller extends HTMLElement {
 
   // External API
   setConfig({ diceSets, holders, myPeerId, isHost }) {
-    this.diceSets = diceSets || [{ id: 'set-1', count: 2, color: '#ffffff' }];
+    const newDiceSets = diceSets || [{ id: 'set-1', count: 2, color: '#ffffff' }];
+
+    // Clear currentValues for sets whose count has changed
+    for (const newSet of newDiceSets) {
+      const oldSet = this.diceSets.find(s => s.id === newSet.id);
+      const oldValues = this.currentValues[newSet.id];
+      if (oldValues && (!oldSet || oldSet.count !== newSet.count)) {
+        delete this.currentValues[newSet.id];
+      }
+    }
+
+    this.diceSets = newDiceSets;
     this.myPeerId = myPeerId;
     this.isHost = isHost;
 
