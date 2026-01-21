@@ -483,7 +483,6 @@ dice-roller .dice-roller-container {
 
 dice-roller .dice-sets-area {
   display: flex;
-  gap: 16px;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -502,6 +501,22 @@ dice-roller .dice-set {
   transition: border-color 0.2s ease, background 0.2s ease;
   cursor: pointer;
   background: var(--set-bg);
+  border-radius: 0;
+}
+
+/* Round only outer corners of dice set group */
+dice-roller .dice-set:first-child {
+  border-top-left-radius: var(--border-radius);
+  border-bottom-left-radius: var(--border-radius);
+}
+
+dice-roller .dice-set:last-child {
+  border-top-right-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+}
+
+dice-roller .dice-set:only-child {
+  border-radius: var(--border-radius);
 }
 
 dice-roller .dice-set:hover {
@@ -1044,5 +1059,22 @@ peer-list .empty-message {
   dice-roller .dice-set {
     padding: 12px;
     min-width: 120px;
+  }
+
+  /* On mobile, dice sets stack vertically - adjust corners */
+  dice-roller .dice-sets-area {
+    flex-direction: column;
+  }
+
+  dice-roller .dice-set:first-child {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+  }
+
+  dice-roller .dice-set:last-child {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+  }
+
+  dice-roller .dice-set:only-child {
+    border-radius: var(--border-radius);
   }
 }
