@@ -109,9 +109,9 @@ class DiceRoller extends HTMLElement {
         ` : ''}
         <div class="dice-display">
           ${hasValues && !isHeld ?
-            values.map(v => `<div class="die">${this.getDiceSvg(v)}</div>`).join('') :
+            values.map(v => `<div class="die">${this.getDiceSvg(v, '#ffffff')}</div>`).join('') :
             Array(set.count).fill(0).map(() =>
-              `<div class="die-placeholder">${this.getDiceSvg(1)}</div>`
+              `<div class="die-placeholder">${this.getDiceSvg(1, '#ffffff')}</div>`
             ).join('')
           }
         </div>
@@ -197,15 +197,14 @@ class DiceRoller extends HTMLElement {
     displays.forEach((display, index) => {
       const set = this.diceSets[index];
       display.innerHTML = Array(set.count).fill(0).map(() =>
-        `<div class="die rolling">${this.getDiceSvg(1)}</div>`
+        `<div class="die rolling">${this.getDiceSvg(1, '#ffffff')}</div>`
       ).join('');
     });
 
     // Animate for 500ms
     const animate = () => {
       this.querySelectorAll('.die.rolling').forEach(die => {
-        const color = die.style.getPropertyValue('--die-color');
-        die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1);
+        die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1, '#ffffff');
       });
     };
     const interval = setInterval(animate, 80);
@@ -230,7 +229,7 @@ class DiceRoller extends HTMLElement {
       const set = this.diceSets[index];
       const values = rollResults[set.id];
       display.innerHTML = values.map(v =>
-        `<div class="die">${this.getDiceSvg(v)}</div>`
+        `<div class="die">${this.getDiceSvg(v, '#ffffff')}</div>`
       ).join('');
     });
 
@@ -275,7 +274,7 @@ class DiceRoller extends HTMLElement {
         const display = setEl.querySelector('.dice-display');
         if (display && values.length > 0) {
           display.innerHTML = values.map(v =>
-            `<div class="die">${this.getDiceSvg(v)}</div>`
+            `<div class="die">${this.getDiceSvg(v, '#ffffff')}</div>`
           ).join('');
         }
       }
