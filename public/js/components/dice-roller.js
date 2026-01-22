@@ -4,6 +4,8 @@
  * Each dice set is displayed in its own area with its color
  * Click a set to grab it -> When all sets are held, any holder can roll
  */
+import { getDiceSvg, getPipColor, hexToRgba } from '../utils/dice-utils.js';
+
 class DiceRoller extends HTMLElement {
   constructor() {
     super();
@@ -39,40 +41,6 @@ class DiceRoller extends HTMLElement {
     }
   }
 
-  // Get appropriate pip color based on dice background
-  getPipColor(diceColor) {
-    // White or very light colors get black pips, others get white
-    if (diceColor === '#ffffff' || diceColor === '#eab308') {
-      return '#0f172a';
-    }
-    return '#ffffff';
-  }
-
-  getDiceSvg(value, pipColor = '#0f172a') {
-    const positions = {
-      topLeft: { cx: 14, cy: 14 },
-      topRight: { cx: 36, cy: 14 },
-      midLeft: { cx: 14, cy: 25 },
-      center: { cx: 25, cy: 25 },
-      midRight: { cx: 36, cy: 25 },
-      bottomLeft: { cx: 14, cy: 36 },
-      bottomRight: { cx: 36, cy: 36 }
-    };
-    const pipConfigs = {
-      1: ['center'],
-      2: ['topRight', 'bottomLeft'],
-      3: ['topRight', 'center', 'bottomLeft'],
-      4: ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'],
-      5: ['topLeft', 'topRight', 'center', 'bottomLeft', 'bottomRight'],
-      6: ['topLeft', 'topRight', 'midLeft', 'midRight', 'bottomLeft', 'bottomRight']
-    };
-    const pips = pipConfigs[value].map(pos => {
-      const p = positions[pos];
-      return `<circle cx="${p.cx}" cy="${p.cy}" r="5" fill="${pipColor}"/>`;
-    }).join('');
-    return `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">${pips}</svg>`;
-  }
-
   render() {
     const allHeld = this.allSetsHeld();
 
@@ -97,9 +65,9 @@ class DiceRoller extends HTMLElement {
     const canRoll = allHeld && this.iAmHoldingAny();
 
     // Generate a slightly lighter color for the background
-    const bgColor = this.hexToRgba(set.color, 0.15);
+    const bgColor = hexToRgba(set.color, 0.15);
     const borderColor = isHeld ? set.color : 'transparent';
-    const pipColor = this.getPipColor(set.color);
+    const pipColor = getPipColor(set.color);
 
     // When all dice are held, show different UI based on who's holding
     if (allHeld) {
@@ -142,22 +110,15 @@ class DiceRoller extends HTMLElement {
         ` : ''}
         <div class="dice-display">
           ${hasValues && !isHeld ?
-            values.map(v => `<div class="die">${this.getDiceSvg(v, pipColor)}</div>`).join('') :
+            values.map(v => `<div class="die">${getDiceSvg(v, pipColor)}</div>`).join('') :
             Array(set.count).fill(0).map(() =>
-              `<div class="die-placeholder">${this.getDiceSvg(1, pipColor)}</div>`
+              `<div class="die-placeholder">${getDiceSvg(1, pipColor)}</div>`
             ).join('')
           }
         </div>
         ${!isHeld ? '<div class="grab-hint">Click to grab</div>' : ''}
       </div>
     `;
-  }
-
-  hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
   attachEventListeners() {
@@ -214,8 +175,8 @@ class DiceRoller extends HTMLElement {
     this.diceSets.forEach(set => {
       const setEl = this.querySelector(`.dice-set[data-set-id="${set.id}"]`);
       if (setEl) {
-        const pipColor = this.getPipColor(set.color);
-        const bgColor = this.hexToRgba(set.color, 0.15);
+        const pipColor = getPipColor(set.color);
+        const bgColor = hexToRgba(set.color, 0.15);
 
         // Replace content with rolling dice
         setEl.className = 'dice-set card held rolling-set';
@@ -225,7 +186,7 @@ class DiceRoller extends HTMLElement {
         setEl.innerHTML = `
           <div class="dice-display">
             ${Array(set.count).fill(0).map(() =>
-              `<div class="die rolling" data-pip-color="${pipColor}">${this.getDiceSvg(1, pipColor)}</div>`
+              `<div class="die rolling" data-pip-color="${pipColor}">${getDiceSvg(1, pipColor)}</div>`
             ).join('')}
           </div>
         `;
@@ -236,7 +197,7 @@ class DiceRoller extends HTMLElement {
     const animate = () => {
       this.querySelectorAll('.die.rolling').forEach(die => {
         const pipColor = die.dataset.pipColor || '#ffffff';
-        die.innerHTML = this.getDiceSvg(Math.floor(Math.random() * 6) + 1, pipColor);
+        die.innerHTML = getDiceSvg(Math.floor(Math.random() * 6) + 1, pipColor);
       });
     };
     const interval = setInterval(animate, 80);
@@ -262,10 +223,10 @@ class DiceRoller extends HTMLElement {
       if (setEl) {
         const display = setEl.querySelector('.dice-display');
         if (display) {
-          const pipColor = this.getPipColor(set.color);
+          const pipColor = getPipColor(set.color);
           const values = rollResults[set.id];
           display.innerHTML = values.map(v =>
-            `<div class="die">${this.getDiceSvg(v, pipColor)}</div>`
+            `<div class="die">${getDiceSvg(v, pipColor)}</div>`
           ).join('');
         }
       }
@@ -322,8 +283,8 @@ class DiceRoller extends HTMLElement {
 
       const setEl = this.querySelector(`.dice-set[data-set-id="${set.id}"]`);
       if (setEl) {
-        const pipColor = this.getPipColor(set.color);
-        const bgColor = this.hexToRgba(set.color, 0.15);
+        const pipColor = getPipColor(set.color);
+        const bgColor = hexToRgba(set.color, 0.15);
 
         // Update the set element to show dice results
         setEl.className = 'dice-set card';
@@ -332,7 +293,7 @@ class DiceRoller extends HTMLElement {
         setEl.style.borderColor = 'transparent';
         setEl.innerHTML = `
           <div class="dice-display">
-            ${values.map(v => `<div class="die">${this.getDiceSvg(v, pipColor)}</div>`).join('')}
+            ${values.map(v => `<div class="die">${getDiceSvg(v, pipColor)}</div>`).join('')}
           </div>
           <div class="grab-hint">Click to grab</div>
         `;

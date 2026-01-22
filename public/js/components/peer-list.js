@@ -1,6 +1,8 @@
 /**
  * PeerList - Web Component for displaying connected peers
  */
+import { escapeHtml } from '../utils/html-utils.js';
+
 class PeerList extends HTMLElement {
   constructor() {
     super();
@@ -99,7 +101,7 @@ class PeerList extends HTMLElement {
           <div class="peer-avatar ${isSelf ? 'self' : ''} ${isHolder ? 'holding' : ''}">${this.getInitials(username)}</div>
           ${isHolder ? '<div class="peer-dice-icon">&#127922;</div>' : ''}
         </div>
-        <div class="peer-name ${isSelf ? 'self' : ''}">${this.escapeHtml(username)}</div>
+        <div class="peer-name ${isSelf ? 'self' : ''}">${escapeHtml(username)}</div>
         <div class="peer-status ${status === 'connecting' ? 'connecting' : ''}"></div>
       </div>
     `).join('');
@@ -118,12 +120,6 @@ class PeerList extends HTMLElement {
       .map(part => part.charAt(0).toUpperCase())
       .slice(0, 2)
       .join('');
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   clear() {
