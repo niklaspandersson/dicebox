@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: 'public',
-  base: '/dicebox/',
+  base: process.env.VITE_BASE ?? '/dicebox/',
   build: {
     outDir: '../dist',
     emptyOutDir: true,
