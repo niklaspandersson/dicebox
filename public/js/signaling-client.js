@@ -2,6 +2,10 @@
  * SignalingClient - Handles WebSocket connection to minimal ICE broker
  * Only handles: peer ID assignment, room queries, host registration, and WebRTC signaling
  */
+
+// Heartbeat interval (should be less than server's SESSION_EXPIRY)
+const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+
 export class SignalingClient extends EventTarget {
   constructor() {
     super();
@@ -12,6 +16,28 @@ export class SignalingClient extends EventTarget {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this._connectPromise = null;
+    this._heartbeatInterval = null;
+    this._sessionToken = null;
+  }
+
+  /**
+   * Get or create session token (stored in sessionStorage for tab persistence)
+   */
+  getSessionToken() {
+    if (this._sessionToken) {
+      return this._sessionToken;
+    }
+
+    // Try to get existing token from sessionStorage
+    this._sessionToken = sessionStorage.getItem('dicebox-session-token');
+
+    if (!this._sessionToken) {
+      // Generate new token (UUID-like format)
+      this._sessionToken = crypto.randomUUID();
+      sessionStorage.setItem('dicebox-session-token', this._sessionToken);
+    }
+
+    return this._sessionToken;
   }
 
   connect() {
@@ -39,8 +65,13 @@ export class SignalingClient extends EventTarget {
       }, 10000);
 
       this.ws.onopen = () => {
-        console.log('Connected to signaling server');
+        console.log('Connected to signaling server, sending hello...');
         this.reconnectAttempts = 0;
+
+        // Send hello with session token
+        const sessionToken = this.getSessionToken();
+        this.send({ type: 'hello', sessionToken });
+
         this.dispatchEvent(new CustomEvent('connected'));
       };
 
@@ -48,12 +79,13 @@ export class SignalingClient extends EventTarget {
         console.log('Disconnected from signaling server', event.code);
         clearTimeout(connectionTimeout);
         this._connectPromise = null;
+        this.stopHeartbeat();
 
         const wasConnected = this.peerId !== null;
         const previousRoomId = this.roomId;
         const wasHost = this.isHost;
 
-        this.peerId = null;
+        // Don't clear peerId/roomId - session may be restored on reconnect
         this.dispatchEvent(new CustomEvent('disconnected', {
           detail: { wasConnected, previousRoomId, wasHost }
         }));
@@ -80,10 +112,27 @@ export class SignalingClient extends EventTarget {
         // Handle peer-id specially to resolve connect promise
         if (message.type === 'peer-id') {
           this.peerId = message.peerId;
-          console.log('Assigned peer ID:', this.peerId);
+
+          if (message.restored) {
+            console.log('Session restored, peer ID:', this.peerId, 'room:', message.roomId);
+            this.roomId = message.roomId || null;
+            // Dispatch session-restored event for app to handle
+            this.dispatchEvent(new CustomEvent('session-restored', {
+              detail: { peerId: this.peerId, roomId: this.roomId }
+            }));
+          } else {
+            console.log('New session, peer ID:', this.peerId);
+          }
+
           clearTimeout(connectionTimeout);
           this._connectPromise = null;
+          this.startHeartbeat();
           resolve();
+          return;
+        }
+
+        // Handle heartbeat ack (just ignore, it's just to confirm connection is alive)
+        if (message.type === 'heartbeat-ack') {
           return;
         }
 
@@ -99,6 +148,22 @@ export class SignalingClient extends EventTarget {
     });
 
     return this._connectPromise;
+  }
+
+  startHeartbeat() {
+    this.stopHeartbeat();
+    this._heartbeatInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.send({ type: 'heartbeat' });
+      }
+    }, HEARTBEAT_INTERVAL);
+  }
+
+  stopHeartbeat() {
+    if (this._heartbeatInterval) {
+      clearInterval(this._heartbeatInterval);
+      this._heartbeatInterval = null;
+    }
   }
 
   attemptReconnect() {
@@ -208,6 +273,7 @@ export class SignalingClient extends EventTarget {
   }
 
   disconnect() {
+    this.stopHeartbeat();
     if (this.ws) {
       this.send({ type: 'leave-room' });
       this.ws.close();
@@ -222,6 +288,12 @@ export class SignalingClient extends EventTarget {
   // Reset reconnection state (useful when user explicitly disconnects)
   resetReconnection() {
     this.reconnectAttempts = this.maxReconnectAttempts;
+  }
+
+  // Clear session (for explicit logout/new session)
+  clearSession() {
+    sessionStorage.removeItem('dicebox-session-token');
+    this._sessionToken = null;
   }
 }
 

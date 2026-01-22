@@ -224,5 +224,24 @@ export class RoomManager extends EventTarget {
       this.dispatchEvent(new CustomEvent('room-closed', { detail: e.detail }));
       callbacks.onRoomClosed?.(e.detail);
     });
+
+    signalingClient.addEventListener('session-restored', (e) => {
+      const { roomId } = e.detail;
+      console.log(`Session restored, previous room: ${roomId}`);
+      if (roomId) {
+        this.roomId = roomId;
+        // isHost will be determined when we get host-reconnected or need to rejoin
+      }
+      this.dispatchEvent(new CustomEvent('session-restored', { detail: e.detail }));
+      callbacks.onSessionRestored?.(e.detail);
+    });
+
+    signalingClient.addEventListener('host-reconnected', (e) => {
+      const { roomId, hostPeerId } = e.detail;
+      console.log(`Host reconnected to room ${roomId}`);
+      this.hostPeerId = hostPeerId;
+      this.dispatchEvent(new CustomEvent('host-reconnected', { detail: e.detail }));
+      callbacks.onHostReconnected?.(e.detail);
+    });
   }
 }

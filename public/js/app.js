@@ -127,6 +127,22 @@ class DiceBoxApp {
           this.connectionManager.showStatus(reason || 'Room closed', 'disconnected');
           this.leaveRoom();
         }
+      },
+      onSessionRestored: ({ roomId }) => {
+        if (roomId && this.roomView.classList.contains('active')) {
+          // We were in a room and got restored - re-establish WebRTC connections
+          console.log('Session restored while in room, re-establishing connections...');
+          this.connectionManager.showStatus('Reconnecting...', 'connecting');
+          this.handleSessionRestored(roomId);
+        }
+      },
+      onHostReconnected: ({ roomId, hostPeerId }) => {
+        if (this.roomManager.roomId === roomId && !this.roomManager.isHost) {
+          console.log('Host reconnected, re-establishing connection...');
+          this.connectionManager.showStatus('Host reconnected', 'connected');
+          // Re-connect to host via WebRTC
+          this.reconnectToHost(hostPeerId);
+        }
       }
     });
 
@@ -494,6 +510,42 @@ class DiceBoxApp {
     if (this.roomView) {
       this.roomView.setHostStatus(true);
     }
+  }
+
+  /**
+   * Handle session restoration after reconnect
+   */
+  handleSessionRestored(roomId) {
+    // If we were the host, we should have been automatically restored
+    // If we were a client, we need to reconnect to the host
+    if (this.roomManager.isHost) {
+      console.log('Session restored as host, waiting for peers to reconnect');
+      this.connectionManager.showStatus('Reconnected as host', 'connected');
+    } else if (this.roomManager.hostPeerId) {
+      // Reconnect to host
+      this.reconnectToHost(this.roomManager.hostPeerId);
+    }
+  }
+
+  /**
+   * Reconnect to host after session restoration or host reconnection
+   */
+  reconnectToHost(hostPeerId) {
+    console.log(`Reconnecting to host: ${hostPeerId}`);
+
+    // Close any existing connection to this peer
+    webrtcManager.closePeerConnection(hostPeerId);
+
+    // Initiate new connection
+    webrtcManager.connectToPeer(hostPeerId)
+      .then(() => {
+        console.log('WebRTC connection to host re-established');
+        this.connectionManager.showStatus('Connected', 'connected');
+      })
+      .catch((error) => {
+        console.error('Failed to reconnect to host:', error);
+        this.connectionManager.showStatus('Failed to reconnect', 'disconnected');
+      });
   }
 
   handlePeerDisconnected(peerId) {

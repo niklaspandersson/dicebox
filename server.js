@@ -162,8 +162,17 @@ const wss = new WebSocket.Server({ server });
 // Room tracking: roomId -> { hostPeerId, hostWs, members: Set<peerId>, cleanupTimer }
 const rooms = new Map();
 
-// Peer connections: peerId -> { ws, roomId, ip }
+// Peer connections: peerId -> { ws, roomId, ip, sessionToken }
 const peers = new Map();
+
+// Session management: sessionToken -> { peerId, roomId, lastSeen }
+// Sessions allow peers to reconnect with the same identity after brief disconnects
+const sessions = new Map();
+
+// Session configuration
+const SESSION_EXPIRY = 5 * 60 * 1000; // 5 minutes
+const SESSION_CLEANUP_INTERVAL = 60 * 1000; // Check for expired sessions every minute
+const HEARTBEAT_INTERVAL = 30 * 1000; // Client should send heartbeat every 30s
 
 // Grace period before deleting a room when host disconnects (allows reconnection/migration)
 const ROOM_CLEANUP_DELAY = 30000; // 30 seconds
@@ -171,6 +180,13 @@ const ROOM_CLEANUP_DELAY = 30000; // 30 seconds
 // Generate cryptographically secure peer ID
 function generatePeerId() {
   return crypto.randomBytes(16).toString('hex');
+}
+
+// Validate session token format (UUID-like or 32 hex chars)
+function isValidSessionToken(token) {
+  if (typeof token !== 'string') return false;
+  // Accept UUID format or 32+ hex chars
+  return /^[a-f0-9-]{32,36}$/i.test(token);
 }
 
 // Validate room ID format
@@ -258,6 +274,14 @@ function sendError(ws, errorType, reason) {
   sendTo(ws, { type: 'error', errorType, reason });
 }
 
+// Update session's roomId when peer joins/leaves a room
+function updateSessionRoom(sessionToken, roomId) {
+  const session = sessions.get(sessionToken);
+  if (session) {
+    session.roomId = roomId;
+  }
+}
+
 // Schedule room cleanup after host disconnects (allows time for migration or reconnection)
 function scheduleRoomCleanup(roomId) {
   const room = rooms.get(roomId);
@@ -292,22 +316,13 @@ wss.on('connection', (ws, req) => {
     return;
   }
 
-  const peerId = generatePeerId();
-  peers.set(peerId, { ws, roomId: null, ip });
   trackConnection(ip, ws);
 
-  console.log(`Peer connected: ${peerId.substring(0, 8)}...`);
-
-  // Send peer their ID
-  sendTo(ws, { type: 'peer-id', peerId });
+  // Peer ID is assigned after hello message (may restore from session)
+  let peerId = null;
+  let sessionToken = null;
 
   ws.on('message', (data) => {
-    // Check rate limit
-    if (!checkRateLimit(peerId)) {
-      sendError(ws, 'rate-limit', 'Too many messages');
-      return;
-    }
-
     let message;
     try {
       message = JSON.parse(data);
@@ -319,6 +334,108 @@ wss.on('connection', (ws, req) => {
     // Validate message has a type
     if (!message || typeof message.type !== 'string') {
       sendError(ws, 'invalid-message', 'Message must have a type');
+      return;
+    }
+
+    // First message must be 'hello' with session token
+    if (!peerId) {
+      if (message.type !== 'hello') {
+        sendError(ws, 'protocol-error', 'First message must be hello');
+        return;
+      }
+
+      sessionToken = message.sessionToken;
+      if (!isValidSessionToken(sessionToken)) {
+        sendError(ws, 'invalid-session', 'Invalid session token format');
+        ws.close();
+        return;
+      }
+
+      // Check for existing session
+      const existingSession = sessions.get(sessionToken);
+      const now = Date.now();
+
+      if (existingSession && (now - existingSession.lastSeen) < SESSION_EXPIRY) {
+        // Restore existing session
+        peerId = existingSession.peerId;
+        const previousRoomId = existingSession.roomId;
+
+        // Update session
+        existingSession.lastSeen = now;
+
+        // Check if old peer connection exists and close it
+        const oldPeer = peers.get(peerId);
+        if (oldPeer && oldPeer.ws !== ws) {
+          oldPeer.ws.close();
+        }
+
+        // Register peer with restored ID
+        peers.set(peerId, { ws, roomId: previousRoomId, ip, sessionToken });
+
+        console.log(`Session restored: ${peerId.substring(0, 8)}... (token: ${sessionToken.substring(0, 8)}...)`);
+
+        // Send peer their restored ID and room info
+        sendTo(ws, {
+          type: 'peer-id',
+          peerId,
+          restored: true,
+          roomId: previousRoomId
+        });
+
+        // If peer was in a room, restore room membership
+        if (previousRoomId) {
+          const room = rooms.get(previousRoomId);
+          if (room) {
+            // Re-add to members if they were a member
+            if (!room.members.has(peerId) && room.hostPeerId !== peerId) {
+              room.members.add(peerId);
+            }
+            // If they were the host and room is waiting for host, restore
+            if (!room.hostPeerId) {
+              room.hostPeerId = peerId;
+              room.hostWs = ws;
+              if (room.cleanupTimer) {
+                clearTimeout(room.cleanupTimer);
+                room.cleanupTimer = null;
+              }
+              console.log(`Host restored for room ${previousRoomId}`);
+              // Notify members that host is back
+              for (const memberId of room.members) {
+                sendToPeer(memberId, { type: 'host-reconnected', roomId: previousRoomId, hostPeerId: peerId });
+              }
+            }
+          }
+        }
+      } else {
+        // Create new session
+        peerId = generatePeerId();
+        sessions.set(sessionToken, { peerId, roomId: null, lastSeen: now });
+        peers.set(peerId, { ws, roomId: null, ip, sessionToken });
+
+        console.log(`New session: ${peerId.substring(0, 8)}... (token: ${sessionToken.substring(0, 8)}...)`);
+
+        sendTo(ws, { type: 'peer-id', peerId, restored: false });
+      }
+      return;
+    }
+
+    // Check rate limit (after peerId is assigned)
+    if (!checkRateLimit(peerId)) {
+      sendError(ws, 'rate-limit', 'Too many messages');
+      return;
+    }
+
+    // Update session lastSeen on any message (acts as heartbeat)
+    if (sessionToken) {
+      const session = sessions.get(sessionToken);
+      if (session) {
+        session.lastSeen = Date.now();
+      }
+    }
+
+    // Handle heartbeat message
+    if (message.type === 'heartbeat') {
+      sendTo(ws, { type: 'heartbeat-ack' });
       return;
     }
 
@@ -381,6 +498,7 @@ wss.on('connection', (ws, req) => {
           cleanupTimer: null
         });
         peer.roomId = roomId;
+        updateSessionRoom(sessionToken, roomId);
 
         sendTo(ws, { type: 'register-host-success', roomId });
         console.log(`Room ${roomId} created with host ${peerId.substring(0, 8)}...`);
@@ -414,6 +532,7 @@ wss.on('connection', (ws, req) => {
             cleanupTimer: null
           });
           peer.roomId = roomId;
+          updateSessionRoom(sessionToken, roomId);
           sendTo(ws, { type: 'claim-host-success', roomId });
           console.log(`Room ${roomId} host migrated to ${peerId.substring(0, 8)}...`);
         } else {
@@ -446,6 +565,7 @@ wss.on('connection', (ws, req) => {
 
         peer.roomId = roomId;
         room.members.add(peerId);
+        updateSessionRoom(sessionToken, roomId);
 
         // Tell the peer who the host is so they can initiate WebRTC
         sendTo(ws, {
@@ -511,6 +631,7 @@ wss.on('connection', (ws, req) => {
           }
 
           peer.roomId = null;
+          updateSessionRoom(sessionToken, null);
         }
         break;
       }
@@ -522,6 +643,12 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', () => {
+    if (!peerId) {
+      // Connection closed before hello was received
+      untrackConnection(ip, ws);
+      return;
+    }
+
     const peer = peers.get(peerId);
 
     if (peer) {
@@ -542,11 +669,15 @@ wss.on('connection', (ws, req) => {
             scheduleRoomCleanup(roomId);
             console.log(`Room ${roomId} host disconnected, notified ${room.members.size} members, cleanup in ${ROOM_CLEANUP_DELAY / 1000}s`);
           } else {
-            // Member disconnected - just remove from members set
-            room.members.delete(peerId);
+            // Member disconnected - keep in members set for potential reconnection
+            // They will be removed when session expires
+            console.log(`Member ${peerId.substring(0, 8)}... disconnected from room ${roomId}, session kept for reconnection`);
           }
         }
       }
+
+      // Keep session alive for reconnection - don't delete it
+      // Session will be cleaned up by periodic cleanup if not reconnected
     }
 
     messageRates.delete(peerId);
@@ -568,6 +699,30 @@ setInterval(() => {
     }
   }
 }, 60000);
+
+// Cleanup expired sessions periodically
+setInterval(() => {
+  const now = Date.now();
+  let expiredCount = 0;
+
+  for (const [token, session] of sessions) {
+    if (now - session.lastSeen > SESSION_EXPIRY) {
+      // Clean up any room membership for this session
+      if (session.roomId) {
+        const room = rooms.get(session.roomId);
+        if (room) {
+          room.members.delete(session.peerId);
+        }
+      }
+      sessions.delete(token);
+      expiredCount++;
+    }
+  }
+
+  if (expiredCount > 0) {
+    console.log(`Cleaned up ${expiredCount} expired session(s)`);
+  }
+}, SESSION_CLEANUP_INTERVAL);
 
 server.listen(PORT, () => {
   console.log(`DiceBox server running on http://localhost:${PORT}`);
