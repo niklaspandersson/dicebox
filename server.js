@@ -159,11 +159,14 @@ const server = http.createServer((req, res) => {
 // WebSocket signaling server - MINIMAL ICE BROKER
 const wss = new WebSocket.Server({ server });
 
-// Minimal room tracking: roomId -> { hostPeerId, hostWs }
+// Room tracking: roomId -> { hostPeerId, hostWs, members: Set<peerId>, cleanupTimer }
 const rooms = new Map();
 
 // Peer connections: peerId -> { ws, roomId, ip }
 const peers = new Map();
+
+// Grace period before deleting a room when host disconnects (allows reconnection/migration)
+const ROOM_CLEANUP_DELAY = 30000; // 30 seconds
 
 // Generate cryptographically secure peer ID
 function generatePeerId() {
@@ -255,6 +258,30 @@ function sendError(ws, errorType, reason) {
   sendTo(ws, { type: 'error', errorType, reason });
 }
 
+// Schedule room cleanup after host disconnects (allows time for migration or reconnection)
+function scheduleRoomCleanup(roomId) {
+  const room = rooms.get(roomId);
+  if (!room) return;
+
+  // Clear any existing cleanup timer
+  if (room.cleanupTimer) {
+    clearTimeout(room.cleanupTimer);
+  }
+
+  room.cleanupTimer = setTimeout(() => {
+    const currentRoom = rooms.get(roomId);
+    // Only delete if room still has no host
+    if (currentRoom && !currentRoom.hostPeerId) {
+      // Notify remaining members the room is closing
+      for (const memberId of currentRoom.members) {
+        sendToPeer(memberId, { type: 'room-closed', roomId, reason: 'Host did not return' });
+      }
+      rooms.delete(roomId);
+      console.log(`Room ${roomId} deleted after cleanup timeout (no host claimed)`);
+    }
+  }, ROOM_CLEANUP_DELAY);
+}
+
 wss.on('connection', (ws, req) => {
   const ip = getClientIp(req);
 
@@ -335,13 +362,24 @@ wss.on('connection', (ws, req) => {
           return;
         }
 
-        // Check if room already has a host
-        if (rooms.has(roomId)) {
+        // Check if room already has an active host
+        const existingRoom = rooms.get(roomId);
+        if (existingRoom && peers.has(existingRoom.hostPeerId)) {
           sendTo(ws, { type: 'register-host-failed', roomId, reason: 'Room already has a host' });
           return;
         }
 
-        rooms.set(roomId, { hostPeerId: peerId, hostWs: ws });
+        // Clear any pending cleanup timer if room exists
+        if (existingRoom && existingRoom.cleanupTimer) {
+          clearTimeout(existingRoom.cleanupTimer);
+        }
+
+        rooms.set(roomId, {
+          hostPeerId: peerId,
+          hostWs: ws,
+          members: new Set(),
+          cleanupTimer: null
+        });
         peer.roomId = roomId;
 
         sendTo(ws, { type: 'register-host-success', roomId });
@@ -362,7 +400,19 @@ wss.on('connection', (ws, req) => {
 
         // Allow claiming if room doesn't exist or has no active host
         if (!room || !peers.has(room.hostPeerId)) {
-          rooms.set(roomId, { hostPeerId: peerId, hostWs: ws });
+          // Clear any pending cleanup timer
+          if (room && room.cleanupTimer) {
+            clearTimeout(room.cleanupTimer);
+          }
+
+          // Preserve members list if room exists, otherwise create new
+          const members = room ? room.members : new Set();
+          rooms.set(roomId, {
+            hostPeerId: peerId,
+            hostWs: ws,
+            members,
+            cleanupTimer: null
+          });
           peer.roomId = roomId;
           sendTo(ws, { type: 'claim-host-success', roomId });
           console.log(`Room ${roomId} host migrated to ${peerId.substring(0, 8)}...`);
@@ -388,7 +438,14 @@ wss.on('connection', (ws, req) => {
           return;
         }
 
+        // Check if host is still connected
+        if (!peers.has(room.hostPeerId)) {
+          sendTo(ws, { type: 'join-room-failed', roomId, reason: 'Room host is disconnected' });
+          return;
+        }
+
         peer.roomId = roomId;
+        room.members.add(peerId);
 
         // Tell the peer who the host is so they can initiate WebRTC
         sendTo(ws, {
@@ -435,11 +492,22 @@ wss.on('connection', (ws, req) => {
       case 'leave-room': {
         if (peer.roomId) {
           const room = rooms.get(peer.roomId);
+          const roomId = peer.roomId;
 
-          // If this peer was the host, remove the room
-          if (room && room.hostPeerId === peerId) {
-            rooms.delete(peer.roomId);
-            console.log(`Room ${peer.roomId} closed (host left)`);
+          if (room) {
+            if (room.hostPeerId === peerId) {
+              // Host is leaving - notify all members and start cleanup timer
+              for (const memberId of room.members) {
+                sendToPeer(memberId, { type: 'host-disconnected', roomId });
+              }
+              room.hostPeerId = null;
+              room.hostWs = null;
+              scheduleRoomCleanup(roomId);
+              console.log(`Room ${roomId} host left, notified ${room.members.size} members`);
+            } else {
+              // Member is leaving - just remove from members set
+              room.members.delete(peerId);
+            }
           }
 
           peer.roomId = null;
@@ -461,12 +529,22 @@ wss.on('connection', (ws, req) => {
 
       if (peer.roomId) {
         const room = rooms.get(peer.roomId);
+        const roomId = peer.roomId;
 
-        // If this peer was the host, remove the room entry
-        // (clients will handle migration via claim-host)
-        if (room && room.hostPeerId === peerId) {
-          rooms.delete(peer.roomId);
-          console.log(`Room ${peer.roomId} host disconnected, awaiting migration`);
+        if (room) {
+          if (room.hostPeerId === peerId) {
+            // Host disconnected - notify all members and start cleanup timer
+            for (const memberId of room.members) {
+              sendToPeer(memberId, { type: 'host-disconnected', roomId });
+            }
+            room.hostPeerId = null;
+            room.hostWs = null;
+            scheduleRoomCleanup(roomId);
+            console.log(`Room ${roomId} host disconnected, notified ${room.members.size} members, cleanup in ${ROOM_CLEANUP_DELAY / 1000}s`);
+          } else {
+            // Member disconnected - just remove from members set
+            room.members.delete(peerId);
+          }
         }
       }
     }
