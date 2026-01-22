@@ -5,11 +5,16 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": ["dice", "webrtc", "web-components", "p2p"],
   "license": "MIT",
   "dependencies": {
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
   }
 }
