@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Patch deployment with new image
         run: |
-          kubectl patch deployment dicebox-app-deployment --namespace www --patch-file=/dev/stdin <<-EOF
+          kubectl patch deployment dice-app-deployment --namespace www --patch-file=/dev/stdin <<-EOF
           { "spec": { "template": { "spec": { "containers": [ { "name": "dice-app", "image": "$REGISTRY_URL/${{ github.repository }}:$(echo ${GITHUB_SHA} | head -c 7)"}]}}}}
           EOF
         env:
