@@ -378,12 +378,20 @@ export class WebRTCManager extends EventTarget {
   setupDataChannel(peerId, channel) {
     this.dataChannels.set(peerId, channel);
 
-    channel.onopen = () => {
+    const dispatchOpen = () => {
       console.log(`Data channel with ${peerId} opened`);
       this.dispatchEvent(new CustomEvent('channel-open', {
         detail: { peerId, channel }
       }));
     };
+
+    channel.onopen = dispatchOpen;
+
+    // If channel is already open (can happen when ondatachannel fires with
+    // an already-established channel), dispatch the event immediately
+    if (channel.readyState === 'open') {
+      dispatchOpen();
+    }
 
     channel.onclose = () => {
       console.log(`Data channel with ${peerId} closed`);
@@ -510,6 +518,12 @@ export class WebRTCManager extends EventTarget {
         console.error(`Failed to send to peer ${peerId}:`, error);
         return false;
       }
+    }
+    // Log when message cannot be sent for debugging
+    if (!channel) {
+      console.warn(`Cannot send to peer ${peerId}: no channel found`);
+    } else {
+      console.warn(`Cannot send to peer ${peerId}: channel state is ${channel.readyState}`);
     }
     return false;
   }
