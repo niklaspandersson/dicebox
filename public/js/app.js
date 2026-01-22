@@ -111,8 +111,22 @@ class DiceBoxApp {
       onRegisterHostFailed: () => {
         this.connectionManager.showStatus('Room already exists', 'disconnected');
       },
-      onJoinFailed: () => {
-        this.connectionManager.showStatus('Room not found', 'disconnected');
+      onJoinFailed: ({ reason }) => {
+        this.connectionManager.showStatus(reason || 'Room not found', 'disconnected');
+      },
+      onHostDisconnected: ({ roomId }) => {
+        if (!this.roomManager.isHost && this.roomManager.roomId === roomId) {
+          console.log('Host disconnected, initiating migration...');
+          this.connectionManager.showStatus('Host disconnected, reconnecting...', 'connecting');
+          this.migrationManager.initiate(roomId, this.connectionManager.serverConnected);
+        }
+      },
+      onRoomClosed: ({ roomId, reason }) => {
+        if (this.roomManager.roomId === roomId) {
+          console.log(`Room closed: ${reason}`);
+          this.connectionManager.showStatus(reason || 'Room closed', 'disconnected');
+          this.leaveRoom();
+        }
       }
     });
 

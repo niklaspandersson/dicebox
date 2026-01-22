@@ -212,5 +212,17 @@ export class RoomManager extends EventTarget {
       this.dispatchEvent(new CustomEvent('claim-host-failed', { detail: e.detail }));
       callbacks.onClaimHostFailed?.(e.detail);
     });
+
+    signalingClient.addEventListener('host-disconnected', (e) => {
+      console.log(`Host disconnected from room ${e.detail.roomId}`);
+      this.dispatchEvent(new CustomEvent('host-disconnected', { detail: e.detail }));
+      callbacks.onHostDisconnected?.(e.detail);
+    });
+
+    signalingClient.addEventListener('room-closed', (e) => {
+      console.log(`Room ${e.detail.roomId} closed: ${e.detail.reason}`);
+      this.dispatchEvent(new CustomEvent('room-closed', { detail: e.detail }));
+      callbacks.onRoomClosed?.(e.detail);
+    });
   }
 }
