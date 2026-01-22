@@ -4,7 +4,15 @@
 
 Refactor from star topology (host-based) to full mesh topology where all peers connect directly to each other. This eliminates host migration complexity and provides better fault tolerance.
 
-**Key insight**: With max 4 participants, mesh means only 6 connections (n*(n-1)/2). Dice rolling has no conflicts - rolls are commutative and can be ordered by timestamp.
+**Key insight**: Dice rolling generates minimal data (~10KB/min per peer). Even with 10 participants, each peer only sends ~90KB/min outbound - trivial bandwidth. Mesh scales well for typical group sizes.
+
+**Connection math:**
+| Peers | Connections | Outbound/peer |
+|-------|-------------|---------------|
+| 4     | 6           | 30 KB/min     |
+| 8     | 28          | 70 KB/min     |
+| 10    | 45          | 90 KB/min     |
+| 15    | 105         | 140 KB/min    |
 
 ---
 
@@ -377,9 +385,11 @@ With mesh, eventual consistency is acceptable because:
 |--------|--------|-------|--------|
 | Core JS lines | ~2100 | ~1700 | -400 (~19%) |
 | Message types | 11 | 7 | -4 |
-| Connection complexity | O(n) star | O(n²) mesh | Acceptable for n≤4 |
+| Connection complexity | O(n) star | O(n²) mesh | Fine for typical group sizes |
 | Single point of failure | Yes (host) | No | Improved |
 | Migration code | 114 lines | 0 | -100% |
+
+**Scaling notes:** Mesh works well up to ~15-20 peers. Beyond that, consider SFU (Selective Forwarding Unit) architecture. For a dice app, this limit is rarely a concern.
 
 ---
 
