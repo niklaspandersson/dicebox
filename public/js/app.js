@@ -6,7 +6,6 @@ import { signalingClient } from './signaling-client.js';
 import { webrtcManager } from './webrtc-manager.js';
 import { ConnectionManager } from './connection-manager.js';
 import { RoomManager } from './room-manager.js';
-import { DiceStateManager } from './dice-state-manager.js';
 import { MessageRouter, MSG } from './message-router.js';
 
 class DiceBoxApp {
@@ -14,7 +13,6 @@ class DiceBoxApp {
     // Initialize managers
     this.connectionManager = new ConnectionManager();
     this.roomManager = new RoomManager();
-    this.diceState = new DiceStateManager();
     this.messageRouter = new MessageRouter();
 
     // UI components
@@ -283,11 +281,8 @@ class DiceBoxApp {
     this.roomManager.setReceivedStateFrom(peerId);
     const meshState = this.roomManager.getMeshState();
 
-    // Load the state
+    // Load the state (includes diceConfig)
     meshState.loadSnapshot(state);
-
-    // Update dice settings
-    this.diceState.setSettings(state.diceConfig);
 
     // Now enter the room UI
     this.enterRoom();
@@ -436,10 +431,6 @@ class DiceBoxApp {
     this.peerList.setSelf(this.connectionManager.getEffectiveId(), this.roomManager.username);
     this.diceHistory.peerId = this.connectionManager.getEffectiveId();
 
-    // Load dice config from mesh state
-    const meshState = this.roomManager.getMeshState();
-    this.diceState.setSettings(meshState.getDiceConfig());
-
     this.updateDiceRollerState();
 
     console.log(`Entered room ${this.roomManager.roomId} as ${this.roomManager.username}`);
@@ -503,10 +494,10 @@ class DiceBoxApp {
     const rollId = `${myId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Build set results with holder info
-    const diceSettings = this.diceState.getSettings();
+    const diceConfig = meshState.getDiceConfig();
     const setResults = [];
 
-    for (const set of diceSettings.diceSets) {
+    for (const set of diceConfig.diceSets) {
       const values = rollResults[set.id] || [];
       const holder = meshState.getHolder(set.id);
       setResults.push({
@@ -549,20 +540,20 @@ class DiceBoxApp {
     if (!this.diceRoller) return;
 
     const meshState = this.roomManager.getMeshState();
-    const diceSettings = this.diceState.getSettings();
+    const diceConfig = meshState.getDiceConfig();
     const holders = meshState.getHolders();
 
     this.diceRoller.setConfig({
-      diceSets: diceSettings.diceSets,
+      diceSets: diceConfig?.diceSets || [],
       holders: Array.from(holders.entries()),
       myPeerId: this.connectionManager.getEffectiveId()
     });
 
-    if (this.peerList) {
+    if (this.peerList && diceConfig) {
       const holderInfo = new Map();
       for (const [setId, holder] of holders) {
         if (!holderInfo.has(holder.peerId)) {
-          const set = diceSettings.diceSets.find(s => s.id === setId);
+          const set = diceConfig.diceSets.find(s => s.id === setId);
           holderInfo.set(holder.peerId, set?.color || '#f59e0b');
         }
       }
@@ -581,8 +572,6 @@ class DiceBoxApp {
     });
 
     this.roomManager.leaveRoom();
-    this.diceState.reset();
-
     this.connectionManager.peerId = signalingClient.peerId;
 
     if (this.peerList) this.peerList.clear();

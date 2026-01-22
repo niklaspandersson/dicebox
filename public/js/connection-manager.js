@@ -86,30 +86,9 @@ export class ConnectionManager extends EventTarget {
   }
 
   /**
-   * Update connection indicator UI element
-   */
-  updateConnectionIndicator(state) {
-    const indicator = document.getElementById('connection-indicator');
-    if (!indicator) return;
-
-    indicator.classList.remove('connected', 'disconnected');
-    if (state === 'connected') {
-      indicator.classList.add('connected');
-      indicator.title = 'Connected to server';
-    } else if (state === 'disconnected') {
-      indicator.classList.add('disconnected');
-      indicator.title = 'Disconnected - multiplayer unavailable';
-    } else {
-      indicator.title = 'Connecting...';
-    }
-  }
-
-  /**
    * Show status toast message
    */
   showStatus(text, type = 'connected') {
-    this.updateConnectionIndicator(type);
-
     // Only show toast for non-error transient messages
     if (type === 'disconnected') return;
 
