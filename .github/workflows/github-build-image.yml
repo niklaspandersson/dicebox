@@ -1,0 +1,35 @@
+name: Build image and push to private registry
+on: 
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - 'main'
+  push:
+    branches:
+      - 'main'
+  workflow_dispatch:
+
+env:
+  KANIKO_CACHE_ARGS: "--cache=true --cache-copy-layers=true --cache-ttl=24h"
+
+jobs:
+  build:
+    runs-on: home-arc-runners
+    container:
+      image: gcr.io/kaniko-project/executor:v1.23.2-debug # the kaniko image
+    permissions:
+      contents: read # read the repository
+
+    steps:
+      - name: Build and Push Image to local registry
+        run: |
+          /kaniko/executor --dockerfile="./Dockerfile" \
+            --context="${{ github.repositoryUrl }}#${{ github.sha }}"  \
+            --destination="$REGISTRY_URL/${{ github.repository }}:$(echo ${GITHUB_SHA} | head  -c 7)" \
+            --insecure-registry="$REGISTRY_URL" \
+            ${{ env.KANIKO_CACHE_ARGS }} \
+            --push-retry 5 
+        env:
+          GIT_USERNAME: ${{ github.actor }}
+          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_URL: "docker-registry.docker-registry:5000"
