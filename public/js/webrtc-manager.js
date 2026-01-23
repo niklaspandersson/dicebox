@@ -317,7 +317,9 @@ export class WebRTCManager extends EventTarget {
         this.clearConnectionTimeout(peerId);
         this.logConnectionType(peerId, pc);
         this.dispatchEvent(new CustomEvent('peer-connected', { detail: { peerId } }));
-      } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+      } else if (pc.connectionState === 'failed') {
+        // Only close on 'failed', not 'disconnected'
+        // 'disconnected' is often temporary and can recover (e.g., when switching from IPv6 to IPv4)
         this.closePeerConnection(peerId);
       }
     };
