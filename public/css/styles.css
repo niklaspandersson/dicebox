@@ -682,6 +682,12 @@ dice-roller .dice-display {
   align-items: center;
 }
 
+dice-roller .die-wrapper {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
 dice-roller .die {
   width: 60px;
   height: 60px;
@@ -1209,6 +1215,7 @@ peer-list .empty-message {
     font-size: 1rem;
   }
 
+  dice-roller .die-wrapper,
   dice-roller .die,
   dice-roller .die-placeholder {
     width: 52px;

@@ -117,9 +117,9 @@ class DiceRoller extends HTMLElement {
         ` : ''}
         <div class="dice-display">
           ${hasValues && !isHeld ?
-            values.map(v => `<div class="die" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div>`).join('') :
+            values.map(v => `<div class="die-wrapper"><div class="die" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div></div>`).join('') :
             Array(set.count).fill(0).map(() =>
-              `<div class="die-placeholder">${getDiceSvg(1, pipColor)}</div>`
+              `<div class="die-wrapper"><div class="die-placeholder">${getDiceSvg(1, pipColor)}</div></div>`
             ).join('')
           }
         </div>
@@ -193,7 +193,7 @@ class DiceRoller extends HTMLElement {
         setEl.innerHTML = `
           <div class="dice-display">
             ${Array(set.count).fill(0).map(() =>
-              `<div class="die rolling" data-pip-color="${pipColor}">${getDiceSvg(1, pipColor)}</div>`
+              `<div class="die-wrapper"><div class="die rolling" data-pip-color="${pipColor}">${getDiceSvg(1, pipColor)}</div></div>`
             ).join('')}
           </div>
         `;
@@ -233,7 +233,7 @@ class DiceRoller extends HTMLElement {
           const pipColor = getPipColor(set.color);
           const values = rollResults[set.id];
           display.innerHTML = values.map(v =>
-            `<div class="die" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div>`
+            `<div class="die-wrapper"><div class="die" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div></div>`
           ).join('');
         }
       }
@@ -299,7 +299,7 @@ class DiceRoller extends HTMLElement {
         setEl.style.borderColor = 'transparent';
         setEl.innerHTML = `
           <div class="dice-display">
-            ${values.map(v => `<div class="die" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div>`).join('')}
+            ${values.map(v => `<div class="die-wrapper"><div class="die" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div></div>`).join('')}
           </div>
           <div class="grab-hint">Click to grab</div>
         `;
