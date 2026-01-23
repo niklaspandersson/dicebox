@@ -7,6 +7,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 COPY server.js ./
+COPY state-storage.js ./
 COPY public/ ./public/
 
 EXPOSE 3000
