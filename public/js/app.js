@@ -30,17 +30,7 @@ class DiceBoxApp {
     this.setupEventListeners();
     this.setupManagerEvents();
 
-    // Show connecting state
-    if (this.roomJoin) {
-      this.roomJoin.setConnecting();
-    }
-
-    const connected = await this.connectionManager.connect();
-    if (connected && this.roomJoin) {
-      this.roomJoin.setConnected();
-    } else if (this.roomJoin) {
-      this.roomJoin.setDisconnected();
-    }
+    await this.connectionManager.connect();
   }
 
   // === MESSAGE HANDLERS SETUP (Mesh topology - all handlers are equal) ===
@@ -62,38 +52,22 @@ class DiceBoxApp {
   setupManagerEvents() {
     // Connection manager events
     this.connectionManager.setupEventListeners({
-      onConnected: () => {
-        if (this.roomJoin && this.roomJoin.style.display !== 'none') {
-          this.roomJoin.setConnected();
-        }
-      },
-      onDisconnected: () => {
-        if (this.roomJoin && this.roomJoin.style.display !== 'none') {
-          this.roomJoin.setDisconnected();
-        }
-      },
+      onConnected: () => {},
+      onDisconnected: () => {},
       onReconnected: () => {
         // Session should be automatically restored by signaling client
       },
-      onReconnectFailed: () => {
-        if (this.roomJoin && this.roomJoin.style.display !== 'none') {
-          this.roomJoin.setDisconnected();
-        }
-      },
-      onServerError: (detail) => {
-        if (detail.errorType === 'rate-limit') {
-          this.connectionManager.showStatus('Rate limited - slow down', 'disconnected');
-        }
-      }
+      onReconnectFailed: () => {},
+      onServerError: () => {}
     });
 
     // Room manager events
     this.roomManager.setupSignalingEvents({
       onCreateRoomFailed: ({ reason }) => {
-        this.connectionManager.showStatus(reason || 'Failed to create room', 'disconnected');
+        console.error('Failed to create room:', reason);
       },
       onJoinFailed: ({ reason }) => {
-        this.connectionManager.showStatus(reason || 'Room not found', 'disconnected');
+        console.error('Failed to join room:', reason);
       },
       onPeerDisconnected: ({ peerId }) => {
         // Handle WebRTC disconnection
@@ -106,7 +80,9 @@ class DiceBoxApp {
       onSessionRestored: ({ roomId }) => {
         if (roomId && this.roomView.classList.contains('active')) {
           console.log('Session restored while in room, reconnecting...');
-          this.connectionManager.showStatus('Reconnecting...', 'connecting');
+          if (this.peerList) {
+            this.peerList.setSelfStatus('connecting');
+          }
           // Re-query room to get current peers
           signalingClient.queryRoom(roomId);
         }
@@ -115,11 +91,6 @@ class DiceBoxApp {
 
     this.roomManager.addEventListener('room-created', () => {
       this.enterRoom();
-    });
-
-    this.roomManager.addEventListener('room-joined', (e) => {
-      // Room joined, waiting for WebRTC connections to complete
-      this.connectionManager.showStatus('Connecting to peers...', 'connecting');
     });
 
     this.roomManager.addEventListener('peer-left', (e) => {
@@ -182,13 +153,7 @@ class DiceBoxApp {
   }
 
   async retryConnection() {
-    if (this.roomJoin) {
-      this.roomJoin.setConnecting();
-    }
-    const connected = await this.connectionManager.retryConnection();
-    if (connected && this.roomJoin) {
-      this.roomJoin.setConnected();
-    }
+    await this.connectionManager.retryConnection();
   }
 
   setupWebRTCEvents() {
@@ -299,7 +264,6 @@ class DiceBoxApp {
     }
 
     this.updateDiceRollerState();
-    this.connectionManager.showStatus('Connected', 'connected');
   }
 
   handlePeerJoinedMsg(peerId, { peerId: newPeerId, username }) {
@@ -579,12 +543,6 @@ class DiceBoxApp {
 
     this.roomJoin.style.display = 'block';
     this.roomView.hide();
-
-    if (this.connectionManager.serverConnected) {
-      this.roomJoin.setConnected();
-    } else {
-      this.roomJoin.setDisconnected();
-    }
   }
 }
 

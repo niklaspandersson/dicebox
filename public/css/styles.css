@@ -70,35 +70,6 @@ header .header-right {
   gap: 12px;
 }
 
-/* Connection indicator */
-.connection-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  cursor: help;
-}
-
-.connection-indicator .indicator-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--warning);
-  animation: pulse 1s infinite;
-  transition: background 0.3s ease;
-}
-
-.connection-indicator.connected .indicator-dot {
-  background: var(--secondary-color);
-  animation: none;
-}
-
-.connection-indicator.disconnected .indicator-dot {
-  background: var(--danger);
-  animation: pulse 1.5s infinite;
-}
-
 header h1 {
   font-size: 3rem;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -1146,29 +1117,6 @@ peer-list .empty-message {
   text-align: center;
   padding: 10px;
   font-size: 0.9rem;
-}
-
-/* Connection status */
-.connection-status {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 10px 16px;
-  border-radius: var(--border-radius);
-  font-size: 0.85rem;
-  z-index: 1000;
-}
-
-.connection-status.connected {
-  background: var(--secondary-color);
-}
-
-.connection-status.connecting {
-  background: var(--warning);
-}
-
-.connection-status.disconnected {
-  background: var(--danger);
 }
 
 /* Scrollbar styles */

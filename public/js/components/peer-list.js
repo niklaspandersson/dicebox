@@ -9,6 +9,7 @@ class PeerList extends HTMLElement {
     this.peers = new Map();
     this.selfPeerId = null;
     this.selfUsername = null;
+    this.selfStatus = 'connected';
     // Map of peer IDs to dice set color
     this.holderInfo = new Map();
   }
@@ -17,9 +18,15 @@ class PeerList extends HTMLElement {
     this.render();
   }
 
-  setSelf(peerId, username) {
+  setSelf(peerId, username, status = 'connected') {
     this.selfPeerId = peerId;
     this.selfUsername = username;
+    this.selfStatus = status;
+    this.renderPeers();
+  }
+
+  setSelfStatus(status) {
+    this.selfStatus = status;
     this.renderPeers();
   }
 
@@ -67,7 +74,7 @@ class PeerList extends HTMLElement {
       allPeers.push({
         peerId: this.selfPeerId,
         username: this.selfUsername,
-        status: 'connected',
+        status: this.selfStatus,
         isSelf: true,
         isHolder: this.holderInfo.has(this.selfPeerId),
         holderColor: this.holderInfo.get(this.selfPeerId)
@@ -126,6 +133,7 @@ class PeerList extends HTMLElement {
     this.peers.clear();
     this.selfPeerId = null;
     this.selfUsername = null;
+    this.selfStatus = 'connected';
     this.holderInfo.clear();
     this.renderPeers();
   }

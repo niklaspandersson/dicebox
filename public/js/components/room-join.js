@@ -19,7 +19,6 @@ const DICE_COLORS = [
 class RoomJoin extends HTMLElement {
   constructor() {
     super();
-    this._serverConnected = false;
     this._diceValues = [0, 0, 0, 0]; // 4 dice, values 0-5 (representing 1-6)
     this._createMode = false;
     this._diceSets = [{ id: 'set-1', count: 2, color: '#ffffff' }];
@@ -396,40 +395,6 @@ class RoomJoin extends HTMLElement {
     }));
   }
 
-  // Update the header connection indicator
-  updateConnectionIndicator(state) {
-    const indicator = document.getElementById('connection-indicator');
-    if (!indicator) return;
-
-    indicator.classList.remove('connected', 'disconnected');
-    if (state === 'connected') {
-      indicator.classList.add('connected');
-      indicator.title = 'Connected to server';
-    } else if (state === 'disconnected') {
-      indicator.classList.add('disconnected');
-      indicator.title = 'Disconnected - multiplayer unavailable';
-    } else {
-      indicator.title = 'Connecting...';
-    }
-  }
-
-  // Called when successfully connected to server
-  setConnected() {
-    this._serverConnected = true;
-    this.updateConnectionIndicator('connected');
-  }
-
-  // Called when connection fails
-  setDisconnected() {
-    this._serverConnected = false;
-    this.updateConnectionIndicator('disconnected');
-  }
-
-  // Called when attempting to connect
-  setConnecting() {
-    this._serverConnected = false;
-    this.updateConnectionIndicator('connecting');
-  }
 }
 
 customElements.define('room-join', RoomJoin);

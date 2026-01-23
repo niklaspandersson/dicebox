@@ -85,24 +85,4 @@ export class ConnectionManager extends EventTarget {
     });
   }
 
-  /**
-   * Show status toast message
-   */
-  showStatus(text, type = 'connected') {
-    // Only show toast for non-error transient messages
-    if (type === 'disconnected') return;
-
-    let status = document.querySelector('.connection-status');
-    if (!status) {
-      status = document.createElement('div');
-      status.className = 'connection-status';
-      document.body.appendChild(status);
-    }
-    status.textContent = text;
-    status.className = `connection-status ${type}`;
-
-    if (type === 'connected') {
-      setTimeout(() => status.remove(), 3000);
-    }
-  }
 }
