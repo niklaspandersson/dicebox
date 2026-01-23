@@ -742,6 +742,10 @@ dice-roller .dice-display-container {
   position: relative;
 }
 
+dice-roller .dice-display-container .dice-display {
+  visibility: hidden;
+}
+
 dice-roller .roll-ready-overlay {
   position: absolute;
   top: 0;
@@ -751,8 +755,6 @@ dice-roller .roll-ready-overlay {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
 }
 
 dice-roller .roll-ready-hint {
