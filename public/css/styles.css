@@ -33,7 +33,7 @@ body {
   padding: 20px;
 }
 
-header {
+header-bar {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -41,7 +41,7 @@ header {
   position: relative;
 }
 
-header .header-left {
+header-bar .header-left {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -49,13 +49,13 @@ header .header-left {
   min-width: 0;
 }
 
-header .header-title-row {
+header-bar .header-title-row {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-header .header-right {
+header-bar .header-right {
   position: absolute;
   top: 0;
   right: 0;
@@ -64,7 +64,7 @@ header .header-right {
   gap: 12px;
 }
 
-header h1 {
+header-bar h1 {
   font-size: 3rem;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   -webkit-background-clip: text;
@@ -74,28 +74,28 @@ header h1 {
   transition: font-size 0.2s ease;
 }
 
-header .tagline {
+header-bar .tagline {
   color: var(--text-muted);
   font-size: 1.1rem;
 }
 
-header .room-info {
+header-bar .room-info {
   display: flex;
   align-items: center;
 }
 
-header .room-info .room-id {
+header-bar .room-info .room-id {
   font-size: 0.85rem;
   color: var(--text-muted);
 }
 
-header .room-info .room-id span {
+header-bar .room-info .room-id span {
   color: var(--secondary-color);
   font-weight: 600;
   letter-spacing: 0.05em;
 }
 
-header .btn-leave {
+header-bar .btn-leave {
   background: var(--surface-light);
   padding: 8px;
   border-radius: 8px;
@@ -104,7 +104,7 @@ header .btn-leave {
   justify-content: center;
 }
 
-header .btn-leave:hover {
+header-bar .btn-leave:hover {
   background: var(--danger);
   color: white;
   transform: none;
@@ -189,39 +189,39 @@ header .btn-leave:hover {
 }
 
 /* Compact header when in room */
-#app.in-room header {
+#app.in-room header-bar {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-#app.in-room header .header-left {
+#app.in-room header-bar .header-left {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
   min-width: 0;
 }
 
-#app.in-room header .header-title-row {
+#app.in-room header-bar .header-title-row {
   gap: 6px;
 }
 
-#app.in-room header .header-right {
+#app.in-room header-bar .header-right {
   position: static;
   display: flex;
   flex-shrink: 0;
 }
 
-#app.in-room header h1 {
+#app.in-room header-bar h1 {
   font-size: 1.3rem;
 }
 
-#app.in-room header .tagline {
+#app.in-room header-bar .tagline {
   display: none;
 }
 
-#app.in-room header .room-info .room-id {
+#app.in-room header-bar .room-info .room-id {
   font-size: 0.8rem;
 }
 
@@ -1121,15 +1121,15 @@ peer-list .empty-message {
     padding: 12px;
   }
 
-  header {
+  header-bar {
     margin-bottom: 24px;
   }
 
-  header h1 {
+  header-bar h1 {
     font-size: 2.5rem;
   }
 
-  header .tagline {
+  header-bar .tagline {
     font-size: 1rem;
   }
 

@@ -16,17 +16,12 @@ class DiceBoxApp {
     this.messageRouter = new MessageRouter();
 
     // UI components
+    this.headerBar = document.querySelector('header-bar');
     this.roomJoin = document.querySelector('room-join');
     this.roomView = document.querySelector('room-view');
     this.diceRoller = null;
     this.diceHistory = null;
     this.peerList = null;
-
-    // Header elements (centralized management)
-    this.appContainer = document.getElementById('app');
-    this.headerRoomInfo = document.getElementById('header-room-info');
-    this.headerRoomId = document.getElementById('header-room-id');
-    this.headerLeaveBtn = document.getElementById('header-leave-btn');
 
     this.init();
   }
@@ -136,13 +131,6 @@ class DiceBoxApp {
     document.addEventListener('leave-room', () => {
       this.leaveRoom();
     });
-
-    // Header leave button
-    if (this.headerLeaveBtn) {
-      this.headerLeaveBtn.addEventListener('click', () => {
-        this.leaveRoom();
-      });
-    }
 
     document.addEventListener('retry-connection', () => {
       this.retryConnection();
@@ -399,12 +387,7 @@ class DiceBoxApp {
   enterRoom() {
     this.roomJoin.style.display = 'none';
     this.roomView.show();
-
-    // Update header for room view
-    if (this.appContainer) this.appContainer.classList.add('in-room');
-    if (this.headerRoomInfo) this.headerRoomInfo.style.display = 'flex';
-    if (this.headerRoomId) this.headerRoomId.textContent = this.roomManager.roomId;
-    if (this.headerLeaveBtn) this.headerLeaveBtn.style.display = 'block';
+    this.headerBar.showRoomView(this.roomManager.roomId);
 
     this.diceRoller = this.roomView.querySelector('dice-roller');
     this.diceHistory = this.roomView.querySelector('dice-history');
@@ -561,11 +544,7 @@ class DiceBoxApp {
 
     this.roomJoin.style.display = 'block';
     this.roomView.hide();
-
-    // Reset header for join view
-    if (this.appContainer) this.appContainer.classList.remove('in-room');
-    if (this.headerRoomInfo) this.headerRoomInfo.style.display = 'none';
-    if (this.headerLeaveBtn) this.headerLeaveBtn.style.display = 'none';
+    this.headerBar.showJoinView();
   }
 }
 
