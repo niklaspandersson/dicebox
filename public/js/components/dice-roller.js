@@ -76,34 +76,31 @@ class DiceRoller extends HTMLElement {
     const borderColor = isHeld ? set.color : 'transparent';
     const pipColor = getPipColor(set.color);
 
-    // When all dice are held, show different UI based on who's holding
+    // When all dice are held, show dice placeholders with overlay text
     if (allHeld) {
-      if (iAmHolder) {
-        // I'm holding this set - show "Click to roll"
-        return `
-          <div class="dice-set card held ready-to-roll my-hold"
-               data-set-id="${set.id}"
-               style="--set-color: ${set.color}; --set-bg: ${bgColor}; border-color: ${borderColor}">
+      const hintText = iAmHolder ? 'Click to roll' : `${holder.username} is about to roll`;
+      const hintClass = iAmHolder ? '' : 'waiting';
+      return `
+        <div class="dice-set card held ready-to-roll ${iAmHolder ? 'my-hold' : 'other-hold'}"
+             data-set-id="${set.id}"
+             style="--set-color: ${set.color}; --set-bg: ${bgColor}; border-color: ${borderColor}">
+          ${iAmHolder ? `
             <div class="holder-info">
               <span class="holder-name">You</span>
             </div>
-            <div class="roll-ready-display">
-              <div class="roll-ready-hint">Click to roll</div>
+          ` : ''}
+          <div class="dice-display-container">
+            <div class="dice-display">
+              ${Array(set.count).fill(0).map(() =>
+                `<div class="die-wrapper"><div class="die-placeholder">${getDiceSvg(1, pipColor)}</div></div>`
+              ).join('')}
+            </div>
+            <div class="roll-ready-overlay">
+              <div class="roll-ready-hint ${hintClass}">${hintText}</div>
             </div>
           </div>
-        `;
-      } else {
-        // Someone else is holding this set - show "... is about to roll"
-        return `
-          <div class="dice-set card held ready-to-roll other-hold"
-               data-set-id="${set.id}"
-               style="--set-color: ${set.color}; --set-bg: ${bgColor}; border-color: ${borderColor}">
-            <div class="roll-ready-display">
-              <div class="roll-ready-hint waiting">${holder.username} is about to roll</div>
-            </div>
-          </div>
-        `;
-      }
+        </div>
+      `;
     }
 
     return `

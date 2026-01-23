@@ -738,11 +738,21 @@ dice-roller .grab-hint {
   margin-top: 8px;
 }
 
-dice-roller .roll-ready-display {
+dice-roller .dice-display-container {
+  position: relative;
+}
+
+dice-roller .roll-ready-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 70px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
 }
 
 dice-roller .roll-ready-hint {
