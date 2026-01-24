@@ -52,10 +52,21 @@ class DiceHistory extends HTMLElement {
   }
 
   normalizeRoll(roll) {
+    // Build a map of locked dice per set for easy lookup
+    const lockedBySet = new Map();
+    if (roll.lockedDice) {
+      for (const lock of roll.lockedDice) {
+        lockedBySet.set(lock.setId, new Set(lock.lockedIndices));
+      }
+    }
+
     // New multi-set format
     if (roll.setResults) {
       return {
-        setResults: roll.setResults,
+        setResults: roll.setResults.map(sr => ({
+          ...sr,
+          lockedIndices: lockedBySet.get(sr.setId) || new Set()
+        })),
         total: roll.total,
         rollId: roll.rollId,
         timestamp: roll.timestamp || Date.now()
@@ -69,7 +80,8 @@ class DiceHistory extends HTMLElement {
         color: '#ffffff',
         values: roll.values || [],
         holderId: roll.peerId,
-        holderUsername: roll.username
+        holderUsername: roll.username,
+        lockedIndices: lockedBySet.get('set-1') || new Set()
       }],
       total: roll.total || (roll.values || []).reduce((a, b) => a + b, 0),
       rollId: roll.rollId,
@@ -110,11 +122,13 @@ class DiceHistory extends HTMLElement {
 
       const diceHtml = roll.setResults.map(setResult => {
         const pipColor = getPipColor(setResult.color);
+        const lockedIndices = setResult.lockedIndices || new Set();
         return `
           <span class="history-dice-group" style="--group-color: ${setResult.color}">
-            ${setResult.values.map(v =>
-              `<span class="history-die" style="background: ${setResult.color}">${getDiceSvg(v, pipColor)}</span>`
-            ).join('')}
+            ${setResult.values.map((v, i) => {
+              const isLocked = lockedIndices.has(i);
+              return `<span class="history-die ${isLocked ? 'was-locked' : ''}" style="background: ${setResult.color}">${getDiceSvg(v, pipColor)}</span>`;
+            }).join('')}
           </span>
         `;
       }).join('');
@@ -131,9 +145,11 @@ class DiceHistory extends HTMLElement {
     const setEntries = roll.setResults.map(setResult => {
       const isSelf = setResult.holderId === this.selfPeerId;
       const pipColor = getPipColor(setResult.color);
-      const diceHtml = setResult.values.map(v =>
-        `<span class="history-die" style="background: ${setResult.color}">${getDiceSvg(v, pipColor)}</span>`
-      ).join('');
+      const lockedIndices = setResult.lockedIndices || new Set();
+      const diceHtml = setResult.values.map((v, i) => {
+        const isLocked = lockedIndices.has(i);
+        return `<span class="history-die ${isLocked ? 'was-locked' : ''}" style="background: ${setResult.color}">${getDiceSvg(v, pipColor)}</span>`;
+      }).join('');
 
       return `
         <div class="history-set-entry">

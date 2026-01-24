@@ -694,6 +694,12 @@ dice-roller .dice-display-container .dice-display {
   visibility: hidden;
 }
 
+/* Show locked dice faintly when all dice are held */
+dice-roller .dice-display-container .dice-display.locked-preview {
+  visibility: visible;
+  opacity: 0.25;
+}
+
 dice-roller .roll-ready-overlay {
   position: absolute;
   top: 0;
@@ -945,6 +951,11 @@ dice-history .history-die {
   padding: 2px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   display: inline-flex;
+  position: relative;
+}
+
+dice-history .history-die.was-locked {
+  box-shadow: 0 0 0 2px var(--secondary-color), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 dice-history .history-die svg {

@@ -28,6 +28,9 @@ class DiceRoller extends HTMLElement {
     this.lockedDice = new Map();      // setId -> Map<dieIndex, value>
     this.holderHasRolled = new Map(); // setId -> boolean
     this.lastRoller = new Map();      // setId -> { peerId, username }
+
+    // Stable transforms per die (regenerated only on roll)
+    this.diceTransforms = new Map();  // setId -> Map<dieIndex, transformString>
   }
 
   connectedCallback() {
@@ -47,11 +50,35 @@ class DiceRoller extends HTMLElement {
   }
 
   // Generate random rotation and position offset for a natural dice appearance
-  getRandomDiceTransform() {
+  // Transforms are cached per die and only regenerated on roll
+  getDiceTransform(setId, dieIndex) {
+    if (!this.diceTransforms.has(setId)) {
+      this.diceTransforms.set(setId, new Map());
+    }
+    const setTransforms = this.diceTransforms.get(setId);
+    if (!setTransforms.has(dieIndex)) {
+      setTransforms.set(dieIndex, this.generateRandomTransform());
+    }
+    return setTransforms.get(dieIndex);
+  }
+
+  generateRandomTransform() {
     const rotation = Math.floor(Math.random() * 31) - 15; // -15 to 15 degrees
     const offsetX = Math.floor(Math.random() * 11) - 5; // -5 to 5 px
     const offsetY = Math.floor(Math.random() * 11) - 5; // -5 to 5 px
     return `transform: rotate(${rotation}deg) translate(${offsetX}px, ${offsetY}px);`;
+  }
+
+  // Regenerate transforms for a set (called after rolling)
+  regenerateTransforms(setId) {
+    const setTransforms = new Map();
+    const set = this.diceSets.find(s => s.id === setId);
+    if (set) {
+      for (let i = 0; i < set.count; i++) {
+        setTransforms.set(i, this.generateRandomTransform());
+      }
+    }
+    this.diceTransforms.set(setId, setTransforms);
   }
 
   render() {
@@ -110,14 +137,15 @@ class DiceRoller extends HTMLElement {
               ${hasLocked ? `<span class="locked-count">${lockedCount} locked</span>` : ''}
             </div>
           ` : ''}
-          <div class="dice-display-container">
-            <div class="dice-display">
+          <div class="dice-display-container ${hasLocked ? 'has-locked-preview' : ''}">
+            <div class="dice-display locked-preview">
               ${Array(set.count).fill(0).map((_, i) => {
                 const isLocked = lockedMap.has(i);
-                const val = isLocked ? lockedMap.get(i) : (values[i] || 1);
+                if (!isLocked) return '';
+                const val = lockedMap.get(i);
                 return `<div class="die-wrapper">
-                  <div class="die-placeholder ${isLocked ? 'locked' : ''}" data-die-index="${i}">${getDiceSvg(val, pipColor)}</div>
-                  ${isLocked ? '<div class="lock-indicator">🔒</div>' : ''}
+                  <div class="die locked" style="${this.getDiceTransform(set.id, i)}">${getDiceSvg(val, pipColor)}</div>
+                  <div class="lock-indicator">🔒</div>
                 </div>`;
               }).join('')}
             </div>
@@ -138,7 +166,7 @@ class DiceRoller extends HTMLElement {
           return `<div class="die-wrapper">
             <div class="die lockable ${isLocked ? 'locked' : ''}"
                  data-die-index="${i}"
-                 style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div>
+                 style="${this.getDiceTransform(set.id, i)}">${getDiceSvg(v, pipColor)}</div>
             ${isLocked ? '<div class="lock-indicator">🔒</div>' : ''}
           </div>`;
         }).join('');
@@ -149,7 +177,7 @@ class DiceRoller extends HTMLElement {
           return `<div class="die-wrapper">
             <div class="die ${isLocked ? 'locked' : ''}"
                  data-die-index="${i}"
-                 style="${this.getRandomDiceTransform()}">${getDiceSvg(isLocked ? lockedMap.get(i) : v, pipColor)}</div>
+                 style="${this.getDiceTransform(set.id, i)}">${getDiceSvg(isLocked ? lockedMap.get(i) : v, pipColor)}</div>
             ${isLocked ? '<div class="lock-indicator">🔒</div>' : ''}
           </div>`;
         }).join('');
@@ -158,7 +186,7 @@ class DiceRoller extends HTMLElement {
         return values.map((v, i) => {
           const isLocked = lockedMap.has(i);
           return `<div class="die-wrapper">
-            <div class="die ${isLocked ? 'locked' : ''}" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div>
+            <div class="die ${isLocked ? 'locked' : ''}" style="${this.getDiceTransform(set.id, i)}">${getDiceSvg(v, pipColor)}</div>
             ${isLocked ? '<div class="lock-indicator">🔒</div>' : ''}
           </div>`;
         }).join('');
@@ -385,6 +413,9 @@ class DiceRoller extends HTMLElement {
       totalSum += values.reduce((a, b) => a + b, 0);
     });
 
+    // Regenerate transforms for fresh positions after roll
+    this.diceSets.forEach(set => this.regenerateTransforms(set.id));
+
     // Show results
     this.diceSets.forEach(set => {
       const setEl = this.querySelector(`.dice-set[data-set-id="${set.id}"]`);
@@ -396,7 +427,7 @@ class DiceRoller extends HTMLElement {
           const locked = lockedBySet.get(set.id) || new Map();
           display.innerHTML = values.map((v, i) =>
             `<div class="die-wrapper">
-              <div class="die ${locked.has(i) ? 'locked' : ''}" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div>
+              <div class="die ${locked.has(i) ? 'locked' : ''}" style="${this.getDiceTransform(set.id, i)}">${getDiceSvg(v, pipColor)}</div>
               ${locked.has(i) ? '<div class="lock-indicator">🔒</div>' : ''}
             </div>`
           ).join('');
@@ -510,6 +541,9 @@ class DiceRoller extends HTMLElement {
       }
     }
 
+    // Regenerate transforms for fresh positions
+    this.diceSets.forEach(set => this.regenerateTransforms(set.id));
+
     this.diceSets.forEach(set => {
       const values = rollResults[set.id] || [];
       if (values.length === 0) return;
@@ -528,7 +562,7 @@ class DiceRoller extends HTMLElement {
         setEl.innerHTML = `
           <div class="dice-display">
             ${values.map((v, i) => `<div class="die-wrapper">
-              <div class="die ${locked.has(i) ? 'locked' : ''}" style="${this.getRandomDiceTransform()}">${getDiceSvg(v, pipColor)}</div>
+              <div class="die ${locked.has(i) ? 'locked' : ''}" style="${this.getDiceTransform(set.id, i)}">${getDiceSvg(v, pipColor)}</div>
               ${locked.has(i) ? '<div class="lock-indicator">🔒</div>' : ''}
             </div>`).join('')}
           </div>
