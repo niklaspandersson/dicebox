@@ -1,5 +1,5 @@
 name: Build image and push to private registry
-on: 
+on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
@@ -28,8 +28,15 @@ jobs:
             --destination="$REGISTRY_URL/${{ github.repository }}:$(echo ${GITHUB_SHA} | head  -c 7)" \
             --insecure-registry="$REGISTRY_URL" \
             ${{ env.KANIKO_CACHE_ARGS }} \
-            --push-retry 5 
+            --push-retry 5
         env:
           GIT_USERNAME: ${{ github.actor }}
           GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_URL: "docker-registry.docker-registry:5000"
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/github-deploy-to-prod.yml
+    with:
+      sha: ${{ github.sha }}
