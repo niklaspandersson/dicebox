@@ -17,8 +17,7 @@ jobs:
     steps:
       - name: Patch deployment with new image
         run: |
-          SHA="${{ inputs.sha || github.sha }}"
-          SHORT_SHA="${SHA:0:7}"
+          SHORT_SHA=$(printf "%.7s" "${{ inputs.sha || github.sha }}")
           kubectl patch deployment dice-app-deployment --namespace www --patch-file=/dev/stdin <<-EOF
           { "spec": { "template": { "spec": { "containers": [ { "name": "dice-app", "image": "$REGISTRY_URL/${{ github.repository }}:${SHORT_SHA}"}]}}}}
           EOF
