@@ -162,6 +162,12 @@ class DiceBoxApp {
       const { peerId, channel } = e.detail;
       console.log(`Channel opened with ${peerId}`);
 
+      // Reset self status to connected when we establish a peer connection
+      // This handles the case where self was set to 'connecting' during session restoration
+      if (this.peerList) {
+        this.peerList.setSelfStatus('connected');
+      }
+
       this.roomManager.markPeerConnected(peerId);
 
       // Send HELLO to introduce ourselves
