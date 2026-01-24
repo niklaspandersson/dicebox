@@ -249,32 +249,22 @@ export class WebRTCManager extends EventTarget {
   }
 
   async createPeerConnection(peerId, initiator = false) {
-    console.log(`createPeerConnection for ${peerId}, initiator: ${initiator}`);
-
     // Close existing connection if any
     if (this.peerConnections.has(peerId)) {
-      console.log(`createPeerConnection: closing existing connection to ${peerId}`);
       this.closePeerConnection(peerId);
     }
 
     // Initialize pending candidates buffer for this peer (preserve existing if any)
     // This is critical: ICE candidates may arrive before the offer/answer,
     // so we must not clear already-buffered candidates
-    const existingPending = this.pendingCandidates.get(peerId);
-    console.log(`createPeerConnection: existing pending candidates for ${peerId}: ${existingPending ? existingPending.length : 0}`);
     if (!this.pendingCandidates.has(peerId)) {
       this.pendingCandidates.set(peerId, []);
     }
 
     // Get current ICE servers (STUN + TURN if configured)
     const iceServers = this.getIceServers();
-    console.log(`Creating RTCPeerConnection with ${iceServers.length} ICE servers:`, JSON.stringify(iceServers.slice(0, 2)));
 
-    const pc = new RTCPeerConnection({
-      iceServers,
-      // Explicitly allow all candidate types
-      iceCandidatePoolSize: 0
-    });
+    const pc = new RTCPeerConnection({ iceServers });
 
     this.peerConnections.set(peerId, pc);
 
@@ -283,10 +273,7 @@ export class WebRTCManager extends EventTarget {
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        console.log(`Sending ICE candidate to ${peerId}: ${e.candidate.candidate.substring(0, 50)}...`);
         signalingClient.sendIceCandidate(peerId, e.candidate);
-      } else {
-        console.log(`ICE candidate gathering complete for ${peerId} (null candidate)`);
       }
     };
 
@@ -344,11 +331,8 @@ export class WebRTCManager extends EventTarget {
       this.setupDataChannel(peerId, channel);
 
       try {
-        console.log(`Creating offer for ${peerId}...`);
         const offer = await pc.createOffer();
-        console.log(`Setting local description for ${peerId}...`);
         await pc.setLocalDescription(offer);
-        console.log(`Sending offer to ${peerId}...`);
         signalingClient.sendOffer(peerId, offer);
       } catch (error) {
         console.error(`Failed to create/send offer to ${peerId}:`, error);
@@ -430,53 +414,37 @@ export class WebRTCManager extends EventTarget {
   }
 
   async handleOffer(peerId, offer) {
-    console.log(`handleOffer from ${peerId}: creating peer connection...`);
-    console.log(`handleOffer: offer type=${offer.type}, sdp length=${offer.sdp?.length || 0}`);
     const pc = await this.createPeerConnection(peerId, false);
 
-    console.log(`handleOffer from ${peerId}: setting remote description...`);
     // Pass offer directly - modern browsers don't need RTCSessionDescription wrapper
     await pc.setRemoteDescription(offer);
 
     // Apply any buffered ICE candidates now that remote description is set
-    console.log(`handleOffer from ${peerId}: applying pending candidates...`);
     await this.applyPendingCandidates(peerId);
 
-    console.log(`handleOffer from ${peerId}: creating answer...`);
     const answer = await pc.createAnswer();
-    console.log(`handleOffer from ${peerId}: setting local description...`);
     await pc.setLocalDescription(answer);
-    console.log(`handleOffer from ${peerId}: sending answer...`);
     signalingClient.sendAnswer(peerId, answer);
   }
 
   async handleAnswer(peerId, answer) {
-    console.log(`handleAnswer from ${peerId}: setting remote description...`);
-    console.log(`handleAnswer: answer type=${answer.type}, sdp length=${answer.sdp?.length || 0}`);
     const pc = this.peerConnections.get(peerId);
     if (pc) {
       // Pass answer directly - modern browsers don't need RTCSessionDescription wrapper
       await pc.setRemoteDescription(answer);
 
       // Apply any buffered ICE candidates now that remote description is set
-      console.log(`handleAnswer from ${peerId}: applying pending candidates...`);
       await this.applyPendingCandidates(peerId);
-    } else {
-      console.warn(`handleAnswer from ${peerId}: no peer connection found!`);
     }
   }
 
   async handleIceCandidate(peerId, candidate) {
     if (!candidate) return;
 
-    const candidateStr = candidate.candidate ? candidate.candidate.substring(0, 50) : 'null';
-    console.log(`Received ICE candidate from ${peerId}: ${candidateStr}...`);
-
     const pc = this.peerConnections.get(peerId);
 
     // If connection doesn't exist yet, or remote description isn't set, buffer the candidate
     if (!pc || !pc.remoteDescription || !pc.remoteDescription.type) {
-      console.log(`Buffering ICE candidate for ${peerId} (pc: ${!!pc}, remoteDesc: ${pc?.remoteDescription?.type || 'none'})`);
       let pending = this.pendingCandidates.get(peerId);
       if (!pending) {
         pending = [];
@@ -487,7 +455,6 @@ export class WebRTCManager extends EventTarget {
     }
 
     try {
-      console.log(`Adding ICE candidate for ${peerId} directly:`, JSON.stringify(candidate));
       // Pass candidate directly - modern browsers handle plain objects
       await pc.addIceCandidate(candidate);
     } catch (e) {
@@ -497,20 +464,13 @@ export class WebRTCManager extends EventTarget {
 
   async applyPendingCandidates(peerId) {
     const pending = this.pendingCandidates.get(peerId);
-    console.log(`applyPendingCandidates for ${peerId}: ${pending ? pending.length : 0} candidates buffered`);
     if (!pending || pending.length === 0) return;
 
     const pc = this.peerConnections.get(peerId);
-    if (!pc) {
-      console.warn(`applyPendingCandidates: no peer connection for ${peerId}`);
-      return;
-    }
-
-    console.log(`Applying ${pending.length} buffered ICE candidates for ${peerId}`);
+    if (!pc) return;
 
     for (const candidate of pending) {
       try {
-        console.log(`Applying buffered candidate for ${peerId}:`, JSON.stringify(candidate));
         // Pass candidate directly - modern browsers handle plain objects
         await pc.addIceCandidate(candidate);
       } catch (e) {
@@ -554,12 +514,6 @@ export class WebRTCManager extends EventTarget {
         console.error(`Failed to send to peer ${peerId}:`, error);
         return false;
       }
-    }
-    // Log when message cannot be sent for debugging
-    if (!channel) {
-      console.warn(`Cannot send to peer ${peerId}: no channel found`);
-    } else {
-      console.warn(`Cannot send to peer ${peerId}: channel state is ${channel.readyState}`);
     }
     return false;
   }

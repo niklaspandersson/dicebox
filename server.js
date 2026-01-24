@@ -537,24 +537,14 @@ wss.on('connection', (ws, req) => {
         const { targetPeerId } = message;
 
         if (!isValidPeerId(targetPeerId)) {
-          console.log(`[signaling] ${message.type} from ${peerId.substring(0, 8)}...: invalid target peer ID`);
           sendError(ws, 'invalid-peer', 'Invalid target peer ID');
           return;
         }
 
         // Verify target peer exists
         if (!await storage.hasPeer(targetPeerId)) {
-          console.log(`[signaling] ${message.type} from ${peerId.substring(0, 8)}... to ${targetPeerId.substring(0, 8)}...: target not found`);
           sendError(ws, 'peer-not-found', 'Target peer not found');
           return;
-        }
-
-        // Check if target has WebSocket connection
-        const targetWs = wsConnections.get(targetPeerId);
-        if (!targetWs) {
-          console.log(`[signaling] ${message.type} from ${peerId.substring(0, 8)}... to ${targetPeerId.substring(0, 8)}...: target has no WebSocket`);
-        } else {
-          console.log(`[signaling] ${message.type} from ${peerId.substring(0, 8)}... to ${targetPeerId.substring(0, 8)}...: relaying`);
         }
 
         sendToPeer(targetPeerId, {
