@@ -698,6 +698,58 @@ setInterval(async () => {
   }
 }, 60000);
 
+// Graceful shutdown handling
+let isShuttingDown = false;
+
+async function shutdown(signal) {
+  if (isShuttingDown) {
+    logger.warn('Shutdown already in progress');
+    return;
+  }
+
+  isShuttingDown = true;
+  logger.info({ signal }, 'Shutdown signal received, closing gracefully');
+
+  // Stop accepting new WebSocket connections
+  wss.close(() => {
+    logger.info('WebSocket server closed');
+  });
+
+  // Close all existing WebSocket connections
+  const closePromises = [];
+  for (const [peerId, ws] of wsConnections) {
+    closePromises.push(new Promise((resolve) => {
+      ws.close(1001, 'Server shutting down');
+      ws.once('close', resolve);
+      // Force close after timeout
+      setTimeout(resolve, 1000);
+    }));
+  }
+
+  await Promise.all(closePromises);
+  logger.info({ count: wsConnections.size }, 'WebSocket connections closed');
+
+  // Close HTTP server
+  server.close(() => {
+    logger.info('HTTP server closed');
+  });
+
+  // Disconnect from storage (Redis)
+  try {
+    await storage.disconnect();
+    logger.info('Storage disconnected');
+  } catch (err) {
+    logger.error({ error: err.message }, 'Error disconnecting storage');
+  }
+
+  logger.info('Graceful shutdown complete');
+  process.exit(0);
+}
+
+// Register signal handlers
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 // Start server
 async function start() {
   storage = createStorage();
