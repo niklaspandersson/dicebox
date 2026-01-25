@@ -13,7 +13,21 @@ env:
   KANIKO_CACHE_ARGS: "--cache=true --cache-copy-layers=true --cache-ttl=24h"
 
 jobs:
+  security-audit:
+    runs-on: home-arc-runners
+    container:
+      image: node:24-slim
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit
+        run: |
+          npm ci --ignore-scripts
+          npm audit --audit-level=high
+
   build:
+    needs: security-audit
     runs-on: home-arc-runners
     container:
       image: gcr.io/kaniko-project/executor:v1.23.2-debug # the kaniko image
