@@ -14,6 +14,7 @@ const { logger } = require('./logger.js');
 // Configuration
 const REDIS_HOST = process.env.REDIS_HOST;
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 const SESSION_EXPIRY_SECONDS = 5 * 60; // 5 minutes
 
 // Redis key prefixes
@@ -165,8 +166,15 @@ class RedisStorage {
   }
 
   async connect() {
-    const url = `redis://${REDIS_HOST}:${REDIS_PORT}`;
-    logger.info({ host: REDIS_HOST, port: REDIS_PORT }, 'Connecting to Redis');
+    // Build Redis URL with optional authentication
+    const authPart = REDIS_PASSWORD ? `:${REDIS_PASSWORD}@` : '';
+    const url = `redis://${authPart}${REDIS_HOST}:${REDIS_PORT}`;
+
+    logger.info({
+      host: REDIS_HOST,
+      port: REDIS_PORT,
+      authenticated: !!REDIS_PASSWORD
+    }, 'Connecting to Redis');
 
     this.client = createClient({ url });
 
