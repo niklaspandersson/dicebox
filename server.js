@@ -122,9 +122,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Static file serving
+  // Static file serving (from 'dist' in production, 'public' in development)
+  const staticDir = process.env.STATIC_DIR || 'dist';
   let filePath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
-  filePath = path.join(__dirname, 'public', filePath);
+  filePath = path.join(__dirname, staticDir, filePath);
 
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
