@@ -7,11 +7,6 @@ on:
         required: true
         type: string
   workflow_dispatch:
-    inputs:
-      sha:
-        description: 'Commit SHA to deploy (7 characters)'
-        required: true
-        type: string
 
 jobs:
   deploy:
