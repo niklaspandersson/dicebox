@@ -23,4 +23,4 @@ jobs:
           { "spec": { "template": { "spec": { "containers": [ { "name": "dice-app", "image": "$REGISTRY_URL/${{ github.repository }}:${SHORT_SHA}"}]}}}}
           EOF
         env:
-          REGISTRY_URL: "registry.home:30500"
+          REGISTRY_URL: "docker-registry.docker-registry:5000"
