@@ -8,12 +8,6 @@ const { logger, truncatePeerId } = require('./logger.js');
 
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration - comma-separated list of allowed origins
-// Use '*' only for development, specify exact origins in production
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['*'];
-
 // TURN server configuration via environment variables
 const TURN_CONFIG = {
   urls: process.env.TURN_URL ? process.env.TURN_URL.split(',').map(u => u.trim()) : null,
@@ -92,55 +86,8 @@ function generateTurnCredentials() {
   return null;
 }
 
-/**
- * Check if an origin is allowed by CORS policy
- */
-function isOriginAllowed(origin) {
-  if (ALLOWED_ORIGINS.includes('*')) {
-    return true;
-  }
-  return origin && ALLOWED_ORIGINS.includes(origin);
-}
-
-/**
- * Set CORS headers based on request origin
- */
-function setCorsHeaders(req, res) {
-  const origin = req.headers.origin;
-
-  if (ALLOWED_ORIGINS.includes('*')) {
-    // Development mode - allow all origins
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  } else if (origin && isOriginAllowed(origin)) {
-    // Production mode - only allow specified origins
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  // If origin is not allowed, don't set Access-Control-Allow-Origin header
-
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
-
 // Simple static file server with API endpoints
 const server = http.createServer(async (req, res) => {
-  // CORS headers for API endpoints
-  setCorsHeaders(req, res);
-
-  // Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
-    // Only respond to preflight if origin is allowed
-    const origin = req.headers.origin;
-    if (!isOriginAllowed(origin)) {
-      res.writeHead(403);
-      res.end('Origin not allowed');
-      return;
-    }
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
   // API: Get TURN credentials
   if (req.url === '/api/turn-credentials' && req.method === 'GET') {
     const credentials = generateTurnCredentials();

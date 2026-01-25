@@ -15,12 +15,6 @@ All game state is managed peer-to-peer via WebRTC data channels. The server only
 
 See `.env.example` for all available configuration options.
 
-### Required for Production
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `ALLOWED_ORIGINS` | Comma-separated allowed CORS origins | `https://dice.example.com` |
-
 ### Recommended for Production
 
 | Variable | Description | Example |
@@ -42,7 +36,6 @@ docker build -t dicebox .
 docker run -d \
   --name dicebox \
   -p 3000:3000 \
-  -e ALLOWED_ORIGINS=https://dice.example.com \
   -e LOG_LEVEL=info \
   dicebox
 ```
@@ -57,7 +50,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - ALLOWED_ORIGINS=https://dice.example.com
       - REDIS_HOST=redis
       - LOG_LEVEL=info
     depends_on:
@@ -190,7 +182,6 @@ Recommended log aggregation: ELK Stack, Grafana Loki, or CloudWatch Logs.
 
 ## Security Checklist
 
-- [ ] Set `ALLOWED_ORIGINS` to specific domains (not `*`)
 - [ ] Use HTTPS/WSS in production (via reverse proxy)
 - [ ] Configure TURN server with authentication
 - [ ] Enable Redis authentication if using Redis
