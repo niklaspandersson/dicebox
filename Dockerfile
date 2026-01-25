@@ -1,3 +1,21 @@
+# Stage 1: Build frontend assets
+FROM node:24.0.2-slim AS builder
+
+WORKDIR /app
+
+# Copy package files and install ALL dependencies (including devDependencies for build)
+COPY package*.json ./
+RUN npm ci
+
+# Copy source files needed for build
+COPY public/ ./public/
+COPY vite.config.js ./
+
+# Build frontend assets with Vite
+# Set VITE_BASE=/ since app is served at root
+RUN VITE_BASE=/ npm run build
+
+# Stage 2: Production image
 FROM node:24.0.2-slim
 
 # Create non-root user for security
@@ -6,15 +24,17 @@ RUN groupadd --gid 1001 nodejs \
 
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files and install production dependencies only
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy application files
+# Copy server files
 COPY server.js ./
 COPY state-storage.js ./
 COPY logger.js ./
-COPY public/ ./public/
+
+# Copy built frontend assets from builder stage
+COPY --from=builder /app/dist ./dist/
 
 # Change ownership to non-root user
 RUN chown -R nodejs:nodejs /app
