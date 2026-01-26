@@ -58,7 +58,8 @@ class DiceHistory extends HTMLElement {
         setResults: roll.setResults,
         total: roll.total,
         rollId: roll.rollId,
-        timestamp: roll.timestamp || Date.now()
+        timestamp: roll.timestamp || Date.now(),
+        lockedDice: roll.lockedDice || []
       };
     }
 
@@ -73,7 +74,8 @@ class DiceHistory extends HTMLElement {
       }],
       total: roll.total || (roll.values || []).reduce((a, b) => a + b, 0),
       rollId: roll.rollId,
-      timestamp: roll.timestamp || Date.now()
+      timestamp: roll.timestamp || Date.now(),
+      lockedDice: roll.lockedDice || []
     };
   }
 
@@ -89,6 +91,29 @@ class DiceHistory extends HTMLElement {
   }
 
   renderRollEntry(roll) {
+    // Build a map of locked dice for quick lookup: setId -> Set of locked indices
+    const lockedMap = new Map();
+    if (roll.lockedDice) {
+      for (const lock of roll.lockedDice) {
+        lockedMap.set(lock.setId, new Set(lock.lockedIndices));
+      }
+    }
+
+    // Helper to check if a die is locked
+    const isDieLocked = (setId, dieIndex) => {
+      const lockedIndices = lockedMap.get(setId);
+      return lockedIndices && lockedIndices.has(dieIndex);
+    };
+
+    // Helper to render a single die with optional lock indicator
+    const renderDie = (setId, value, dieIndex, color, pipColor) => {
+      const isLocked = isDieLocked(setId, dieIndex);
+      return `<span class="history-die-wrapper">
+        <span class="history-die ${isLocked ? 'locked' : ''}" style="background: ${color}">${getDiceSvg(value, pipColor)}</span>
+        ${isLocked ? '<span class="history-lock-indicator">🔒</span>' : ''}
+      </span>`;
+    };
+
     // Group set results by holder for cleaner display
     const holderGroups = new Map();
 
@@ -112,8 +137,8 @@ class DiceHistory extends HTMLElement {
         const pipColor = getPipColor(setResult.color);
         return `
           <span class="history-dice-group" style="--group-color: ${setResult.color}">
-            ${setResult.values.map(v =>
-              `<span class="history-die" style="background: ${setResult.color}">${getDiceSvg(v, pipColor)}</span>`
+            ${setResult.values.map((v, i) =>
+              renderDie(setResult.setId, v, i, setResult.color, pipColor)
             ).join('')}
           </span>
         `;
@@ -131,8 +156,8 @@ class DiceHistory extends HTMLElement {
     const setEntries = roll.setResults.map(setResult => {
       const isSelf = setResult.holderId === this.selfPeerId;
       const pipColor = getPipColor(setResult.color);
-      const diceHtml = setResult.values.map(v =>
-        `<span class="history-die" style="background: ${setResult.color}">${getDiceSvg(v, pipColor)}</span>`
+      const diceHtml = setResult.values.map((v, i) =>
+        renderDie(setResult.setId, v, i, setResult.color, pipColor)
       ).join('');
 
       return `
