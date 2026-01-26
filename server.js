@@ -125,8 +125,16 @@ const server = http.createServer(async (req, res) => {
 
   // Static file serving (from 'dist' in production, 'public' in development)
   const staticDir = process.env.STATIC_DIR || 'dist';
-  let filePath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
-  filePath = path.join(__dirname, staticDir, filePath);
+  const baseDir = path.resolve(__dirname, staticDir);
+  const requestedPath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
+
+  // Resolve the full path and ensure it's within the static directory (prevent path traversal)
+  const filePath = path.resolve(baseDir, '.' + requestedPath);
+  if (!filePath.startsWith(baseDir + path.sep) && filePath !== baseDir) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
 
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
@@ -678,6 +686,7 @@ async function shutdown(signal) {
   });
 
   // Close all existing WebSocket connections
+  const connectionCount = wsConnections.size;
   const closePromises = [];
   for (const ws of wsConnections.values()) {
     closePromises.push(new Promise((resolve) => {
@@ -689,7 +698,7 @@ async function shutdown(signal) {
   }
 
   await Promise.all(closePromises);
-  logger.info({ count: wsConnections.size }, 'WebSocket connections closed');
+  logger.info({ count: connectionCount }, 'WebSocket connections closed');
 
   // Close HTTP server and wait for completion
   await new Promise((resolve) => {
@@ -699,12 +708,14 @@ async function shutdown(signal) {
     });
   });
 
-  // Disconnect from storage (Redis)
-  try {
-    await storage.disconnect();
-    logger.info('Storage disconnected');
-  } catch (err) {
-    logger.error({ error: err.message }, 'Error disconnecting storage');
+  // Disconnect from storage (Redis) if initialized
+  if (storage) {
+    try {
+      await storage.disconnect();
+      logger.info('Storage disconnected');
+    } catch (err) {
+      logger.error({ error: err.message }, 'Error disconnecting storage');
+    }
   }
 
   logger.info('Graceful shutdown complete');
