@@ -350,8 +350,8 @@ class DiceBoxApp {
   handleDiceGrabMsg(peerId, { setId, username, restoredLock }) {
     const meshState = this.roomManager.getMeshState();
 
-    // Clear last roller when someone grabs (they're taking over)
-    meshState.clearLastRoller(setId);
+    // Note: Don't clear lastRoller here - it should persist until someone actually rolls.
+    // This allows the lastRoller to retain locking ability if they grab and drop without rolling.
 
     // Clear existing locks when someone grabs
     meshState.clearLocksForSet(setId);
@@ -476,8 +476,8 @@ class DiceBoxApp {
 
     // Grab locally
     if (meshState.tryGrab(setId, myId, this.roomManager.username)) {
-      // Clear last roller (we're taking over as holder now)
-      meshState.clearLastRoller(setId);
+      // Note: Don't clear lastRoller here - it should persist until someone actually rolls.
+      // This allows the lastRoller to retain locking ability if they grab and drop without rolling.
 
       // Determine what lock state to use
       let lockToRestore = null;
