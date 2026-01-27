@@ -146,11 +146,6 @@ class DiceBoxApp {
       this.handleRollRequested(e.detail);
     });
 
-    // roll-completed: roll finished, update history (called after values received)
-    document.addEventListener('roll-completed', (e) => {
-      this.handleRollCompleted(e.detail);
-    });
-
     document.addEventListener('dice-grabbed', (e) => {
       this.handleLocalDiceGrab(e);
     });
@@ -610,7 +605,7 @@ class DiceBoxApp {
 
     try {
       // Request roll from a peer (or self if solo)
-      const { rollResults, roll } = await this.rollManager.requestRoll({
+      const { rollResults } = await this.rollManager.requestRoll({
         diceSets,
         lockedDice,
         holders: holdersMap
@@ -627,15 +622,6 @@ class DiceBoxApp {
         this.diceRoller.cancelRoll();
       }
     }
-  }
-
-  /**
-   * Handle roll completed event - update history and state
-   * Called after dice-roller finishes showing the roll
-   */
-  handleRollCompleted({ rollResults, total, holders, lockedDice }) {
-    // History is updated when we receive the DICE_ROLL message
-    // This event is just for any additional UI updates needed
   }
 
   /**

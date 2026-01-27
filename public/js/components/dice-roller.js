@@ -447,24 +447,6 @@ class DiceRoller extends HTMLElement {
     for (const set of this.diceSets) {
       this.holderHasRolled.set(set.id, true);
     }
-
-    // Calculate total
-    let totalSum = 0;
-    for (const setId in rollResults) {
-      totalSum += rollResults[setId].reduce((a, b) => a + b, 0);
-    }
-
-    // Emit roll-completed event for history tracking
-    this.dispatchEvent(new CustomEvent('roll-completed', {
-      bubbles: true,
-      detail: {
-        diceType: 6,
-        rollResults,
-        total: totalSum,
-        holders: Array.from(this.holders.entries()),
-        lockedDice: lockedDiceInfo || []
-      }
-    }));
   }
 
   /**

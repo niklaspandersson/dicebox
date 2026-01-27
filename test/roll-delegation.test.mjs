@@ -3,7 +3,7 @@
  * Tests the anti-cheat peer selection and dice value generation
  */
 
-import { describe, it, before, mock } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 // Since the modules use browser ES module syntax, we'll inline the functions for testing
@@ -198,7 +198,7 @@ describe('selectRollGenerator', () => {
 
     // Run many rolls and count selections
     for (let i = 0; i < 1000; i++) {
-      const rollId = `roll-${i}-${Date.now()}-${Math.random()}`;
+      const rollId = `roll-${i}-fixed-seed`;
       const result = selectRollGenerator(peers, requester, rollId);
 
       const count = selectionCounts.get(result.generatorId) || 0;

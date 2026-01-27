@@ -14,9 +14,8 @@ import {
 } from './utils/roll-delegation.js';
 import { MSG } from './message-router.js';
 
-export class RollManager extends EventTarget {
+export class RollManager {
   constructor() {
-    super();
     this.messageRouter = null;
     this.meshState = null;
     this.myPeerId = null;
@@ -75,7 +74,7 @@ export class RollManager extends EventTarget {
    * @returns {Promise<Object>} - Resolves with roll results
    */
   async requestRoll({ diceSets, lockedDice, holders }) {
-    const rollId = `${this.myPeerId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const rollId = `${this.myPeerId}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const allPeerIds = this.getAllPeerIds();
 
     // Determine who should generate this roll
@@ -143,7 +142,10 @@ export class RollManager extends EventTarget {
   }
 
   /**
-   * Send a roll request to the designated peer
+   * Send a roll request to all peers.
+   * We broadcast (rather than sending to the designated peer only) because all peers
+   * independently compute who the designated generator is. Broadcasting ensures the
+   * request reaches the correct peer even if peer lists are briefly out of sync.
    */
   sendRollRequest(rollId, generatorId, diceSets, lockedDice) {
     this.messageRouter.broadcast({
@@ -298,7 +300,7 @@ export class RollManager extends EventTarget {
    * Handle incoming dice roll (either our requested roll or another player's roll)
    */
   handleDiceRoll(fromPeerId, roll) {
-    const { rollId, generatedBy } = roll;
+    const { rollId } = roll;
 
     // Validate roll values
     const rollResults = {};
@@ -370,7 +372,7 @@ export class RollManager extends EventTarget {
    */
   cleanup() {
     // Cancel all pending requests
-    for (const [rollId, request] of this.pendingRequests) {
+    for (const request of this.pendingRequests.values()) {
       if (request.timeoutId) {
         clearTimeout(request.timeoutId);
       }
