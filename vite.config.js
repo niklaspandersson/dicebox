@@ -8,9 +8,13 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     rollupOptions: {
-      // Only play/index.html needs JS bundling
       input: {
+        main: resolve(__dirname, 'public/index.html'),
         play: resolve(__dirname, 'public/play/index.html'),
+        about: resolve(__dirname, 'public/about.html'),
+        help: resolve(__dirname, 'public/help.html'),
+        privacy: resolve(__dirname, 'public/privacy.html'),
+        terms: resolve(__dirname, 'public/terms.html'),
       },
       output: {
         // Content-hashed filenames for cache-busting (supports "cache forever" strategy)
