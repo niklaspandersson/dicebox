@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help - Call to Roll</title>
+  <meta name="description" content="Learn how to use Call to Roll to roll dice with friends online.">
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Oswald:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/landing.css">
+</head>
+<body>
+  <div class="static-page">
+    <a href="./" class="back-link">&larr; Back to Call to Roll</a>
+
+    <header class="static-page-header">
+      <h1>Help Center</h1>
+      <p class="subtitle">Everything you need to know about using Call to Roll</p>
+    </header>
+
+    <div class="static-content">
+      <h2>Getting Started</h2>
+
+      <h3>Creating a Room</h3>
+      <ol>
+        <li>Enter your name in the text field</li>
+        <li>Click "Create Room"</li>
+        <li>Configure your dice sets:
+          <ul>
+            <li>Choose the number of dice (1-10 per set)</li>
+            <li>Select colors for each set</li>
+            <li>Add up to 4 different sets</li>
+            <li>Enable "Allow dice locking" if desired</li>
+          </ul>
+        </li>
+        <li>Click "Start Room"</li>
+        <li>Share the 4-digit room code with your friends</li>
+      </ol>
+
+      <h3>Joining a Room</h3>
+      <ol>
+        <li>Enter your name in the text field</li>
+        <li>Click "Join Room"</li>
+        <li>Click the dice to set the room code (each die cycles 1-6)</li>
+        <li>Click "Enter Room" when the code matches</li>
+      </ol>
+
+      <h2>Rolling Dice</h2>
+      <p>
+        Once in a room, you'll see the dice sets configured by the room creator. To roll:
+      </p>
+      <ol>
+        <li>Click on a dice set to "grab" it (your name appears above)</li>
+        <li>Click the dice set again to roll</li>
+        <li>Everyone in the room sees your roll in real-time</li>
+        <li>Click another set or area to "drop" the dice</li>
+      </ol>
+
+      <div class="highlight-box">
+        <p>Only one player can hold a dice set at a time. If someone else has grabbed the dice, wait for them to roll or drop them.</p>
+      </div>
+
+      <h2>Dice Locking</h2>
+      <p>
+        If the room has dice locking enabled, you can set aside specific dice between rolls
+        (useful for games like Yahtzee):
+      </p>
+      <ol>
+        <li>After rolling, click on individual dice to lock them</li>
+        <li>Locked dice show a green border and lock icon</li>
+        <li>When you roll again, locked dice keep their values</li>
+        <li>Click a locked die to unlock it</li>
+      </ol>
+
+      <h2>Room Codes</h2>
+      <p>
+        Room codes are 4-digit numbers where each digit is 1-6 (like dice faces).
+        This gives 1,296 possible combinations. Room codes are displayed as interactive dice
+        that you click to cycle through values.
+      </p>
+
+      <h2>Frequently Asked Questions</h2>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            How many players can join a room?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>DiceBox uses peer-to-peer connections, so the practical limit depends on your network.
+            Typically, 6-10 players work well. For larger groups, some players may experience
+            connection issues.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            Why can't I connect to a room?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Connection issues are usually caused by:
+            <br>- Firewall or network restrictions blocking WebRTC
+            <br>- VPN software interfering with connections
+            <br>- The room code being incorrect
+            <br>Try disabling VPN, checking your firewall settings, or verifying the room code.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            Do I need to create an account?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>No! DiceBox requires no account, email, or registration. Just enter a display name
+            and start playing. Your name is saved locally in your browser for convenience.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            Is DiceBox free to use?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Yes, completely free. DiceBox is open source and has no premium features,
+            subscriptions, or ads.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            Can I use DiceBox on my phone?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Yes! DiceBox works on any modern browser, including mobile browsers on iOS and Android.
+            No app download required.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            What dice types are available?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>DiceBox supports the standard RPG dice set: d4 (4-sided), d6 (6-sided),
+            d8 (8-sided), d10 (10-sided), d12 (12-sided), d20 (20-sided), and d100 (percentile).</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            How long do rooms last?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Rooms exist as long as at least one player is connected. Once everyone leaves,
+            the room is automatically cleaned up. The same room code can be reused later.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            Are my rolls truly random?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Yes. DiceBox uses your browser's cryptographically secure random number generator
+            (crypto.getRandomValues). This is the same technology used for security applications
+            and provides high-quality randomness.</p>
+          </div>
+        </div>
+      </div>
+
+      <h2>Browser Support</h2>
+      <p>DiceBox works best on modern browsers:</p>
+      <ul>
+        <li>Chrome / Edge (recommended)</li>
+        <li>Firefox</li>
+        <li>Safari (iOS 15+ / macOS 12+)</li>
+        <li>Opera</li>
+      </ul>
+      <p>Internet Explorer is not supported.</p>
+
+      <h2>Still Need Help?</h2>
+      <p>
+        If you're experiencing issues not covered here, try refreshing the page or using a different
+        browser. For persistent problems, you can report issues through our project channels.
+      </p>
+    </div>
+
+    <footer class="site-footer">
+      <p>
+        Call to Roll &copy; 2025<br>
+        <a href="./">Home</a> · <a href="./about.html">About</a> · <a href="./privacy.html">Privacy</a> · <a href="./terms.html">Terms</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
