@@ -1569,17 +1569,20 @@ dice-roller .locked-count {
 }
 
 .static-page-header h1 {
+  font-family: 'Alfa Slab One', cursive;
   font-size: 2.5rem;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--red);
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 var(--red-dark);
 }
 
 .static-page-header .subtitle {
-  color: var(--text-muted);
-  font-size: 1.1rem;
+  font-family: 'Oswald', sans-serif;
+  color: var(--navy);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .back-link {
@@ -1599,15 +1602,19 @@ dice-roller .locked-count {
 
 .static-content {
   background: var(--surface);
+  border: 3px solid var(--navy);
   border-radius: var(--border-radius);
   padding: 32px;
+  box-shadow: 4px 4px 0 var(--navy);
 }
 
 .static-content h2 {
-  font-size: 1.4rem;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  text-transform: uppercase;
   margin-top: 32px;
   margin-bottom: 16px;
-  color: var(--text);
+  color: var(--navy);
 }
 
 .static-content h2:first-child {
@@ -1615,10 +1622,12 @@ dice-roller .locked-count {
 }
 
 .static-content h3 {
-  font-size: 1.1rem;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  text-transform: uppercase;
   margin-top: 24px;
   margin-bottom: 12px;
-  color: var(--text);
+  color: var(--navy);
 }
 
 .static-content p {
@@ -1649,16 +1658,17 @@ dice-roller .locked-count {
 }
 
 .static-content .highlight-box {
-  background: var(--surface-light);
-  border-left: 4px solid var(--primary-color);
+  background: var(--gold);
+  border: 3px solid var(--brown);
   padding: 16px 20px;
   margin: 24px 0;
-  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  border-radius: 0;
 }
 
 .static-content .highlight-box p {
   margin-bottom: 0;
-  color: var(--text);
+  color: var(--navy);
+  font-weight: 500;
 }
 
 .static-content .last-updated {

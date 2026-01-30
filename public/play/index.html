@@ -16,40 +16,9 @@
       flex-direction: column;
     }
 
-    .play-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 20px;
-      background: var(--navy);
-      border-bottom: 3px solid var(--gold);
-    }
-
-    .play-nav-logo {
-      font-family: 'Alfa Slab One', cursive;
-      font-size: 1.1rem;
-      color: var(--gold);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .play-nav-logo-die {
-      width: 24px;
-      height: 24px;
-      background: var(--gold);
-      border-radius: 4px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      padding: 4px;
-      gap: 1px;
-    }
-
-    .play-nav-logo-die .dot {
-      background: var(--navy);
-      border-radius: 50%;
+    /* Use standard nav from landing.css, just override sticky for play page */
+    .play-container > nav {
+      position: relative;
     }
 
     .play-main {
@@ -185,7 +154,7 @@
     }
 
     /* Hide nav when in room */
-    #app.in-room .play-nav {
+    #app.in-room > nav {
       display: none;
     }
 
@@ -209,15 +178,16 @@
 <body>
   <div id="app" class="play-container">
     <!-- Navigation -->
-    <nav class="play-nav">
-      <a href="../" class="play-nav-logo">
-        <span class="play-nav-logo-die">
+    <nav>
+      <a href="../" class="nav-logo">
+        <span class="nav-logo-die">
           <span></span><span></span><span></span>
           <span></span><span class="dot"></span><span></span>
           <span></span><span></span><span></span>
         </span>
         Call to Roll
       </a>
+      <a href="../" class="nav-cta">Home</a>
     </nav>
 
     <!-- Header bar (shown when in room) -->
