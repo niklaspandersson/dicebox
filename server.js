@@ -1,12 +1,13 @@
 const http = require('http');
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const express = require('express');
 const WebSocket = require('ws');
 const { createStorage, SESSION_EXPIRY_SECONDS } = require('./state-storage.js');
 const { logger, truncatePeerId } = require('./logger.js');
 
 const PORT = process.env.PORT || 3000;
+const app = express();
 
 // TURN server configuration via environment variables
 const TURN_CONFIG = {
@@ -15,16 +16,6 @@ const TURN_CONFIG = {
   username: process.env.TURN_USERNAME || null,
   credential: process.env.TURN_CREDENTIAL || null,
   ttl: parseInt(process.env.TURN_TTL, 10) || 86400,
-};
-
-// MIME types for static file serving
-const MIME_TYPES = {
-  '.html': 'text/html',
-  '.js': 'application/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.svg': 'image/svg+xml',
 };
 
 // Rate limiting configuration
@@ -87,68 +78,60 @@ function generateTurnCredentials() {
   return null;
 }
 
-// Simple static file server with API endpoints
-const server = http.createServer(async (req, res) => {
-  // API: Get TURN credentials
-  if (req.url === '/api/turn-credentials' && req.method === 'GET') {
-    const credentials = generateTurnCredentials();
+// API: Get TURN credentials
+app.get('/api/turn-credentials', (req, res) => {
+  const credentials = generateTurnCredentials();
 
-    if (!credentials) {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'TURN not configured' }));
-      return;
-    }
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(credentials));
-    return;
+  if (!credentials) {
+    return res.status(404).json({ error: 'TURN not configured' });
   }
 
-  // API: Health check
-  if (req.url === '/api/health' && req.method === 'GET') {
-    try {
-      const roomCount = await storage.getRoomCount();
-      const peerCount = await storage.getPeerCount();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        status: 'ok',
-        rooms: roomCount,
-        peers: peerCount,
-        turnConfigured: !!TURN_CONFIG.urls
-      }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'error', error: err.message }));
-    }
-    return;
-  }
-
-  // Static file serving (from 'dist' in production, 'public' in development)
-  const staticDir = process.env.STATIC_DIR || 'dist';
-  const baseDir = path.resolve(__dirname, staticDir);
-  const requestedPath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
-
-  // Resolve the full path and ensure it's within the static directory (prevent path traversal)
-  const filePath = path.resolve(baseDir, '.' + requestedPath);
-  if (!filePath.startsWith(baseDir + path.sep) && filePath !== baseDir) {
-    res.writeHead(403);
-    res.end('Forbidden');
-    return;
-  }
-
-  const ext = path.extname(filePath);
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404);
-      res.end('Not found');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(data);
-  });
+  res.json(credentials);
 });
+
+// API: Health check
+app.get('/api/health', async (req, res) => {
+  try {
+    const roomCount = await storage.getRoomCount();
+    const peerCount = await storage.getPeerCount();
+    res.json({
+      status: 'ok',
+      rooms: roomCount,
+      peers: peerCount,
+      turnConfigured: !!TURN_CONFIG.urls
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
+// Static file serving with cache headers
+// HTML files: ETag enabled, no caching
+// All other files: Cache forever (immutable)
+const staticDir = process.env.STATIC_DIR || 'dist';
+const staticPath = path.resolve(__dirname, staticDir);
+
+// Cache header middleware
+app.use((req, res, next) => {
+  const ext = path.extname(req.path);
+  if (ext === '.html' || req.path === '/' || req.path.endsWith('/')) {
+    // HTML files: use ETag for validation, but don't cache
+    res.set('Cache-Control', 'no-cache');
+  } else if (ext) {
+    // All other static assets: cache forever (1 year, immutable)
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+  next();
+});
+
+// Serve static files with ETag enabled
+app.use(express.static(staticPath, {
+  etag: true,
+  index: 'index.html',
+}));
+
+// Create HTTP server from Express app
+const server = http.createServer(app);
 
 // WebSocket signaling server - MESH TOPOLOGY
 const wss = new WebSocket.Server({
