@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play - Call to Roll</title>
+  <meta name="description" content="Roll dice with friends in real-time. Create or join a room to start playing.">
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Oswald:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/landing.css">
+  <style>
+    /* Play page specific styles */
+    .play-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .play-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background: var(--navy);
+      border-bottom: 3px solid var(--gold);
+    }
+
+    .play-nav-logo {
+      font-family: 'Alfa Slab One', cursive;
+      font-size: 1.1rem;
+      color: var(--gold);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .play-nav-logo-die {
+      width: 24px;
+      height: 24px;
+      background: var(--gold);
+      border-radius: 4px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 4px;
+      gap: 1px;
+    }
+
+    .play-nav-logo-die .dot {
+      background: var(--navy);
+      border-radius: 50%;
+    }
+
+    .play-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Mode selection view */
+    .mode-selection {
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .mode-selection h1 {
+      font-family: 'Alfa Slab One', cursive;
+      font-size: 2rem;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+
+    .mode-selection p {
+      color: var(--text-muted);
+      margin-bottom: 30px;
+    }
+
+    .mode-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .mode-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 25px;
+      background: var(--surface);
+      border: 3px solid var(--navy);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 4px 4px 0 var(--navy);
+      text-decoration: none;
+    }
+
+    .mode-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--navy);
+    }
+
+    .mode-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--navy);
+    }
+
+    .mode-btn-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .mode-btn-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--navy);
+      margin-bottom: 5px;
+    }
+
+    .mode-btn-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .mode-btn.create-btn {
+      border-color: var(--red);
+    }
+
+    .mode-btn.create-btn .mode-btn-title {
+      color: var(--red);
+    }
+
+    /* Views management */
+    .view {
+      display: none;
+      width: 100%;
+      max-width: 450px;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    /* Join form header */
+    .form-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form-header h2 {
+      font-family: 'Alfa Slab One', cursive;
+      font-size: 1.5rem;
+      color: var(--red);
+      margin-bottom: 5px;
+    }
+
+    .form-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .back-to-modes {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--navy);
+      text-decoration: none;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      transition: color 0.2s ease;
+    }
+
+    .back-to-modes:hover {
+      color: var(--red);
+    }
+
+    /* Hide nav when in room */
+    #app.in-room .play-nav {
+      display: none;
+    }
+
+    #app.in-room .play-main {
+      padding: 0;
+      justify-content: flex-start;
+    }
+
+    /* Room view should show when active */
+    #app.in-room room-view.active {
+      display: block;
+    }
+
+    /* Hide mode selection and join views when in room */
+    #app.in-room .mode-selection,
+    #app.in-room .view {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="play-container">
+    <!-- Navigation -->
+    <nav class="play-nav">
+      <a href="../" class="play-nav-logo">
+        <span class="play-nav-logo-die">
+          <span></span><span></span><span></span>
+          <span></span><span class="dot"></span><span></span>
+          <span></span><span></span><span></span>
+        </span>
+        Call to Roll
+      </a>
+    </nav>
+
+    <!-- Header bar (shown when in room) -->
+    <header-bar></header-bar>
+
+    <main class="play-main">
+      <!-- Mode Selection View -->
+      <div class="mode-selection view active" id="mode-view">
+        <h1>Let's Play!</h1>
+        <p>Choose how you want to get started</p>
+
+        <div class="mode-buttons">
+          <a href="?create" class="mode-btn create-btn" id="create-mode-btn">
+            <span class="mode-btn-icon">&#127922;</span>
+            <span class="mode-btn-title">Create Room</span>
+            <span class="mode-btn-desc">Start a new game and invite friends</span>
+          </a>
+
+          <a href="?join" class="mode-btn join-btn" id="join-mode-btn">
+            <span class="mode-btn-icon">&#128279;</span>
+            <span class="mode-btn-title">Join Room</span>
+            <span class="mode-btn-desc">Enter a room code to join an existing game</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Create Room View -->
+      <div class="view" id="create-view">
+        <a href="?" class="back-to-modes">&larr; Back</a>
+        <div class="form-header">
+          <h2>Create a Room</h2>
+          <p>Set up your dice and share the code with friends</p>
+        </div>
+        <room-join mode="create"></room-join>
+      </div>
+
+      <!-- Join Room View -->
+      <div class="view" id="join-view">
+        <a href="?" class="back-to-modes">&larr; Back</a>
+        <div class="form-header">
+          <h2>Join a Room</h2>
+          <p>Enter the 4-digit room code to join</p>
+        </div>
+        <room-join mode="join"></room-join>
+      </div>
+
+      <!-- Room View (hidden until joined) -->
+      <room-view></room-view>
+    </main>
+  </div>
+
+  <!-- Web Components -->
+  <script type="module" src="../js/signaling-client.js"></script>
+  <script type="module" src="../js/webrtc-manager.js"></script>
+  <script type="module" src="../js/components/header-bar.js"></script>
+  <script type="module" src="../js/components/room-join.js"></script>
+  <script type="module" src="../js/components/dice-config.js"></script>
+  <script type="module" src="../js/components/dice-roller.js"></script>
+  <script type="module" src="../js/components/dice-history.js"></script>
+  <script type="module" src="../js/components/peer-list.js"></script>
+  <script type="module" src="../js/components/room-view.js"></script>
+  <script type="module" src="../js/app.js"></script>
+
+  <!-- Client-side routing -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modeView = document.getElementById('mode-view');
+      const createView = document.getElementById('create-view');
+      const joinView = document.getElementById('join-view');
+
+      function showView(viewName) {
+        // Hide all views
+        modeView.classList.remove('active');
+        createView.classList.remove('active');
+        joinView.classList.remove('active');
+
+        // Show selected view
+        switch (viewName) {
+          case 'create':
+            createView.classList.add('active');
+            break;
+          case 'join':
+            joinView.classList.add('active');
+            break;
+          default:
+            modeView.classList.add('active');
+        }
+      }
+
+      function handleRoute() {
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.has('create')) {
+          showView('create');
+        } else if (params.has('join')) {
+          showView('join');
+          // Pre-fill room code if provided
+          const roomCode = params.get('join');
+          if (roomCode && roomCode.length === 4) {
+            // Will be handled by room-join component
+            const joinComponent = joinView.querySelector('room-join');
+            if (joinComponent && joinComponent.setRoomCode) {
+              joinComponent.setRoomCode(roomCode);
+            }
+          }
+        } else {
+          showView('mode');
+        }
+      }
+
+      // Handle initial route
+      handleRoute();
+
+      // Handle browser back/forward
+      window.addEventListener('popstate', handleRoute);
+
+      // Handle mode button clicks with proper navigation
+      document.getElementById('create-mode-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        history.pushState({}, '', '?create');
+        showView('create');
+      });
+
+      document.getElementById('join-mode-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        history.pushState({}, '', '?join');
+        showView('join');
+      });
+
+      // Handle back links
+      document.querySelectorAll('.back-to-modes').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          history.pushState({}, '', '?');
+          showView('mode');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

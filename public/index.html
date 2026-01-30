@@ -15,210 +15,138 @@
 </head>
 <body>
 
-  <div id="app">
-    <!-- Navigation (hidden when in room) -->
-    <nav id="main-nav">
-      <a href="./" class="nav-logo">
-        <span class="nav-logo-die">
-          <span></span><span></span><span></span>
-          <span></span><span class="dot"></span><span></span>
-          <span></span><span></span><span></span>
-        </span>
-        Call to Roll
-      </a>
-      <button class="nav-cta" id="nav-play-btn">Play</button>
-    </nav>
+  <!-- Navigation -->
+  <nav>
+    <a href="./" class="nav-logo">
+      <span class="nav-logo-die">
+        <span></span><span></span><span></span>
+        <span></span><span class="dot"></span><span></span>
+        <span></span><span></span><span></span>
+      </span>
+      Call to Roll
+    </a>
+    <a href="./play/" class="nav-cta">Play Now</a>
+  </nav>
 
-    <!-- Header bar (shown when in room) -->
-    <header-bar></header-bar>
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-frame">
+        <div class="hero-inner">
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
 
-    <main>
-      <!-- Landing Page Content (hidden when in room) -->
-      <div class="landing-page" id="landing-page">
+          <div class="hero-badge">For 2-99 Players</div>
+          <h1>Call to Roll</h1>
+          <p class="hero-subtitle">Real-Time Dice Rolling</p>
 
-        <!-- Hero Section -->
-        <section class="hero">
-          <div class="hero-frame">
-            <div class="hero-inner">
-              <div class="corner corner-tl"></div>
-              <div class="corner corner-tr"></div>
-              <div class="corner corner-bl"></div>
-              <div class="corner corner-br"></div>
-
-              <div class="hero-badge">For 2-99 Players</div>
-              <h1>Call to Roll</h1>
-              <p class="hero-subtitle">Real-Time Dice Rolling</p>
-
-              <div class="dice-row">
-                <div class="hero-die">
-                  <span class="dot"></span><span></span><span class="dot"></span>
-                  <span></span><span></span><span></span>
-                  <span class="dot"></span><span></span><span class="dot"></span>
-                </div>
-                <div class="hero-die">
-                  <span></span><span></span><span></span>
-                  <span></span><span class="dot"></span><span></span>
-                  <span></span><span></span><span></span>
-                </div>
-                <div class="hero-die">
-                  <span class="dot"></span><span></span><span class="dot"></span>
-                  <span></span><span class="dot"></span><span></span>
-                  <span class="dot"></span><span></span><span class="dot"></span>
-                </div>
-              </div>
-
-              <p class="hero-tagline">Roll dice together with friends, no matter where they are in the world.</p>
-
-              <div class="hero-buttons">
-                <button class="btn-primary" id="hero-start-btn">Start a Game</button>
-                <a href="#how-to-play" class="btn-secondary">How It Works</a>
-              </div>
-
-              <p class="hero-note">Free · No download · Works on any device</p>
+          <div class="dice-row">
+            <div class="hero-die">
+              <span class="dot"></span><span></span><span class="dot"></span>
+              <span></span><span></span><span></span>
+              <span class="dot"></span><span></span><span class="dot"></span>
+            </div>
+            <div class="hero-die">
+              <span></span><span></span><span></span>
+              <span></span><span class="dot"></span><span></span>
+              <span></span><span></span><span></span>
+            </div>
+            <div class="hero-die">
+              <span class="dot"></span><span></span><span class="dot"></span>
+              <span></span><span class="dot"></span><span></span>
+              <span class="dot"></span><span></span><span class="dot"></span>
             </div>
           </div>
-        </section>
 
-        <!-- Features / How to Play Section -->
-        <section class="features" id="how-to-play">
-          <h2 class="features-title">How to Play</h2>
+          <p class="hero-tagline">Roll dice together with friends, no matter where they are in the world.</p>
 
-          <div class="features-grid">
-            <div class="feature-card">
-              <div class="feature-number">1</div>
-              <h3>Create a Room</h3>
-              <p>Tap "Start a Game" and get your unique room code instantly. Configure your dice sets and options.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-number">2</div>
-              <h3>Invite Friends</h3>
-              <p>Share the 4-digit room code with friends. They join by clicking the dice to enter the code - no sign-up needed.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-number">3</div>
-              <h3>Roll Together!</h3>
-              <p>Everyone sees every roll at the exact same moment. Grab dice, roll, and track results in the shared history.</p>
-            </div>
+          <div class="hero-buttons">
+            <a href="./play/?create" class="btn-primary">Start a Game</a>
+            <a href="#how-to-play" class="btn-secondary">How It Works</a>
           </div>
-        </section>
 
-        <!-- Social Proof -->
-        <section class="social-proof">
-          <div class="social-badge">
-            <h3>50,000+</h3>
-            <p>Dice Rolled Together</p>
-          </div>
-        </section>
-
-        <!-- Testimonial -->
-        <section class="testimonial">
-          <div class="testimonial-card">
-            <blockquote>Finally, a dice roller that actually feels like we're playing together! My D&D group uses it every week.</blockquote>
-            <div class="testimonial-author">
-              <div class="author-avatar">&#129497;</div>
-              <div class="author-info">
-                <strong>Sarah M.</strong>
-                <span>Dungeon Master</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Final CTA -->
-        <section class="final-cta">
-          <h2>Ready to Roll?</h2>
-          <p>Your friends are waiting!</p>
-          <button class="btn-primary" id="final-start-btn">Answer the Call</button>
-        </section>
-      </div>
-
-      <!-- Room Join Modal (hidden by default, shown when starting a game) -->
-      <div class="join-modal" id="join-modal" style="display: none;">
-        <div class="join-modal-content">
-          <button class="join-modal-close" id="join-modal-close">&times;</button>
-          <room-join></room-join>
+          <p class="hero-note">Free · No download · Works on any device</p>
         </div>
       </div>
+    </section>
 
-      <!-- Room View (hidden until joined) -->
-      <room-view></room-view>
-    </main>
+    <!-- Features / How to Play Section -->
+    <section class="features" id="how-to-play">
+      <h2 class="features-title">How to Play</h2>
 
-    <!-- Footer (hidden when in room) -->
-    <footer class="site-footer" id="site-footer">
-      <p>
-        Call to Roll &copy; 2025<br>
-        <a href="./privacy.html">Privacy</a> · <a href="./terms.html">Terms</a> · <a href="./help.html">Help</a> · <a href="./about.html">About</a>
-      </p>
-    </footer>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-number">1</div>
+          <h3>Create a Room</h3>
+          <p>Tap "Start a Game" and get your unique room code instantly. Configure your dice sets and options.</p>
+        </div>
 
-    <div class="safe-area"></div>
-  </div>
+        <div class="feature-card">
+          <div class="feature-number">2</div>
+          <h3>Invite Friends</h3>
+          <p>Share the 4-digit room code with friends. They join by clicking the dice to enter the code - no sign-up needed.</p>
+        </div>
 
-  <!-- Web Components -->
-  <script type="module" src="./js/signaling-client.js"></script>
-  <script type="module" src="./js/webrtc-manager.js"></script>
-  <script type="module" src="./js/components/header-bar.js"></script>
-  <script type="module" src="./js/components/room-join.js"></script>
-  <script type="module" src="./js/components/dice-config.js"></script>
-  <script type="module" src="./js/components/dice-roller.js"></script>
-  <script type="module" src="./js/components/dice-history.js"></script>
-  <script type="module" src="./js/components/peer-list.js"></script>
-  <script type="module" src="./js/components/room-view.js"></script>
-  <script type="module" src="./js/app.js"></script>
+        <div class="feature-card">
+          <div class="feature-number">3</div>
+          <h3>Roll Together!</h3>
+          <p>Everyone sees every roll at the exact same moment. Grab dice, roll, and track results in the shared history.</p>
+        </div>
+      </div>
+    </section>
 
-  <!-- Landing Page Interactions -->
+    <!-- Social Proof -->
+    <section class="social-proof">
+      <div class="social-badge">
+        <h3>50,000+</h3>
+        <p>Dice Rolled Together</p>
+      </div>
+    </section>
+
+    <!-- Testimonial -->
+    <section class="testimonial">
+      <div class="testimonial-card">
+        <blockquote>Finally, a dice roller that actually feels like we're playing together! My D&D group uses it every week.</blockquote>
+        <div class="testimonial-author">
+          <div class="author-avatar">&#129497;</div>
+          <div class="author-info">
+            <strong>Sarah M.</strong>
+            <span>Dungeon Master</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+      <h2>Ready to Roll?</h2>
+      <p>Your friends are waiting!</p>
+      <a href="./play/" class="btn-primary">Answer the Call</a>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>
+      Call to Roll &copy; 2025<br>
+      <a href="./play/">Play</a> · <a href="./about.html">About</a> · <a href="./help.html">Help</a> · <a href="./privacy.html">Privacy</a> · <a href="./terms.html">Terms</a>
+    </p>
+  </footer>
+
+  <div class="safe-area"></div>
+
+  <!-- Smooth scroll for anchor links -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const joinModal = document.getElementById('join-modal');
-      const joinModalClose = document.getElementById('join-modal-close');
-      const heroStartBtn = document.getElementById('hero-start-btn');
-      const finalStartBtn = document.getElementById('final-start-btn');
-      const navPlayBtn = document.getElementById('nav-play-btn');
-
-      function openJoinModal() {
-        joinModal.style.display = 'flex';
-        // Focus on username input
-        setTimeout(() => {
-          const usernameInput = document.querySelector('room-join #username');
-          if (usernameInput) usernameInput.focus();
-        }, 100);
-      }
-
-      function closeJoinModal() {
-        joinModal.style.display = 'none';
-      }
-
-      // Open modal from various buttons
-      heroStartBtn.addEventListener('click', openJoinModal);
-      finalStartBtn.addEventListener('click', openJoinModal);
-      navPlayBtn.addEventListener('click', openJoinModal);
-
-      // Close modal
-      joinModalClose.addEventListener('click', closeJoinModal);
-      joinModal.addEventListener('click', (e) => {
-        if (e.target === joinModal) closeJoinModal();
-      });
-
-      // Close on escape key
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && joinModal.style.display === 'flex') {
-          closeJoinModal();
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = anchor.getAttribute('href').substring(1);
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
         }
-      });
-
-      // Smooth scroll for anchor links
-      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', (e) => {
-          e.preventDefault();
-          const targetId = anchor.getAttribute('href').substring(1);
-          const target = document.getElementById(targetId);
-          if (target) {
-            target.scrollIntoView({ behavior: 'smooth' });
-          }
-        });
       });
     });
   </script>

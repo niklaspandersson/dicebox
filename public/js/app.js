@@ -432,12 +432,12 @@ class DiceBoxApp {
   // === ROOM UI ===
 
   enterRoom() {
-    // Hide landing page elements
-    this.roomJoin.style.display = 'none';
-    const landingPage = document.getElementById('landing-page');
-    if (landingPage) landingPage.style.display = 'none';
-    const joinModal = document.getElementById('join-modal');
-    if (joinModal) joinModal.style.display = 'none';
+    // Hide join-related elements
+    if (this.roomJoin) this.roomJoin.style.display = 'none';
+
+    // Hide any views in the play page
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.mode-selection').forEach(v => v.classList.remove('active'));
 
     this.roomView.show();
     this.headerBar.showRoomView(this.roomManager.roomId);
@@ -761,13 +761,8 @@ class DiceBoxApp {
     if (this.peerList) this.peerList.clear();
     if (this.diceHistory) this.diceHistory.clear();
 
-    // Show landing page elements
-    this.roomJoin.style.display = 'block';
-    const landingPage = document.getElementById('landing-page');
-    if (landingPage) landingPage.style.display = 'block';
-
-    this.roomView.hide();
-    this.headerBar.showJoinView();
+    // Redirect to play page mode selection
+    window.location.href = window.location.pathname.replace(/\?.*$/, '');
   }
 }
 

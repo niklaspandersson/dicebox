@@ -1,5 +1,6 @@
 /**
  * RoomJoin - Web Component for joining a dice room
+ * Supports mode attribute: "create" or "join" to show specific UI directly
  */
 import { getDiceSvg } from '../utils/dice-utils.js';
 
@@ -21,9 +22,24 @@ class RoomJoin extends HTMLElement {
     super();
     this._diceValues = [0, 0, 0, 0]; // 4 dice, values 0-5 (representing 1-6)
     this._createMode = false;
+    this._joinMode = false;
     this._diceSets = [{ id: 'set-1', count: 2, color: '#ffffff' }];
     this._nextSetId = 2;
     this._allowLocking = false;
+    this._fixedMode = null; // 'create' or 'join' from attribute
+  }
+
+  static get observedAttributes() {
+    return ['mode'];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'mode' && newValue) {
+      this._fixedMode = newValue;
+      if (this.isConnected) {
+        this.applyFixedMode();
+      }
+    }
   }
 
   // Render a die face - converts internal 0-5 value to 1-6 for display
@@ -32,8 +48,43 @@ class RoomJoin extends HTMLElement {
   }
 
   connectedCallback() {
+    this._fixedMode = this.getAttribute('mode');
     this.render();
     this.setupEventListeners();
+    if (this._fixedMode) {
+      this.applyFixedMode();
+    }
+  }
+
+  applyFixedMode() {
+    const createBtn = this.querySelector('#btn-create');
+    const joinBtn = this.querySelector('#btn-join');
+    const joinButtons = this.querySelector('.join-buttons');
+
+    if (this._fixedMode === 'create') {
+      // Show create UI directly
+      this._createMode = true;
+      const configGroup = this.querySelector('#dice-config-group');
+      if (configGroup) configGroup.style.display = 'block';
+      if (createBtn) createBtn.textContent = 'Start Room';
+      if (joinBtn) joinBtn.style.display = 'none';
+      if (joinButtons) joinButtons.style.justifyContent = 'center';
+    } else if (this._fixedMode === 'join') {
+      // Show join UI directly
+      this._joinMode = true;
+      const roomIdGroup = this.querySelector('#room-id-group');
+      if (roomIdGroup) roomIdGroup.style.display = 'block';
+      if (joinBtn) joinBtn.textContent = 'Enter Room';
+      if (createBtn) createBtn.style.display = 'none';
+      if (joinButtons) joinButtons.style.justifyContent = 'center';
+    }
+  }
+
+  // Public method to set room code from URL parameter
+  setRoomCode(roomCode) {
+    if (roomCode && roomCode.length === 4) {
+      this.setDiceFromRoomId(roomCode);
+    }
   }
 
   render() {
