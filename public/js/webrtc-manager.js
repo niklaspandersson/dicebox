@@ -83,8 +83,8 @@ export class WebRTCManager extends EventTarget {
     }
 
     if (config.turnCredentialsEndpoint) {
-      // If endpoint doesn't start with http, prepend the API base URL
-      if (config.turnCredentialsEndpoint.startsWith('http')) {
+      // If endpoint is an absolute URL, use it directly; otherwise prepend the API base URL
+      if (/^https?:\/\//i.test(config.turnCredentialsEndpoint)) {
         this.turnCredentialsEndpoint = config.turnCredentialsEndpoint;
       } else {
         this.turnCredentialsEndpoint = `${getApiBaseUrl()}${config.turnCredentialsEndpoint}`;
@@ -111,6 +111,13 @@ export class WebRTCManager extends EventTarget {
 
     try {
       const response = await fetch(this.turnCredentialsEndpoint);
+
+      // Handle 404 gracefully - TURN server not configured is a valid state
+      if (response.status === 404) {
+        console.info('TURN credentials endpoint not configured (404), using STUN only');
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
