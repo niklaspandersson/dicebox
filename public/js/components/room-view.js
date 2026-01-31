@@ -13,13 +13,15 @@ class RoomView extends HTMLElement {
 
   render() {
     this.innerHTML = `
-      <div class="room-content">
-        <peer-list></peer-list>
-        <div class="main-area">
-          <dice-roller></dice-roller>
-          <dice-history></dice-history>
+      <play-frame>
+        <div class="room-content">
+          <peer-list></peer-list>
+          <div class="main-area">
+            <dice-roller></dice-roller>
+            <dice-history></dice-history>
+          </div>
         </div>
-      </div>
+      </play-frame>
     `;
   }
 

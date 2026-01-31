@@ -163,6 +163,62 @@ input::placeholder {
   box-shadow: 4px 4px 0 var(--navy);
 }
 
+/* Play Frame Component - Decorative frame with corners */
+play-frame {
+  display: block;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+play-frame .play-frame-outer {
+  background: var(--red);
+  padding: 6px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+play-frame .play-frame-inner {
+  background: var(--cream);
+  border: 2px solid var(--navy);
+  padding: 24px;
+  position: relative;
+}
+
+play-frame .play-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--gold);
+}
+
+play-frame .corner-tl {
+  top: 8px;
+  left: 8px;
+  border-right: none;
+  border-bottom: none;
+}
+
+play-frame .corner-tr {
+  top: 8px;
+  right: 8px;
+  border-left: none;
+  border-bottom: none;
+}
+
+play-frame .corner-bl {
+  bottom: 8px;
+  left: 8px;
+  border-right: none;
+  border-top: none;
+}
+
+play-frame .corner-br {
+  bottom: 8px;
+  right: 8px;
+  border-left: none;
+  border-top: none;
+}
+
 /* Shared Keyframe Animations */
 @keyframes fadeIn {
   from {

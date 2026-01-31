@@ -52,54 +52,9 @@
   max-width: 620px;
 }
 
-.play-frame {
-  background: var(--red);
-  padding: 6px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-}
-
-.play-inner {
-  display: flex;
-  justify-content: center;
-  background: var(--cream);
-  border: 2px solid var(--navy);
+/* Override play-frame inner padding for play page views */
+.play-shell play-frame .play-frame-inner {
   padding: 30px 24px 34px;
-  position: relative;
-}
-
-.play-corner {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--gold);
-}
-
-.play-inner .corner-tl {
-  top: 8px;
-  left: 8px;
-  border-right: none;
-  border-bottom: none;
-}
-
-.play-inner .corner-tr {
-  top: 8px;
-  right: 8px;
-  border-left: none;
-  border-bottom: none;
-}
-
-.play-inner .corner-bl {
-  bottom: 8px;
-  left: 8px;
-  border-right: none;
-  border-top: none;
-}
-
-.play-inner .corner-br {
-  bottom: 8px;
-  right: 8px;
-  border-left: none;
-  border-top: none;
 }
 
 .play-badge {
@@ -253,7 +208,7 @@
 }
 
 #app.in-room .play-main {
-  padding: 0;
+  padding: 30px 20px 50px;
   justify-content: flex-start;
 }
 

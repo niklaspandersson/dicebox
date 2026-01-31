@@ -21,11 +21,10 @@ header-bar {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
   background: var(--navy);
   padding: 12px 20px;
   border-bottom: 3px solid var(--gold);
-  margin: -20px -20px 20px -20px;
+  margin: 0 0 20px 0;
 }
 
 header-bar .header-left {
@@ -381,9 +380,7 @@ room-view.active {
 room-view .room-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 600px;
-  margin: 0 auto;
+  gap: 20px;
 }
 
 room-view .main-area {
