@@ -24,6 +24,51 @@ See `.env.example` for all available configuration options.
 | `REDIS_HOST` | Redis hostname for multi-instance deployments | `redis.example.com` |
 | `LOG_LEVEL` | Logging verbosity | `info` |
 
+### Cross-Origin Configuration
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS | `https://app.example.com,https://staging.example.com` |
+
+Use `CORS_ALLOWED_ORIGINS` when the frontend and backend are deployed on different domains. If not set, CORS headers are not added (same-origin requests only).
+
+### Frontend Build Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_BACKEND_HOST` | Backend server host for API and WebSocket connections | `api.example.com:3000` |
+
+The `VITE_BACKEND_HOST` variable is set at **build time** and configures where the frontend makes API and WebSocket requests. If not set, requests are root-relative (same host as the frontend).
+
+**Examples:**
+```bash
+# Explicit protocol (recommended for mixed environments)
+VITE_BACKEND_HOST=https://api.example.com npm run build
+
+# Host only (infers protocol from frontend)
+VITE_BACKEND_HOST=api.example.com npm run build
+
+# Local development with explicit HTTP
+VITE_BACKEND_HOST=http://localhost:3000 npm run build
+```
+
+### Separate Frontend/Backend Deployment
+
+When deploying the frontend (e.g., on a CDN) separately from the backend:
+
+1. Build the frontend with `VITE_BACKEND_HOST`:
+   ```bash
+   VITE_BACKEND_HOST=https://api.dicebox.example.com npm run build
+   ```
+
+2. Configure the backend with `CORS_ALLOWED_ORIGINS`:
+   ```bash
+   CORS_ALLOWED_ORIGINS=https://dicebox.example.com,https://www.dicebox.example.com
+   ```
+
+3. Deploy the `dist/` folder to your CDN or static hosting
+4. Deploy and run the backend server
+
 ## Deployment Options
 
 ### Docker (Recommended)

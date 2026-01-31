@@ -3,6 +3,8 @@
  * Handles: peer ID assignment, room queries, room creation/joining, and WebRTC signaling
  */
 
+import { getWebSocketUrl } from './config.js';
+
 // Heartbeat interval (should be less than server's SESSION_EXPIRY)
 const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 
@@ -46,8 +48,7 @@ export class SignalingClient extends EventTarget {
     }
 
     this._connectPromise = new Promise((resolve, reject) => {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}`;
+      const wsUrl = getWebSocketUrl();
 
       try {
         this.ws = new WebSocket(wsUrl);

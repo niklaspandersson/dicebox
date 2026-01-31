@@ -24,6 +24,7 @@
  * - Cloudflare Calls (beta)
  */
 import { signalingClient } from './signaling-client.js';
+import { getApiBaseUrl } from './config.js';
 
 // Default STUN servers (free, public)
 const DEFAULT_STUN_SERVERS = [
@@ -54,9 +55,13 @@ export class WebRTCManager extends EventTarget {
     this.turnServers = [];
     this.turnCredentialExpiry = null;
     this.turnCredentialRefreshTimer = null;
-    this.turnCredentialsEndpoint = null;
+    // Default TURN credentials endpoint uses the configured API base URL
+    this.turnCredentialsEndpoint = `${getApiBaseUrl()}/api/turn-credentials`;
 
     this.setupSignalingHandlers();
+
+    // Fetch TURN credentials on initialization
+    this.refreshTurnCredentials();
   }
 
   /**
@@ -78,7 +83,12 @@ export class WebRTCManager extends EventTarget {
     }
 
     if (config.turnCredentialsEndpoint) {
-      this.turnCredentialsEndpoint = config.turnCredentialsEndpoint;
+      // If endpoint is an absolute URL, use it directly; otherwise prepend the API base URL
+      if (/^https?:\/\//i.test(config.turnCredentialsEndpoint)) {
+        this.turnCredentialsEndpoint = config.turnCredentialsEndpoint;
+      } else {
+        this.turnCredentialsEndpoint = `${getApiBaseUrl()}${config.turnCredentialsEndpoint}`;
+      }
       // Fetch credentials immediately
       this.refreshTurnCredentials();
     }
@@ -101,6 +111,13 @@ export class WebRTCManager extends EventTarget {
 
     try {
       const response = await fetch(this.turnCredentialsEndpoint);
+
+      // Handle 404 gracefully - TURN server not configured is a valid state
+      if (response.status === 404) {
+        console.info('TURN credentials endpoint not configured (404), using STUN only');
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
