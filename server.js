@@ -9,6 +9,32 @@ const { logger, truncatePeerId } = require('./logger.js');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+// CORS configuration via environment variable
+// CORS_ALLOWED_ORIGINS can be a comma-separated list of allowed origins
+// Example: CORS_ALLOWED_ORIGINS=https://example.com,https://app.example.com
+// If not set, CORS headers are not added (same-origin requests only)
+const CORS_ALLOWED_ORIGINS = process.env.CORS_ALLOWED_ORIGINS
+  ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : null;
+
+// CORS middleware
+if (CORS_ALLOWED_ORIGINS) {
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && CORS_ALLOWED_ORIGINS.includes(origin)) {
+      res.set('Access-Control-Allow-Origin', origin);
+      res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      res.set('Access-Control-Max-Age', '86400');
+    }
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
+    next();
+  });
+  logger.info({ origins: CORS_ALLOWED_ORIGINS }, 'CORS enabled for origins');
+}
+
 // TURN server configuration via environment variables
 const TURN_CONFIG = {
   urls: process.env.TURN_URL ? process.env.TURN_URL.split(',').map(u => u.trim()) : null,

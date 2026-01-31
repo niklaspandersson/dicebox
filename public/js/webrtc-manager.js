@@ -24,6 +24,7 @@
  * - Cloudflare Calls (beta)
  */
 import { signalingClient } from './signaling-client.js';
+import { getApiBaseUrl } from './config.js';
 
 // Default STUN servers (free, public)
 const DEFAULT_STUN_SERVERS = [
@@ -54,9 +55,13 @@ export class WebRTCManager extends EventTarget {
     this.turnServers = [];
     this.turnCredentialExpiry = null;
     this.turnCredentialRefreshTimer = null;
-    this.turnCredentialsEndpoint = null;
+    // Default TURN credentials endpoint uses the configured API base URL
+    this.turnCredentialsEndpoint = `${getApiBaseUrl()}/api/turn-credentials`;
 
     this.setupSignalingHandlers();
+
+    // Fetch TURN credentials on initialization
+    this.refreshTurnCredentials();
   }
 
   /**
@@ -78,7 +83,12 @@ export class WebRTCManager extends EventTarget {
     }
 
     if (config.turnCredentialsEndpoint) {
-      this.turnCredentialsEndpoint = config.turnCredentialsEndpoint;
+      // If endpoint doesn't start with http, prepend the API base URL
+      if (config.turnCredentialsEndpoint.startsWith('http')) {
+        this.turnCredentialsEndpoint = config.turnCredentialsEndpoint;
+      } else {
+        this.turnCredentialsEndpoint = `${getApiBaseUrl()}${config.turnCredentialsEndpoint}`;
+      }
       // Fetch credentials immediately
       this.refreshTurnCredentials();
     }

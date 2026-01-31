@@ -1,0 +1,54 @@
+/**
+ * Application configuration
+ *
+ * Backend host can be configured at build time via VITE_BACKEND_HOST
+ * If not set, requests are made to the same host as the frontend (root-relative)
+ *
+ * Examples:
+ *   VITE_BACKEND_HOST=api.example.com        -> wss://api.example.com, https://api.example.com/api/...
+ *   VITE_BACKEND_HOST=localhost:3000         -> ws://localhost:3000, http://localhost:3000/api/...
+ *   (not set)                                -> same host as frontend (root-relative)
+ */
+
+// Backend host from build-time environment variable
+// When set, this is the host (and optional port) for WebSocket and API requests
+const BACKEND_HOST = import.meta.env.VITE_BACKEND_HOST || null;
+
+/**
+ * Get the WebSocket URL for the signaling server
+ * @returns {string} WebSocket URL (e.g., "wss://api.example.com" or "wss://current-host")
+ */
+export function getWebSocketUrl() {
+  if (BACKEND_HOST) {
+    // Use configured backend host
+    const isSecure = window.location.protocol === 'https:';
+    const protocol = isSecure ? 'wss:' : 'ws:';
+    return `${protocol}//${BACKEND_HOST}`;
+  }
+  // Default: same host as frontend
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}`;
+}
+
+/**
+ * Get the base URL for API requests
+ * @returns {string} API base URL (e.g., "https://api.example.com" or "" for root-relative)
+ */
+export function getApiBaseUrl() {
+  if (BACKEND_HOST) {
+    // Use configured backend host
+    const isSecure = window.location.protocol === 'https:';
+    const protocol = isSecure ? 'https:' : 'http:';
+    return `${protocol}//${BACKEND_HOST}`;
+  }
+  // Default: root-relative (empty string)
+  return '';
+}
+
+/**
+ * Check if a custom backend host is configured
+ * @returns {boolean}
+ */
+export function hasCustomBackendHost() {
+  return !!BACKEND_HOST;
+}
