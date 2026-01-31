@@ -48,15 +48,8 @@ body::before {
 .corner-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
 .corner-br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
 
-.hero-badge {
-  display: inline-block;
-  background: var(--navy);
-  color: var(--gold);
-  padding: 6px 16px;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+/* Badge uses shared .badge class from common.css */
+.hero .badge {
   margin-bottom: 20px;
 }
 

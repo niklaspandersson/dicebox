@@ -413,3 +413,33 @@ nav {
     margin: 5px;
   }
 }
+
+/* ==========================================================================
+   Shared Utilities
+   ========================================================================== */
+
+/* Badge - Used on landing page (.hero-badge) and play page (.play-badge) */
+.badge {
+  display: inline-block;
+  background: var(--navy);
+  color: var(--gold);
+  padding: 6px 16px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Modal Overlay Base - shared between app modals and landing join modal */
+.modal-overlay-base {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}

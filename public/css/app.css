@@ -1,5 +1,68 @@
-/* App Styles - Component-specific styles for Call to Roll */
-/* Common styles (variables, reset, buttons, inputs) are in common.css */
+/* ==========================================================================
+   App Styles - For /play/ page and all web components
+   Common styles (variables, reset, buttons, inputs) are in common.css
+   ========================================================================== */
+
+/* ==========================================================================
+   Play Page Layout
+   ========================================================================== */
+
+/* Play page container */
+.play-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Subtle paper texture */
+.play-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Override sticky nav for play page */
+.play-container>nav {
+  position: relative;
+}
+
+.play-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px 50px;
+  position: relative;
+  z-index: 2;
+}
+
+.play-main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: repeating-linear-gradient(90deg,
+      var(--gold) 0px,
+      var(--gold) 16px,
+      var(--red) 16px,
+      var(--red) 32px);
+}
+
+.play-shell {
+  width: 100%;
+  max-width: 620px;
+}
+
+/* Override play-frame inner padding for play page views */
+.play-shell play-frame .play-frame-inner {
+  padding: 30px 24px 34px;
+}
 
 /* App Container */
 #app {
@@ -7,15 +70,30 @@
   margin: 0 auto;
 }
 
-#app.in-room {
-  padding: 20px;
-}
+/* ==========================================================================
+   App State: #app.in-room
+   All visibility and layout changes when user enters a room (CONSOLIDATED)
+   ========================================================================== */
 
-/* Header Bar Component */
-header-bar {
+
+/* Hide nav when in room */
+#app.in-room>nav {
   display: none;
 }
 
+/* Adjust main area */
+#app.in-room .play-main {
+  padding: 30px 20px 50px;
+  justify-content: flex-start;
+}
+
+/* Hide play shell (mode selection container) */
+#app.in-room .play-shell {
+  display: none;
+}
+
+
+/* Show header bar when in room */
 #app.in-room header-bar {
   display: flex;
   flex-direction: row;
@@ -24,7 +102,187 @@ header-bar {
   background: var(--navy);
   padding: 12px 20px;
   border-bottom: 3px solid var(--gold);
-  margin: 0 0 20px 0;
+}
+
+#app.in-room header-bar .header-left {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+#app.in-room header-bar .header-title-row {
+  gap: 6px;
+}
+
+#app.in-room header-bar .header-right {
+  position: static;
+  display: flex;
+  flex-shrink: 0;
+}
+
+#app.in-room header-bar h1 {
+  font-size: 1.3rem;
+}
+
+#app.in-room header-bar .tagline {
+  display: none;
+}
+
+#app.in-room header-bar .room-info .room-id {
+  font-size: 0.8rem;
+}
+
+/* Room view visibility */
+#app.in-room room-view.active {
+  display: block;
+}
+
+/* ==========================================================================
+   Mode Selection & Forms
+   ========================================================================== */
+
+/* Mode selection view */
+.mode-selection {
+  text-align: center;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mode-selection h1 {
+  font-family: 'Alfa Slab One', cursive;
+  font-size: 2.4rem;
+  color: var(--red);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 var(--red-dark);
+}
+
+.play-subtitle {
+  font-family: 'Oswald', sans-serif;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 26px;
+  font-size: 0.95rem;
+}
+
+.mode-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  background: #fffef9;
+  border: 3px solid var(--navy);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 4px 4px 0 var(--navy);
+  text-decoration: none;
+}
+
+.mode-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--navy);
+}
+
+.mode-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--navy);
+}
+
+.mode-btn-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.mode-btn-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--navy);
+  margin-bottom: 5px;
+}
+
+.mode-btn-desc {
+  font-size: 0.9rem;
+  color: var(--brown);
+}
+
+.mode-btn.create-btn {
+  border-color: var(--red);
+}
+
+.mode-btn.create-btn .mode-btn-title {
+  color: var(--red);
+}
+
+/* Views management */
+.view {
+  display: none;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.view.active {
+  display: block;
+}
+
+/* Join form header */
+.form-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-header h2 {
+  font-family: 'Alfa Slab One', cursive;
+  font-size: 1.6rem;
+  color: var(--red);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.form-header p {
+  font-family: 'Oswald', sans-serif;
+  color: var(--navy);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.back-to-modes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--navy);
+  text-decoration: none;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: color 0.25s ease;
+}
+
+.back-to-modes:hover {
+  color: var(--red);
+}
+
+/* ==========================================================================
+   Web Components
+   ========================================================================== */
+
+/* --- Header Bar Component --- */
+header-bar {
+  display: none;
 }
 
 header-bar .header-left {
@@ -100,7 +358,7 @@ header-bar .btn-leave:hover {
   transform: none;
 }
 
-/* Modal styles */
+/* --- Modal Styles --- */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -171,37 +429,7 @@ header-bar .btn-leave:hover {
   box-shadow: none;
 }
 
-/* Compact header when in room */
-#app.in-room header-bar .header-left {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-}
-
-#app.in-room header-bar .header-title-row {
-  gap: 6px;
-}
-
-#app.in-room header-bar .header-right {
-  position: static;
-  display: flex;
-  flex-shrink: 0;
-}
-
-#app.in-room header-bar h1 {
-  font-size: 1.3rem;
-}
-
-#app.in-room header-bar .tagline {
-  display: none;
-}
-
-#app.in-room header-bar .room-info .room-id {
-  font-size: 0.8rem;
-}
-
-/* Room Join/Create Components */
+/* --- Room Join/Create Components --- */
 room-join,
 room-create {
   display: block;
@@ -209,9 +437,7 @@ room-create {
 
 room-join .join-form,
 room-create .join-form {
-  max-width: 400px;
-  margin: 0 auto;
-  background: var(--cream);
+  background: hsl(from var(--cream) h calc(s - 20) calc(l - 3));
   border: 3px solid var(--brown);
   padding: 30px;
   position: relative;
@@ -252,6 +478,7 @@ room-join .dice-input-container {
   justify-content: center;
   gap: 12px;
   margin-top: 8px;
+  user-select: none;
 }
 
 room-join .room-dice {
@@ -368,7 +595,7 @@ room-create .checkbox-hint {
   margin-left: 26px;
 }
 
-/* Room View */
+/* --- Room View --- */
 room-view {
   display: none;
 }
@@ -389,7 +616,7 @@ room-view .main-area {
   gap: 24px;
 }
 
-/* Dice Roller Component */
+/* --- Dice Roller Component --- */
 dice-roller {
   display: block;
 }
@@ -414,7 +641,6 @@ dice-roller .dice-set {
   position: relative;
   min-width: 140px;
   flex: 1;
-  max-width: 300px;
   padding: 16px;
   border: 3px solid transparent;
   transition: border-color 0.2s ease, background 0.2s ease;
@@ -630,7 +856,7 @@ dice-roller .locked-count {
   border-radius: 4px;
 }
 
-/* Dice Config Component (room creation) */
+/* --- Dice Config Component (room creation) --- */
 dice-config {
   display: block;
   margin-bottom: 16px;
@@ -793,7 +1019,7 @@ dice-config .remove-set-btn:hover {
   background: #dc2626;
 }
 
-/* Dice History Component */
+/* --- Dice History Component --- */
 dice-history {
   display: block;
 }
@@ -926,7 +1152,7 @@ dice-history h3 {
   color: var(--text-muted);
 }
 
-/* Peer List Component */
+/* --- Peer List Component --- */
 peer-list {
   display: block;
 }
@@ -1033,22 +1259,17 @@ peer-list .empty-message {
   font-size: 0.9rem;
 }
 
-/* Landing Content */
+/* --- Landing Content (shown on index, hidden in room) --- */
 .landing-content {
   display: flex;
   flex-direction: column;
   gap: 48px;
 }
 
-#app.in-room .landing-content {
-  display: none;
-}
+/* ==========================================================================
+   Static Pages (About, Help, Privacy, Terms)
+   ========================================================================== */
 
-#app.in-room .site-footer {
-  display: none;
-}
-
-/* Static Pages (About, Help, Privacy, Terms) */
 .static-page {
   max-width: 800px;
   margin: 0 auto;
@@ -1229,7 +1450,10 @@ peer-list .empty-message {
   margin-bottom: 0;
 }
 
-/* Mobile responsive styles */
+/* ==========================================================================
+   Mobile Responsive
+   ========================================================================== */
+
 @media (max-width: 480px) {
 
   header-bar {
