@@ -1,42 +1,7 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* App Styles - Component-specific styles for Call to Roll */
+/* Common styles (variables, reset, buttons, inputs) are in common.css */
 
-:root {
-  /* Call to Roll Theme */
-  --cream: #f5ebe0;
-  --red: #c1121f;
-  --red-dark: #780000;
-  --gold: #d4a84b;
-  --navy: #003049;
-  --brown: #4a3728;
-
-  /* Map to component variables */
-  --primary-color: var(--red);
-  --primary-hover: var(--red-dark);
-  --secondary-color: var(--gold);
-  --background: var(--cream);
-  --surface: #fffef9;
-  --surface-light: #efe5d8;
-  --text: var(--brown);
-  --text-muted: #6b5a4a;
-  --danger: var(--red);
-  --warning: var(--gold);
-  --border-radius: 6px;
-  --shadow: 3px 3px 0 var(--navy);
-}
-
-body {
-  font-family: 'Lora', serif;
-  background: var(--cream);
-  color: var(--brown);
-  min-height: 100dvh;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-
+/* App Container */
 #app {
   max-width: 1200px;
   margin: 0 auto;
@@ -46,6 +11,7 @@ body {
   padding: 20px;
 }
 
+/* Header Bar Component */
 header-bar {
   display: none;
 }
@@ -150,11 +116,6 @@ header-bar .btn-leave:hover {
   animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .modal-content {
   background: var(--surface);
   border-radius: var(--border-radius);
@@ -164,11 +125,6 @@ header-bar .btn-leave:hover {
   max-height: 80vh;
   overflow-y: auto;
   animation: slideUp 0.2s ease;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-header {
@@ -197,11 +153,14 @@ header-bar .btn-leave:hover {
   align-items: center;
   justify-content: center;
   border-radius: 6px;
+  box-shadow: none;
 }
 
 .modal-close-btn:hover {
   background: var(--surface-light);
   color: var(--text);
+  transform: none;
+  box-shadow: none;
 }
 
 .modal-content dice-config {
@@ -214,13 +173,6 @@ header-bar .btn-leave:hover {
 }
 
 /* Compact header when in room */
-#app.in-room header-bar {
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
 #app.in-room header-bar .header-left {
   flex-direction: column;
   align-items: flex-start;
@@ -248,72 +200,6 @@ header-bar .btn-leave:hover {
 
 #app.in-room header-bar .room-info .room-id {
   font-size: 0.8rem;
-}
-
-/* Common button styles */
-button {
-  font-family: 'Oswald', sans-serif;
-  background: var(--red);
-  color: white;
-  border: 3px solid var(--red-dark);
-  padding: 12px 24px;
-  border-radius: var(--border-radius);
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 2px 2px 0 var(--navy);
-}
-
-button:hover {
-  background: var(--red-dark);
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--navy);
-}
-
-button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--navy);
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 2px 2px 0 var(--navy);
-}
-
-/* Input styles */
-input {
-  font-family: 'Lora', serif;
-  background: var(--surface);
-  border: 3px solid var(--navy);
-  color: var(--text);
-  padding: 12px 16px;
-  border-radius: var(--border-radius);
-  font-size: 1rem;
-  width: 100%;
-  transition: border-color 0.2s ease;
-}
-
-input:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(212, 168, 75, 0.2);
-}
-
-input::placeholder {
-  color: var(--text-muted);
-}
-
-/* Card styles */
-.card {
-  background: var(--surface);
-  border-radius: var(--border-radius);
-  padding: 24px;
-  border: 3px solid var(--brown);
-  box-shadow: 4px 4px 0 var(--navy);
 }
 
 /* Room Join Component */
@@ -404,19 +290,6 @@ room-join .room-dice.flipping {
   100% { transform: rotateX(0deg); }
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    margin-bottom: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 100px;
-    margin-bottom: 20px;
-  }
-}
-
 room-join .join-buttons {
   display: flex;
   gap: 12px;
@@ -479,11 +352,13 @@ room-join .color-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: none;
 }
 
 room-join .color-btn:hover {
   border-color: rgba(255, 255, 255, 0.4);
   transform: none;
+  box-shadow: none;
 }
 
 room-join .color-dropdown-arrow {
@@ -519,10 +394,12 @@ room-join .color-option {
   border-radius: 4px;
   border: 2px solid transparent;
   cursor: pointer;
+  box-shadow: none;
 }
 
 room-join .color-option:hover {
   transform: scale(1.1);
+  box-shadow: none;
 }
 
 room-join .color-option.selected {
@@ -583,6 +460,41 @@ room-join .add-set-btn:hover {
 room-join .add-set-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Room Options (checkbox for dice locking) */
+room-join .room-options {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--surface-light);
+}
+
+room-join .checkbox-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+room-join .checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+room-join .checkbox-text {
+  font-weight: 500;
+}
+
+room-join .checkbox-hint {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: 26px;
 }
 
 /* Room View */
@@ -689,6 +601,7 @@ dice-roller .die-wrapper {
   width: 60px;
   height: 60px;
   flex-shrink: 0;
+  position: relative;
 }
 
 dice-roller .die {
@@ -777,6 +690,64 @@ dice-roller .dice-set.other-hold {
   opacity: 0.7;
 }
 
+/* Dice locking styles */
+dice-roller .die.lockable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+dice-roller .die.lockable:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+dice-roller .die.locked {
+  box-shadow: 0 0 0 3px var(--secondary-color), 0 4px 12px rgba(16, 185, 129, 0.4);
+  transform: scale(1.02);
+}
+
+dice-roller .die.locked:hover {
+  box-shadow: 0 0 0 3px var(--secondary-color), 0 6px 16px rgba(16, 185, 129, 0.5);
+}
+
+dice-roller .lock-indicator {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  background: var(--secondary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+dice-roller .lock-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+dice-roller .dice-set.has-locked .holder-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+dice-roller .locked-count {
+  font-size: 0.75rem;
+  color: var(--secondary-color);
+  background: rgba(16, 185, 129, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 /* Dice Config Component (room creation) */
 dice-config {
   display: block;
@@ -840,11 +811,13 @@ dice-config .color-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: none;
 }
 
 dice-config .color-btn:hover {
   border-color: rgba(255, 255, 255, 0.4);
   transform: none;
+  box-shadow: none;
 }
 
 dice-config .color-dropdown-arrow {
@@ -880,10 +853,12 @@ dice-config .color-option {
   border-radius: 4px;
   border: 2px solid transparent;
   cursor: pointer;
+  box-shadow: none;
 }
 
 dice-config .color-option:hover {
   transform: scale(1.1);
+  box-shadow: none;
 }
 
 dice-config .color-option.selected {
@@ -925,11 +900,6 @@ dice-config .remove-set-btn {
 
 dice-config .remove-set-btn:hover {
   background: #dc2626;
-}
-
-@keyframes fadeInOut {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
 }
 
 /* Dice History Component */
@@ -1164,202 +1134,11 @@ peer-list .peer-status.connecting {
   animation: pulse 1s infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
 peer-list .empty-message {
   color: var(--text-muted);
   text-align: center;
   padding: 10px;
   font-size: 0.9rem;
-}
-
-/* Scrollbar styles */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--surface);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--surface-light);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* Mobile responsive styles */
-@media (max-width: 480px) {
-  #app {
-    padding: 12px;
-  }
-
-  header-bar {
-    margin-bottom: 24px;
-  }
-
-  header-bar h1 {
-    font-size: 2.5rem;
-  }
-
-  header-bar .tagline {
-    font-size: 1rem;
-  }
-
-  .card {
-    padding: 16px;
-  }
-
-  room-join .room-dice {
-    width: 52px;
-    height: 52px;
-  }
-
-  room-join .dice-input-container {
-    gap: 8px;
-  }
-
-  room-join .btn-create,
-  room-join .btn-join {
-    padding: 14px;
-    font-size: 1rem;
-  }
-
-  dice-roller .die-wrapper,
-  dice-roller .die,
-  dice-roller .die-placeholder {
-    width: 52px;
-    height: 52px;
-  }
-
-  dice-roller .dice-set {
-    padding: 12px;
-    min-width: 120px;
-    max-width: none;
-    width: 100%;
-  }
-
-  /* On mobile, dice sets stack vertically - adjust corners */
-  dice-roller .dice-sets-area {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  dice-roller .dice-set:first-child {
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-  }
-
-  dice-roller .dice-set:last-child {
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-  }
-
-  dice-roller .dice-set:only-child {
-    border-radius: var(--border-radius);
-  }
-}
-
-/* Room Options (checkbox for dice locking) */
-room-join .room-options {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--surface-light);
-}
-
-room-join .checkbox-label {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: var(--text);
-  font-size: 0.95rem;
-}
-
-room-join .checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary-color);
-  cursor: pointer;
-}
-
-room-join .checkbox-text {
-  font-weight: 500;
-}
-
-room-join .checkbox-hint {
-  flex-basis: 100%;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-left: 26px;
-}
-
-/* Dice locking styles */
-dice-roller .die-wrapper {
-  position: relative;
-}
-
-dice-roller .die.lockable {
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-dice-roller .die.lockable:hover {
-  transform: scale(1.08);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-}
-
-dice-roller .die.locked {
-  box-shadow: 0 0 0 3px var(--secondary-color), 0 4px 12px rgba(16, 185, 129, 0.4);
-  transform: scale(1.02);
-}
-
-dice-roller .die.locked:hover {
-  box-shadow: 0 0 0 3px var(--secondary-color), 0 6px 16px rgba(16, 185, 129, 0.5);
-}
-
-dice-roller .lock-indicator {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
-  background: var(--secondary-color);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  z-index: 1;
-}
-
-dice-roller .lock-hint {
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-dice-roller .dice-set.has-locked .holder-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-dice-roller .locked-count {
-  font-size: 0.75rem;
-  color: var(--secondary-color);
-  background: rgba(16, 185, 129, 0.2);
-  padding: 2px 6px;
-  border-radius: 4px;
 }
 
 /* Landing Content */
@@ -1375,185 +1154,6 @@ dice-roller .locked-count {
 
 #app.in-room .site-footer {
   display: none;
-}
-
-/* Features Section */
-.features-section {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.features-section h2 {
-  text-align: center;
-  font-size: 2rem;
-  margin-bottom: 32px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
-}
-
-.feature-card {
-  background: var(--surface);
-  border-radius: var(--border-radius);
-  padding: 24px;
-  text-align: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.feature-icon {
-  font-size: 2.5rem;
-  margin-bottom: 12px;
-}
-
-.feature-card h3 {
-  font-size: 1.1rem;
-  margin-bottom: 8px;
-  color: var(--text);
-}
-
-.feature-card p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-/* How It Works Section */
-.how-it-works-section {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.how-it-works-section h2 {
-  text-align: center;
-  font-size: 2rem;
-  margin-bottom: 32px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.steps-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.step {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  background: var(--surface);
-  border-radius: var(--border-radius);
-  padding: 24px;
-}
-
-.step-number {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
-}
-
-.step h3 {
-  font-size: 1.1rem;
-  margin-bottom: 6px;
-  color: var(--text);
-}
-
-.step p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-/* Site Footer */
-.site-footer {
-  margin-top: 64px;
-  padding: 40px 20px 24px;
-  background: var(--surface);
-  border-top: 1px solid var(--surface-light);
-}
-
-.footer-content {
-  max-width: 900px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-
-.footer-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.footer-logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.footer-brand p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.footer-links {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.footer-links a {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s ease;
-}
-
-.footer-links a:hover {
-  color: var(--text);
-}
-
-.footer-bottom {
-  max-width: 900px;
-  margin: 24px auto 0;
-  padding-top: 24px;
-  border-top: 1px solid var(--surface-light);
-  text-align: center;
-}
-
-.footer-bottom p {
-  font-size: 0.85rem;
-  color: var(--text-muted);
 }
 
 /* Static Pages (About, Help, Privacy, Terms) */
@@ -1706,11 +1306,13 @@ dice-roller .locked-count {
   font-weight: 600;
   color: var(--text);
   transition: background 0.2s ease;
+  box-shadow: none;
 }
 
 .faq-question:hover {
   background: rgba(255, 255, 255, 0.05);
   transform: none;
+  box-shadow: none;
 }
 
 .faq-icon {
@@ -1735,34 +1337,73 @@ dice-roller .locked-count {
   margin-bottom: 0;
 }
 
-/* Mobile adjustments for landing */
+/* Mobile responsive styles */
 @media (max-width: 480px) {
-  .features-section h2,
-  .how-it-works-section h2 {
-    font-size: 1.5rem;
+  #app {
+    padding: 12px;
   }
 
-  .features-grid {
-    grid-template-columns: 1fr;
+  header-bar {
+    margin-bottom: 24px;
   }
 
-  .step {
+  header-bar h1 {
+    font-size: 2.5rem;
+  }
+
+  header-bar .tagline {
+    font-size: 1rem;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  room-join .room-dice {
+    width: 52px;
+    height: 52px;
+  }
+
+  room-join .dice-input-container {
+    gap: 8px;
+  }
+
+  room-join .btn-create,
+  room-join .btn-join {
+    padding: 14px;
+    font-size: 1rem;
+  }
+
+  dice-roller .die-wrapper,
+  dice-roller .die,
+  dice-roller .die-placeholder {
+    width: 52px;
+    height: 52px;
+  }
+
+  dice-roller .dice-set {
+    padding: 12px;
+    min-width: 120px;
+    max-width: none;
+    width: 100%;
+  }
+
+  /* On mobile, dice sets stack vertically - adjust corners */
+  dice-roller .dice-sets-area {
     flex-direction: column;
-    text-align: center;
+    width: 100%;
   }
 
-  .step-number {
-    margin: 0 auto;
+  dice-roller .dice-set:first-child {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
   }
 
-  .footer-content {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+  dice-roller .dice-set:last-child {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
   }
 
-  .footer-links {
-    justify-content: center;
+  dice-roller .dice-set:only-child {
+    border-radius: var(--border-radius);
   }
 
   .static-page-header h1 {

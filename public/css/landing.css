@@ -1,45 +1,5 @@
 /* Landing Page Styles - Call to Roll Theme */
-
-/* Theme Variables */
-:root {
-  --cream: #f5ebe0;
-  --red: #c1121f;
-  --red-dark: #780000;
-  --gold: #d4a84b;
-  --navy: #003049;
-  --brown: #4a3728;
-
-  /* Map to existing component variables for consistency */
-  --primary-color: var(--red);
-  --primary-hover: var(--red-dark);
-  --secondary-color: var(--gold);
-  --background: var(--cream);
-  --surface: #fffef9;
-  --surface-light: #efe5d8;
-  --text: var(--brown);
-  --text-muted: #6b5a4a;
-  --danger: var(--red);
-  --warning: var(--gold);
-  --border-radius: 6px;
-  --shadow: 3px 3px 0 var(--navy);
-}
-
-/* Base Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Lora', serif;
-  background: var(--cream);
-  color: var(--brown);
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100dvh;
-  line-height: 1.6;
-}
+/* Landing-specific styles only - common styles are in common.css */
 
 /* Paper texture overlay */
 body::before {
@@ -52,67 +12,6 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 1000;
-}
-
-/* Navigation */
-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background: var(--navy);
-  border-bottom: 3px solid var(--gold);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-logo {
-  font-family: 'Alfa Slab One', cursive;
-  font-size: 1.1rem;
-  color: var(--gold);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-logo-die {
-  width: 24px;
-  height: 24px;
-  background: var(--gold);
-  border-radius: 4px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  padding: 4px;
-  gap: 1px;
-}
-
-.nav-logo-die .dot {
-  background: var(--navy);
-  border-radius: 50%;
-}
-
-.nav-cta {
-  font-family: 'Oswald', sans-serif;
-  background: var(--red);
-  color: white;
-  padding: 8px 16px;
-  text-decoration: none;
-  text-transform: uppercase;
-  font-weight: 600;
-  font-size: 0.8rem;
-  letter-spacing: 1px;
-  border: 2px solid var(--red-dark);
-  cursor: pointer;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-}
-
-.nav-cta:hover {
-  background: var(--red-dark);
 }
 
 /* Hero Section */
@@ -227,56 +126,10 @@ nav {
   color: #888;
 }
 
-/* Buttons */
-.btn-primary {
-  display: block;
-  width: 100%;
-  background: var(--red);
-  color: white;
-  padding: 16px 30px;
-  font-family: 'Oswald', sans-serif;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-decoration: none;
-  border: 3px solid var(--red-dark);
-  box-shadow: 3px 3px 0 var(--navy);
-  margin-bottom: 12px;
-  text-align: center;
-  cursor: pointer;
-  min-height: 44px;
-}
-
-.btn-primary:hover {
-  background: var(--red-dark);
-  transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0 var(--navy);
-}
-
-.btn-primary:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--navy);
-}
-
-.btn-secondary {
-  display: block;
-  width: 100%;
-  background: var(--cream);
-  color: var(--navy);
-  padding: 14px 30px;
-  font-family: 'Oswald', sans-serif;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-decoration: none;
-  border: 3px solid var(--navy);
-  text-align: center;
-  cursor: pointer;
-  min-height: 44px;
-}
-
-.btn-secondary:hover {
-  background: var(--surface-light);
+.hero-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* Features Section */
@@ -496,39 +349,6 @@ nav {
   background: #c4983b;
 }
 
-/* Footer */
-.site-footer {
-  background: var(--navy);
-  padding: 25px 20px;
-  text-align: center;
-  border-top: 3px solid var(--gold);
-  margin-top: 0;
-}
-
-.site-footer p {
-  font-family: 'Oswald', sans-serif;
-  color: rgba(255,255,255,0.7);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 0.75rem;
-  line-height: 1.8;
-}
-
-.site-footer a {
-  color: var(--gold);
-  text-decoration: none;
-}
-
-.site-footer a:hover {
-  text-decoration: underline;
-}
-
-/* Bottom safe area for iOS */
-.safe-area {
-  height: env(safe-area-inset-bottom, 0);
-  background: var(--navy);
-}
-
 /* Hide landing content when in room */
 #app.in-room .landing-page {
   display: none;
@@ -562,27 +382,11 @@ nav {
   animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .join-modal-content {
   position: relative;
   width: 100%;
   max-width: 450px;
   animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .join-modal-close {
@@ -608,26 +412,6 @@ nav {
 
 .join-modal-close:hover {
   background: var(--red-dark);
-}
-
-/* Touch feedback */
-.btn-primary:active,
-.btn-secondary:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--navy);
-}
-
-/* Larger tap targets */
-a, button {
-  min-height: 44px;
-}
-
-/* Reduce motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
-  }
 }
 
 /* Landscape orientation adjustments */
@@ -664,14 +448,8 @@ a, button {
   .feature-card {
     padding: 30px;
   }
-  .btn-primary,
-  .btn-secondary {
-    width: auto;
-    display: inline-block;
-    margin: 5px;
-  }
   .hero-buttons {
-    display: flex;
+    flex-direction: row;
     justify-content: center;
     gap: 15px;
   }

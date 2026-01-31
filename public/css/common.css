@@ -1,0 +1,340 @@
+/* Common Styles - Shared Foundation for Call to Roll */
+
+/* Theme Variables */
+:root {
+  /* Core colors */
+  --cream: #f5ebe0;
+  --red: #c1121f;
+  --red-dark: #780000;
+  --gold: #d4a84b;
+  --navy: #003049;
+  --brown: #4a3728;
+
+  /* Semantic mappings */
+  --primary-color: var(--red);
+  --primary-hover: var(--red-dark);
+  --secondary-color: var(--gold);
+  --background: var(--cream);
+  --surface: #fffef9;
+  --surface-light: #efe5d8;
+  --text: var(--brown);
+  --text-muted: #6b5a4a;
+  --danger: var(--red);
+  --warning: var(--gold);
+
+  /* Design tokens */
+  --border-radius: 6px;
+  --shadow: 3px 3px 0 var(--navy);
+}
+
+/* Base Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Base Body Styles */
+body {
+  font-family: 'Lora', serif;
+  background: var(--cream);
+  color: var(--brown);
+  min-height: 100dvh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Common Button Styles */
+.btn-primary {
+  display: block;
+  width: 100%;
+  background: var(--red);
+  color: white;
+  padding: 16px 30px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-decoration: none;
+  border: 3px solid var(--red-dark);
+  box-shadow: 3px 3px 0 var(--navy);
+  margin-bottom: 12px;
+  text-align: center;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.btn-primary:hover {
+  background: var(--red-dark);
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--navy);
+}
+
+.btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--navy);
+}
+
+.btn-secondary {
+  display: block;
+  width: 100%;
+  background: var(--cream);
+  color: var(--navy);
+  padding: 14px 30px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-decoration: none;
+  border: 3px solid var(--navy);
+  text-align: center;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.btn-secondary:hover {
+  background: var(--surface-light);
+}
+
+/* Common button base for app components */
+button {
+  font-family: 'Oswald', sans-serif;
+  background: var(--red);
+  color: white;
+  border: 3px solid var(--red-dark);
+  padding: 12px 24px;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 2px 2px 0 var(--navy);
+}
+
+button:hover {
+  background: var(--red-dark);
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--navy);
+}
+
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--navy);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 2px 2px 0 var(--navy);
+}
+
+/* Common Input Styles */
+input {
+  font-family: 'Lora', serif;
+  background: var(--surface);
+  border: 3px solid var(--navy);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 168, 75, 0.2);
+}
+
+input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Common Card Styles */
+.card {
+  background: var(--surface);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  border: 3px solid var(--brown);
+  box-shadow: 4px 4px 0 var(--navy);
+}
+
+/* Shared Keyframe Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 100px;
+    margin-bottom: 20px;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Reduced Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Larger Tap Targets */
+a, button {
+  min-height: 44px;
+}
+
+/* Navigation */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: var(--navy);
+  border-bottom: 3px solid var(--gold);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-logo {
+  font-family: 'Alfa Slab One', cursive;
+  font-size: 1.1rem;
+  color: var(--gold);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-logo-die {
+  width: 24px;
+  height: 24px;
+  background: var(--gold);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 4px;
+  gap: 1px;
+}
+
+.nav-logo-die .dot {
+  background: var(--navy);
+  border-radius: 50%;
+}
+
+.nav-cta {
+  font-family: 'Oswald', sans-serif;
+  background: var(--red);
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  border: 2px solid var(--red-dark);
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.nav-cta:hover {
+  background: var(--red-dark);
+}
+
+/* Footer */
+.site-footer {
+  background: var(--navy);
+  padding: 25px 20px;
+  text-align: center;
+  border-top: 3px solid var(--gold);
+  margin-top: 0;
+}
+
+.site-footer p {
+  font-family: 'Oswald', sans-serif;
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.75rem;
+  line-height: 1.8;
+}
+
+.site-footer a {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Bottom Safe Area for iOS */
+.safe-area {
+  height: env(safe-area-inset-bottom, 0);
+  background: var(--navy);
+}
+
+/* Tablet Button Adjustments */
+@media (min-width: 600px) {
+  .btn-primary,
+  .btn-secondary {
+    width: auto;
+    display: inline-block;
+    margin: 5px;
+  }
+}

@@ -1,0 +1,166 @@
+/* Play Page Styles - Specific to /play/ */
+
+/* Play page container */
+.play-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Override sticky nav for play page */
+.play-container > nav {
+  position: relative;
+}
+
+.play-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Mode selection view */
+.mode-selection {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.mode-selection h1 {
+  font-family: 'Alfa Slab One', cursive;
+  font-size: 2rem;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+
+.mode-selection p {
+  color: var(--text-muted);
+  margin-bottom: 30px;
+}
+
+.mode-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 25px;
+  background: var(--surface);
+  border: 3px solid var(--navy);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 4px 4px 0 var(--navy);
+  text-decoration: none;
+}
+
+.mode-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--navy);
+}
+
+.mode-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--navy);
+}
+
+.mode-btn-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.mode-btn-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--navy);
+  margin-bottom: 5px;
+}
+
+.mode-btn-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.mode-btn.create-btn {
+  border-color: var(--red);
+}
+
+.mode-btn.create-btn .mode-btn-title {
+  color: var(--red);
+}
+
+/* Views management */
+.view {
+  display: none;
+  width: 100%;
+  max-width: 450px;
+}
+
+.view.active {
+  display: block;
+}
+
+/* Join form header */
+.form-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-header h2 {
+  font-family: 'Alfa Slab One', cursive;
+  font-size: 1.5rem;
+  color: var(--red);
+  margin-bottom: 5px;
+}
+
+.form-header p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.back-to-modes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--navy);
+  text-decoration: none;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  transition: color 0.2s ease;
+}
+
+.back-to-modes:hover {
+  color: var(--red);
+}
+
+/* Hide nav when in room */
+#app.in-room > nav {
+  display: none;
+}
+
+#app.in-room .play-main {
+  padding: 0;
+  justify-content: flex-start;
+}
+
+/* Room view should show when active */
+#app.in-room room-view.active {
+  display: block;
+}
+
+/* Hide mode selection and join views when in room */
+#app.in-room .mode-selection,
+#app.in-room .view {
+  display: none !important;
+}
