@@ -1,7 +1,7 @@
 /**
  * PeerList - Web Component for displaying connected peers
  */
-import { escapeHtml } from '../utils/html-utils.js';
+import { escapeHtml } from "../utils/html-utils.js";
 
 class PeerList extends HTMLElement {
   constructor() {
@@ -9,7 +9,7 @@ class PeerList extends HTMLElement {
     this.peers = new Map();
     this.selfPeerId = null;
     this.selfUsername = null;
-    this.selfStatus = 'connected';
+    this.selfStatus = "connected";
     // Map of peer IDs to dice set color
     this.holderInfo = new Map();
   }
@@ -18,7 +18,7 @@ class PeerList extends HTMLElement {
     this.render();
   }
 
-  setSelf(peerId, username, status = 'connected') {
+  setSelf(peerId, username, status = "connected") {
     this.selfPeerId = peerId;
     this.selfUsername = username;
     this.selfStatus = status;
@@ -30,7 +30,7 @@ class PeerList extends HTMLElement {
     this.renderPeers();
   }
 
-  addPeer(peerId, username, status = 'connected') {
+  addPeer(peerId, username, status = "connected") {
     this.peers.set(peerId, { username, status });
     this.renderPeers();
   }
@@ -64,7 +64,7 @@ class PeerList extends HTMLElement {
   }
 
   renderPeers() {
-    const content = this.querySelector('.peer-list-content');
+    const content = this.querySelector(".peer-list-content");
     if (!content) return;
 
     const allPeers = [];
@@ -77,7 +77,7 @@ class PeerList extends HTMLElement {
         status: this.selfStatus,
         isSelf: true,
         isHolder: this.holderInfo.has(this.selfPeerId),
-        holderColor: this.holderInfo.get(this.selfPeerId)
+        holderColor: this.holderInfo.get(this.selfPeerId),
       });
     }
 
@@ -89,54 +89,59 @@ class PeerList extends HTMLElement {
         status,
         isSelf: false,
         isHolder: this.holderInfo.has(peerId),
-        holderColor: this.holderInfo.get(peerId)
+        holderColor: this.holderInfo.get(peerId),
       });
     }
 
     if (allPeers.length === 0) {
-      content.innerHTML = '<div class="empty-message">Waiting for players...</div>';
+      content.innerHTML =
+        '<div class="empty-message">Waiting for players...</div>';
       return;
     }
 
-    content.innerHTML = allPeers.map(({ peerId, username, status, isSelf, isHolder, holderColor }) => `
-      <div class="peer-item ${isHolder ? 'holding' : ''} ${isSelf && isHolder ? 'can-drop' : ''}"
+    content.innerHTML = allPeers
+      .map(
+        ({ peerId, username, status, isSelf, isHolder, holderColor }) => `
+      <div class="peer-item ${isHolder ? "holding" : ""} ${isSelf && isHolder ? "can-drop" : ""}"
            data-peer-id="${peerId}"
            data-is-self="${isSelf}"
            data-is-holder="${isHolder}"
-           style="${isHolder ? `border-color: ${holderColor}` : ''}">
+           style="${isHolder ? `border-color: ${holderColor}` : ""}">
         <div class="peer-avatar-container">
-          <div class="peer-avatar ${isSelf ? 'self' : ''} ${isHolder ? 'holding' : ''}">${this.getInitials(username)}</div>
-          ${isHolder ? '<div class="peer-dice-icon">&#127922;</div>' : ''}
+          <div class="peer-avatar ${isSelf ? "self" : ""} ${isHolder ? "holding" : ""}">${this.getInitials(username)}</div>
+          ${isHolder ? '<div class="peer-dice-icon">&#127922;</div>' : ""}
         </div>
-        <div class="peer-name ${isSelf ? 'self' : ''}">${escapeHtml(username)}</div>
-        <div class="peer-status ${status === 'connecting' ? 'connecting' : ''}"></div>
+        <div class="peer-name ${isSelf ? "self" : ""}">${escapeHtml(username)}</div>
+        <div class="peer-status ${status === "connecting" ? "connecting" : ""}"></div>
       </div>
-    `).join('');
+    `,
+      )
+      .join("");
 
     // Add click handlers for self holding dice
-    content.querySelectorAll('.peer-item.can-drop').forEach(item => {
-      item.addEventListener('click', () => {
-        this.dispatchEvent(new CustomEvent('dice-dropped', { bubbles: true }));
+    content.querySelectorAll(".peer-item.can-drop").forEach((item) => {
+      item.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("dice-dropped", { bubbles: true }));
       });
     });
   }
 
   getInitials(name) {
     return name
-      .split(' ')
-      .map(part => part.charAt(0).toUpperCase())
+      .split(" ")
+      .map((part) => part.charAt(0).toUpperCase())
       .slice(0, 2)
-      .join('');
+      .join("");
   }
 
   clear() {
     this.peers.clear();
     this.selfPeerId = null;
     this.selfUsername = null;
-    this.selfStatus = 'connected';
+    this.selfStatus = "connected";
     this.holderInfo.clear();
     this.renderPeers();
   }
 }
 
-customElements.define('peer-list', PeerList);
+customElements.define("peer-list", PeerList);

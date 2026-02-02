@@ -32,10 +32,10 @@ class HeaderBar extends HTMLElement {
   }
 
   setupEventListeners() {
-    const leaveBtn = this.querySelector('.btn-leave');
+    const leaveBtn = this.querySelector(".btn-leave");
     if (leaveBtn) {
-      leaveBtn.addEventListener('click', () => {
-        this.dispatchEvent(new CustomEvent('leave-room', { bubbles: true }));
+      leaveBtn.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("leave-room", { bubbles: true }));
       });
     }
   }
@@ -45,20 +45,20 @@ class HeaderBar extends HTMLElement {
     this._roomId = roomId;
 
     // Update app container class for compact header styling
-    const appContainer = document.getElementById('app');
-    if (appContainer) appContainer.classList.add('in-room');
+    const appContainer = document.getElementById("app");
+    if (appContainer) appContainer.classList.add("in-room");
 
     // Show room info
-    const roomInfo = this.querySelector('.room-info');
-    if (roomInfo) roomInfo.style.display = 'flex';
+    const roomInfo = this.querySelector(".room-info");
+    if (roomInfo) roomInfo.style.display = "flex";
 
     // Set room ID
-    const roomIdEl = this.querySelector('.room-id-value');
+    const roomIdEl = this.querySelector(".room-id-value");
     if (roomIdEl) roomIdEl.textContent = roomId;
 
     // Show leave button
-    const leaveBtn = this.querySelector('.btn-leave');
-    if (leaveBtn) leaveBtn.style.display = 'block';
+    const leaveBtn = this.querySelector(".btn-leave");
+    if (leaveBtn) leaveBtn.style.display = "block";
   }
 
   showJoinView() {
@@ -66,17 +66,17 @@ class HeaderBar extends HTMLElement {
     this._roomId = null;
 
     // Update app container class
-    const appContainer = document.getElementById('app');
-    if (appContainer) appContainer.classList.remove('in-room');
+    const appContainer = document.getElementById("app");
+    if (appContainer) appContainer.classList.remove("in-room");
 
     // Hide room info
-    const roomInfo = this.querySelector('.room-info');
-    if (roomInfo) roomInfo.style.display = 'none';
+    const roomInfo = this.querySelector(".room-info");
+    if (roomInfo) roomInfo.style.display = "none";
 
     // Hide leave button
-    const leaveBtn = this.querySelector('.btn-leave');
-    if (leaveBtn) leaveBtn.style.display = 'none';
+    const leaveBtn = this.querySelector(".btn-leave");
+    if (leaveBtn) leaveBtn.style.display = "none";
   }
 }
 
-customElements.define('header-bar', HeaderBar);
+customElements.define("header-bar", HeaderBar);

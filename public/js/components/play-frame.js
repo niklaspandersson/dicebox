@@ -29,4 +29,4 @@ class PlayFrame extends HTMLElement {
   }
 }
 
-customElements.define('play-frame', PlayFrame);
+customElements.define("play-frame", PlayFrame);

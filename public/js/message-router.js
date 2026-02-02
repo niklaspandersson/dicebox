@@ -2,24 +2,24 @@
  * MessageRouter - Routes P2P messages to appropriate handlers
  * Mesh topology: all peers are equal, no host/client distinction
  */
-import { webrtcManager } from './webrtc-manager.js';
+import { webrtcManager } from "./webrtc-manager.js";
 
 // Message types for P2P communication (mesh topology)
 export const MSG = {
   // Peer discovery & sync
-  HELLO: 'hello',             // New peer announces itself with username
-  WELCOME: 'welcome',         // Existing peer responds with current state
-  REQUEST_STATE: 'request-state', // Peer requests state snapshot
+  HELLO: "hello", // New peer announces itself with username
+  WELCOME: "welcome", // Existing peer responds with current state
+  REQUEST_STATE: "request-state", // Peer requests state snapshot
 
   // Peer lifecycle (broadcast to all)
-  PEER_JOINED: 'peer-joined', // Notify all peers of new peer
-  PEER_LEFT: 'peer-left',     // Notify all peers of departed peer
+  PEER_JOINED: "peer-joined", // Notify all peers of new peer
+  PEER_LEFT: "peer-left", // Notify all peers of departed peer
 
   // Dice actions (broadcast to all)
-  DICE_ROLL: 'dice-roll',     // Broadcast dice roll result
-  DICE_GRAB: 'dice-grab',     // Peer grabbed a dice set
-  DICE_DROP: 'dice-drop',     // Peer dropped a dice set
-  DICE_LOCK: 'dice-lock',     // Peer locked/unlocked a die
+  DICE_ROLL: "dice-roll", // Broadcast dice roll result
+  DICE_GRAB: "dice-grab", // Peer grabbed a dice set
+  DICE_DROP: "dice-drop", // Peer dropped a dice set
+  DICE_LOCK: "dice-lock", // Peer locked/unlocked a die
 };
 
 export class MessageRouter extends EventTarget {
@@ -47,7 +47,7 @@ export class MessageRouter extends EventTarget {
       return;
     }
 
-    console.log('Unknown or unhandled message type:', message.type);
+    console.log("Unknown or unhandled message type:", message.type);
   }
 
   /**

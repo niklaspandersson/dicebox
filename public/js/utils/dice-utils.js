@@ -10,17 +10,24 @@ const PIP_POSITIONS = {
   center: { cx: 25, cy: 25 },
   midRight: { cx: 36, cy: 25 },
   bottomLeft: { cx: 14, cy: 36 },
-  bottomRight: { cx: 36, cy: 36 }
+  bottomRight: { cx: 36, cy: 36 },
 };
 
 // Which pips to show for each face value (1-6)
 const PIP_CONFIGS = {
-  1: ['center'],
-  2: ['topRight', 'bottomLeft'],
-  3: ['topRight', 'center', 'bottomLeft'],
-  4: ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'],
-  5: ['topLeft', 'topRight', 'center', 'bottomLeft', 'bottomRight'],
-  6: ['topLeft', 'topRight', 'midLeft', 'midRight', 'bottomLeft', 'bottomRight']
+  1: ["center"],
+  2: ["topRight", "bottomLeft"],
+  3: ["topRight", "center", "bottomLeft"],
+  4: ["topLeft", "topRight", "bottomLeft", "bottomRight"],
+  5: ["topLeft", "topRight", "center", "bottomLeft", "bottomRight"],
+  6: [
+    "topLeft",
+    "topRight",
+    "midLeft",
+    "midRight",
+    "bottomLeft",
+    "bottomRight",
+  ],
 };
 
 /**
@@ -29,11 +36,13 @@ const PIP_CONFIGS = {
  * @param {string} pipColor - Color of the pips (default: '#0f172a')
  * @returns {string} SVG markup
  */
-export function getDiceSvg(value, pipColor = '#0f172a') {
-  const pips = PIP_CONFIGS[value].map(pos => {
-    const p = PIP_POSITIONS[pos];
-    return `<circle cx="${p.cx}" cy="${p.cy}" r="5" fill="${pipColor}"/>`;
-  }).join('');
+export function getDiceSvg(value, pipColor = "#0f172a") {
+  const pips = PIP_CONFIGS[value]
+    .map((pos) => {
+      const p = PIP_POSITIONS[pos];
+      return `<circle cx="${p.cx}" cy="${p.cy}" r="5" fill="${pipColor}"/>`;
+    })
+    .join("");
   return `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">${pips}</svg>`;
 }
 
@@ -45,10 +54,10 @@ export function getDiceSvg(value, pipColor = '#0f172a') {
  */
 export function getPipColor(diceColor) {
   // White or very light colors get black pips, others get white
-  if (diceColor === '#ffffff' || diceColor === '#eab308') {
-    return '#0f172a';
+  if (diceColor === "#ffffff" || diceColor === "#eab308") {
+    return "#0f172a";
   }
-  return '#ffffff';
+  return "#ffffff";
 }
 
 /**

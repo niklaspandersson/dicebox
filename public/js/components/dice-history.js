@@ -2,8 +2,8 @@
  * DiceHistory - Web Component for displaying roll history
  * Shows each dice set with its holder and color
  */
-import { getDiceSvg, getPipColor } from '../utils/dice-utils.js';
-import { escapeHtml } from '../utils/html-utils.js';
+import { getDiceSvg, getPipColor } from "../utils/dice-utils.js";
+import { escapeHtml } from "../utils/html-utils.js";
 
 class DiceHistory extends HTMLElement {
   constructor() {
@@ -59,35 +59,40 @@ class DiceHistory extends HTMLElement {
         total: roll.total,
         rollId: roll.rollId,
         timestamp: roll.timestamp || Date.now(),
-        lockedDice: roll.lockedDice || []
+        lockedDice: roll.lockedDice || [],
       };
     }
 
     // Legacy single-set format - convert to new format
     return {
-      setResults: [{
-        setId: 'set-1',
-        color: '#ffffff',
-        values: roll.values || [],
-        holderId: roll.peerId,
-        holderUsername: roll.username
-      }],
+      setResults: [
+        {
+          setId: "set-1",
+          color: "#ffffff",
+          values: roll.values || [],
+          holderId: roll.peerId,
+          holderUsername: roll.username,
+        },
+      ],
       total: roll.total || (roll.values || []).reduce((a, b) => a + b, 0),
       rollId: roll.rollId,
       timestamp: roll.timestamp || Date.now(),
-      lockedDice: roll.lockedDice || []
+      lockedDice: roll.lockedDice || [],
     };
   }
 
   renderHistory() {
-    const listEl = this.querySelector('.history-list');
+    const listEl = this.querySelector(".history-list");
 
     if (this.history.length === 0) {
-      listEl.innerHTML = '<div class="empty-message">No rolls yet. Be the first to roll!</div>';
+      listEl.innerHTML =
+        '<div class="empty-message">No rolls yet. Be the first to roll!</div>';
       return;
     }
 
-    listEl.innerHTML = this.history.map(roll => this.renderRollEntry(roll)).join('');
+    listEl.innerHTML = this.history
+      .map((roll) => this.renderRollEntry(roll))
+      .join("");
   }
 
   renderRollEntry(roll) {
@@ -109,8 +114,8 @@ class DiceHistory extends HTMLElement {
     const renderDie = (setId, value, dieIndex, color, pipColor) => {
       const isLocked = isDieLocked(setId, dieIndex);
       return `<span class="history-die-wrapper">
-        <span class="history-die ${isLocked ? 'locked' : ''}" style="background: ${color}">${getDiceSvg(value, pipColor)}</span>
-        ${isLocked ? '<span class="history-lock-indicator">🔒</span>' : ''}
+        <span class="history-die ${isLocked ? "locked" : ""}" style="background: ${color}">${getDiceSvg(value, pipColor)}</span>
+        ${isLocked ? '<span class="history-lock-indicator">🔒</span>' : ""}
       </span>`;
     };
 
@@ -122,7 +127,7 @@ class DiceHistory extends HTMLElement {
       if (!holderGroups.has(holderId)) {
         holderGroups.set(holderId, {
           username: setResult.holderUsername,
-          sets: []
+          sets: [],
         });
       }
       holderGroups.get(holderId).sets.push(setResult);
@@ -133,41 +138,49 @@ class DiceHistory extends HTMLElement {
       const [holderId, group] = holderGroups.entries().next().value;
       const isSelf = holderId === this.selfPeerId;
 
-      const diceHtml = roll.setResults.map(setResult => {
-        const pipColor = getPipColor(setResult.color);
-        return `
+      const diceHtml = roll.setResults
+        .map((setResult) => {
+          const pipColor = getPipColor(setResult.color);
+          return `
           <span class="history-dice-group" style="--group-color: ${setResult.color}">
-            ${setResult.values.map((v, i) =>
-              renderDie(setResult.setId, v, i, setResult.color, pipColor)
-            ).join('')}
+            ${setResult.values
+              .map((v, i) =>
+                renderDie(setResult.setId, v, i, setResult.color, pipColor),
+              )
+              .join("")}
           </span>
         `;
-      }).join('');
+        })
+        .join("");
 
       return `
         <div class="history-item single-holder">
-          <span class="username ${isSelf ? 'self' : ''}">${escapeHtml(group.username)}</span>
+          <span class="username ${isSelf ? "self" : ""}">${escapeHtml(group.username)}</span>
           <span class="history-dice">${diceHtml}</span>
         </div>
       `;
     }
 
     // Multiple holders - show each set/holder pair
-    const setEntries = roll.setResults.map(setResult => {
-      const isSelf = setResult.holderId === this.selfPeerId;
-      const pipColor = getPipColor(setResult.color);
-      const diceHtml = setResult.values.map((v, i) =>
-        renderDie(setResult.setId, v, i, setResult.color, pipColor)
-      ).join('');
+    const setEntries = roll.setResults
+      .map((setResult) => {
+        const isSelf = setResult.holderId === this.selfPeerId;
+        const pipColor = getPipColor(setResult.color);
+        const diceHtml = setResult.values
+          .map((v, i) =>
+            renderDie(setResult.setId, v, i, setResult.color, pipColor),
+          )
+          .join("");
 
-      return `
+        return `
         <div class="history-set-entry">
           <span class="set-indicator" style="background: ${setResult.color}"></span>
-          <span class="username ${isSelf ? 'self' : ''}">${escapeHtml(setResult.holderUsername)}</span>
+          <span class="username ${isSelf ? "self" : ""}">${escapeHtml(setResult.holderUsername)}</span>
           <span class="history-dice">${diceHtml}</span>
         </div>
       `;
-    }).join('');
+      })
+      .join("");
 
     return `
       <div class="history-item multi-holder">
@@ -182,4 +195,4 @@ class DiceHistory extends HTMLElement {
   }
 }
 
-customElements.define('dice-history', DiceHistory);
+customElements.define("dice-history", DiceHistory);

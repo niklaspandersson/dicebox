@@ -26,12 +26,12 @@ class RoomView extends HTMLElement {
   }
 
   show() {
-    this.classList.add('active');
+    this.classList.add("active");
   }
 
   hide() {
-    this.classList.remove('active');
+    this.classList.remove("active");
   }
 }
 
-customElements.define('room-view', RoomView);
+customElements.define("room-view", RoomView);

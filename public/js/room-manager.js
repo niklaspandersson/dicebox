@@ -2,9 +2,9 @@
  * RoomManager - Handles room lifecycle for mesh topology
  * All peers are equal - no host/client distinction
  */
-import { signalingClient } from './signaling-client.js';
-import { webrtcManager } from './webrtc-manager.js';
-import { MeshState } from './mesh-state.js';
+import { signalingClient } from "./signaling-client.js";
+import { webrtcManager } from "./webrtc-manager.js";
+import { MeshState } from "./mesh-state.js";
 
 export class RoomManager extends EventTarget {
   constructor() {
@@ -33,10 +33,14 @@ export class RoomManager extends EventTarget {
       signalingClient.createRoom(roomId, diceConfig);
     }
 
-    console.log(`Created room ${roomId} (server ${serverConnected ? 'connected' : 'offline'})`);
-    this.dispatchEvent(new CustomEvent('room-created', {
-      detail: { roomId }
-    }));
+    console.log(
+      `Created room ${roomId} (server ${serverConnected ? "connected" : "offline"})`,
+    );
+    this.dispatchEvent(
+      new CustomEvent("room-created", {
+        detail: { roomId },
+      }),
+    );
   }
 
   /**
@@ -44,9 +48,11 @@ export class RoomManager extends EventTarget {
    */
   joinRoom(roomId, username, serverConnected) {
     if (!serverConnected) {
-      this.dispatchEvent(new CustomEvent('join-failed', {
-        detail: { reason: 'Cannot join room - no server connection' }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("join-failed", {
+          detail: { reason: "Cannot join room - no server connection" },
+        }),
+      );
       return false;
     }
 
@@ -66,7 +72,9 @@ export class RoomManager extends EventTarget {
     if (roomId !== this.roomId) return;
 
     if (exists && peerIds && peerIds.length > 0) {
-      console.log(`Room ${roomId} exists with ${peerIds.length} peers, joining...`);
+      console.log(
+        `Room ${roomId} exists with ${peerIds.length} peers, joining...`,
+      );
 
       // Set dice config from room
       if (diceConfig) {
@@ -76,9 +84,11 @@ export class RoomManager extends EventTarget {
       // Join the room via signaling
       signalingClient.joinRoom(roomId);
     } else {
-      this.dispatchEvent(new CustomEvent('join-failed', {
-        detail: { reason: exists ? 'Room is empty' : 'Room not found' }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("join-failed", {
+          detail: { reason: exists ? "Room is empty" : "Room not found" },
+        }),
+      );
       this.roomId = null;
     }
   }
@@ -100,9 +110,11 @@ export class RoomManager extends EventTarget {
       webrtcManager.connectToPeer(peerId);
     }
 
-    this.dispatchEvent(new CustomEvent('room-joined', {
-      detail: { roomId, peerIds, diceConfig }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("room-joined", {
+        detail: { roomId, peerIds, diceConfig },
+      }),
+    );
   }
 
   /**
@@ -110,15 +122,19 @@ export class RoomManager extends EventTarget {
    */
   handleCreateRoomSuccess({ roomId }) {
     console.log(`Room ${roomId} created successfully`);
-    this.dispatchEvent(new CustomEvent('create-room-success', { detail: { roomId } }));
+    this.dispatchEvent(
+      new CustomEvent("create-room-success", { detail: { roomId } }),
+    );
   }
 
   /**
    * Handle room creation failure
    */
   handleCreateRoomFailed({ roomId, reason }) {
-    console.error('Failed to create room:', reason);
-    this.dispatchEvent(new CustomEvent('create-room-failed', { detail: { roomId, reason } }));
+    console.error("Failed to create room:", reason);
+    this.dispatchEvent(
+      new CustomEvent("create-room-failed", { detail: { roomId, reason } }),
+    );
   }
 
   /**
@@ -139,9 +155,11 @@ export class RoomManager extends EventTarget {
     const peer = this.meshState.getPeer(peerId);
     if (peer) {
       this.meshState.removePeer(peerId);
-      this.dispatchEvent(new CustomEvent('peer-left', {
-        detail: { peerId, username: peer.username }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("peer-left", {
+          detail: { peerId, username: peer.username },
+        }),
+      );
     }
   }
 
@@ -175,9 +193,11 @@ export class RoomManager extends EventTarget {
     this.receivedStateFrom = null;
 
     console.log(`Left room ${oldRoomId}`);
-    this.dispatchEvent(new CustomEvent('room-left', {
-      detail: { roomId: oldRoomId }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("room-left", {
+        detail: { roomId: oldRoomId },
+      }),
+    );
   }
 
   /**
@@ -226,56 +246,58 @@ export class RoomManager extends EventTarget {
    * Setup signaling server event listeners for room events
    */
   setupSignalingEvents(callbacks) {
-    signalingClient.addEventListener('room-info', (e) => {
+    signalingClient.addEventListener("room-info", (e) => {
       this.handleRoomInfo(e.detail);
     });
 
-    signalingClient.addEventListener('create-room-success', (e) => {
+    signalingClient.addEventListener("create-room-success", (e) => {
       this.handleCreateRoomSuccess(e.detail);
     });
 
-    signalingClient.addEventListener('create-room-failed', (e) => {
+    signalingClient.addEventListener("create-room-failed", (e) => {
       this.handleCreateRoomFailed(e.detail);
       callbacks.onCreateRoomFailed?.(e.detail);
     });
 
-    signalingClient.addEventListener('join-room-success', (e) => {
+    signalingClient.addEventListener("join-room-success", (e) => {
       this.handleJoinRoomSuccess(e.detail);
     });
 
-    signalingClient.addEventListener('join-room-failed', (e) => {
-      console.error('Failed to join room:', e.detail.reason);
-      this.dispatchEvent(new CustomEvent('join-failed', { detail: e.detail }));
+    signalingClient.addEventListener("join-room-failed", (e) => {
+      console.error("Failed to join room:", e.detail.reason);
+      this.dispatchEvent(new CustomEvent("join-failed", { detail: e.detail }));
       callbacks.onJoinFailed?.(e.detail);
     });
 
-    signalingClient.addEventListener('peer-joining', (e) => {
+    signalingClient.addEventListener("peer-joining", (e) => {
       this.handlePeerJoining(e.detail);
       callbacks.onPeerJoining?.(e.detail);
     });
 
-    signalingClient.addEventListener('peer-disconnected', (e) => {
+    signalingClient.addEventListener("peer-disconnected", (e) => {
       this.handlePeerDisconnected(e.detail);
       callbacks.onPeerDisconnected?.(e.detail);
     });
 
-    signalingClient.addEventListener('peer-reconnected', (e) => {
+    signalingClient.addEventListener("peer-reconnected", (e) => {
       this.handlePeerReconnected(e.detail);
       callbacks.onPeerReconnected?.(e.detail);
     });
 
-    signalingClient.addEventListener('peer-left', (e) => {
+    signalingClient.addEventListener("peer-left", (e) => {
       this.handlePeerDisconnected(e.detail); // Same handling
       callbacks.onPeerLeft?.(e.detail);
     });
 
-    signalingClient.addEventListener('session-restored', (e) => {
+    signalingClient.addEventListener("session-restored", (e) => {
       const { roomId } = e.detail;
       console.log(`Session restored, previous room: ${roomId}`);
       if (roomId) {
         this.roomId = roomId;
       }
-      this.dispatchEvent(new CustomEvent('session-restored', { detail: e.detail }));
+      this.dispatchEvent(
+        new CustomEvent("session-restored", { detail: e.detail }),
+      );
       callbacks.onSessionRestored?.(e.detail);
     });
   }

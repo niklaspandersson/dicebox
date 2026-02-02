@@ -5,18 +5,18 @@
 export class MeshState extends EventTarget {
   constructor() {
     super();
-    this.peers = new Map();      // peerId -> { username, connectedAt }
-    this.rollHistory = [];       // Recent rolls
-    this.diceConfig = null;      // Immutable, set at room creation
-    this.holders = new Map();    // setId -> { peerId, username }
+    this.peers = new Map(); // peerId -> { username, connectedAt }
+    this.rollHistory = []; // Recent rolls
+    this.diceConfig = null; // Immutable, set at room creation
+    this.holders = new Map(); // setId -> { peerId, username }
     this.maxHistorySize = 100;
     this.knownRollIds = new Set(); // For deduplication
 
     // Dice locking state
-    this.lockedDice = new Map();      // setId -> { lockedIndices: Set<number>, values: Map<index, value> }
+    this.lockedDice = new Map(); // setId -> { lockedIndices: Set<number>, values: Map<index, value> }
     this.holderHasRolled = new Map(); // setId -> boolean (has current holder rolled at least once?)
-    this.savedDiceState = new Map();  // peerId -> Map<setId, { lockedIndices: number[], values: number[] }>
-    this.lastRoller = new Map();      // setId -> { peerId, username } - who last rolled this set
+    this.savedDiceState = new Map(); // peerId -> Map<setId, { lockedIndices: number[], values: number[] }>
+    this.lastRoller = new Map(); // setId -> { peerId, username } - who last rolled this set
   }
 
   // === Peer Management ===
@@ -26,12 +26,14 @@ export class MeshState extends EventTarget {
 
     this.peers.set(peerId, {
       username,
-      connectedAt: Date.now()
+      connectedAt: Date.now(),
     });
 
-    this.dispatchEvent(new CustomEvent('peer-added', {
-      detail: { peerId, username }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("peer-added", {
+        detail: { peerId, username },
+      }),
+    );
     return true;
   }
 
@@ -48,9 +50,11 @@ export class MeshState extends EventTarget {
       }
     }
 
-    this.dispatchEvent(new CustomEvent('peer-removed', {
-      detail: { peerId, username: peer.username }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("peer-removed", {
+        detail: { peerId, username: peer.username },
+      }),
+    );
     return true;
   }
 
@@ -62,7 +66,7 @@ export class MeshState extends EventTarget {
     return Array.from(this.peers.entries()).map(([peerId, data]) => ({
       peerId,
       username: data.username,
-      connectedAt: data.connectedAt
+      connectedAt: data.connectedAt,
     }));
   }
 
@@ -186,7 +190,7 @@ export class MeshState extends EventTarget {
     if (!this.lockedDice.has(setId)) {
       this.lockedDice.set(setId, {
         lockedIndices: new Set(),
-        values: new Map()
+        values: new Map(),
       });
     }
     const lock = this.lockedDice.get(setId);
@@ -261,7 +265,7 @@ export class MeshState extends EventTarget {
     }
     this.savedDiceState.get(peerId).set(setId, {
       lockedIndices: [...lockedIndices],
-      values: [...values]
+      values: [...values],
     });
   }
 
@@ -302,7 +306,7 @@ export class MeshState extends EventTarget {
     }
     this.lockedDice.set(setId, {
       lockedIndices: new Set(lockedIndices),
-      values: new Map(lockedIndices.map((idx, i) => [idx, values[i]]))
+      values: new Map(lockedIndices.map((idx, i) => [idx, values[i]])),
     });
   }
 
@@ -346,7 +350,7 @@ export class MeshState extends EventTarget {
       lockedDiceSnapshot.push({
         setId,
         lockedIndices: [...lock.lockedIndices],
-        values: [...lock.values.entries()].map(([idx, val]) => ({ idx, val }))
+        values: [...lock.values.entries()].map(([idx, val]) => ({ idx, val })),
       });
     }
 
@@ -358,7 +362,7 @@ export class MeshState extends EventTarget {
           peerId,
           setId,
           lockedIndices: state.lockedIndices,
-          values: state.values
+          values: state.values,
         });
       }
     }
@@ -367,7 +371,7 @@ export class MeshState extends EventTarget {
       peers: Array.from(this.peers.entries()).map(([peerId, data]) => ({
         peerId,
         username: data.username,
-        connectedAt: data.connectedAt
+        connectedAt: data.connectedAt,
       })),
       rollHistory: this.rollHistory.slice(0, 50),
       diceConfig: this.diceConfig,
@@ -375,7 +379,7 @@ export class MeshState extends EventTarget {
       lockedDice: lockedDiceSnapshot,
       holderHasRolled: Array.from(this.holderHasRolled.entries()),
       savedDiceState: savedDiceSnapshot,
-      lastRoller: Array.from(this.lastRoller.entries())
+      lastRoller: Array.from(this.lastRoller.entries()),
     };
   }
 
@@ -385,10 +389,10 @@ export class MeshState extends EventTarget {
   loadSnapshot(snapshot) {
     // Load peers
     this.peers.clear();
-    for (const peer of (snapshot.peers || [])) {
+    for (const peer of snapshot.peers || []) {
       this.peers.set(peer.peerId, {
         username: peer.username,
-        connectedAt: peer.connectedAt || Date.now()
+        connectedAt: peer.connectedAt || Date.now(),
       });
     }
 
@@ -418,7 +422,7 @@ export class MeshState extends EventTarget {
       for (const lock of snapshot.lockedDice) {
         this.lockedDice.set(lock.setId, {
           lockedIndices: new Set(lock.lockedIndices),
-          values: new Map(lock.values.map(v => [v.idx, v.val]))
+          values: new Map(lock.values.map((v) => [v.idx, v.val])),
         });
       }
     }
@@ -440,7 +444,7 @@ export class MeshState extends EventTarget {
         }
         this.savedDiceState.get(saved.peerId).set(saved.setId, {
           lockedIndices: saved.lockedIndices,
-          values: saved.values
+          values: saved.values,
         });
       }
     }

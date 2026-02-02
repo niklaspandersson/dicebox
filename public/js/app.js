@@ -2,11 +2,11 @@
  * DiceBox - Main Application
  * Mesh topology: all peers are equal, no host/client distinction
  */
-import { signalingClient } from './signaling-client.js';
-import { webrtcManager } from './webrtc-manager.js';
-import { ConnectionManager } from './connection-manager.js';
-import { RoomManager } from './room-manager.js';
-import { MessageRouter, MSG } from './message-router.js';
+import { signalingClient } from "./signaling-client.js";
+import { webrtcManager } from "./webrtc-manager.js";
+import { ConnectionManager } from "./connection-manager.js";
+import { RoomManager } from "./room-manager.js";
+import { MessageRouter, MSG } from "./message-router.js";
 
 class DiceBoxApp {
   constructor() {
@@ -16,9 +16,9 @@ class DiceBoxApp {
     this.messageRouter = new MessageRouter();
 
     // UI components
-    this.headerBar = document.querySelector('header-bar');
-    this.roomJoin = document.querySelector('room-join');
-    this.roomView = document.querySelector('room-view');
+    this.headerBar = document.querySelector("header-bar");
+    this.roomJoin = document.querySelector("room-join");
+    this.roomView = document.querySelector("room-view");
     this.diceRoller = null;
     this.diceHistory = null;
     this.peerList = null;
@@ -40,13 +40,27 @@ class DiceBoxApp {
     this.messageRouter
       .onMessage(MSG.HELLO, (peerId, msg) => this.handleHello(peerId, msg))
       .onMessage(MSG.WELCOME, (peerId, msg) => this.handleWelcome(peerId, msg))
-      .onMessage(MSG.REQUEST_STATE, (peerId, msg) => this.handleRequestState(peerId, msg))
-      .onMessage(MSG.PEER_JOINED, (peerId, msg) => this.handlePeerJoinedMsg(peerId, msg))
-      .onMessage(MSG.PEER_LEFT, (peerId, msg) => this.handlePeerLeftMsg(peerId, msg))
-      .onMessage(MSG.DICE_ROLL, (peerId, msg) => this.handleDiceRollMsg(peerId, msg))
-      .onMessage(MSG.DICE_GRAB, (peerId, msg) => this.handleDiceGrabMsg(peerId, msg))
-      .onMessage(MSG.DICE_DROP, (peerId, msg) => this.handleDiceDropMsg(peerId, msg))
-      .onMessage(MSG.DICE_LOCK, (peerId, msg) => this.handleDiceLockMsg(peerId, msg));
+      .onMessage(MSG.REQUEST_STATE, (peerId, msg) =>
+        this.handleRequestState(peerId, msg),
+      )
+      .onMessage(MSG.PEER_JOINED, (peerId, msg) =>
+        this.handlePeerJoinedMsg(peerId, msg),
+      )
+      .onMessage(MSG.PEER_LEFT, (peerId, msg) =>
+        this.handlePeerLeftMsg(peerId, msg),
+      )
+      .onMessage(MSG.DICE_ROLL, (peerId, msg) =>
+        this.handleDiceRollMsg(peerId, msg),
+      )
+      .onMessage(MSG.DICE_GRAB, (peerId, msg) =>
+        this.handleDiceGrabMsg(peerId, msg),
+      )
+      .onMessage(MSG.DICE_DROP, (peerId, msg) =>
+        this.handleDiceDropMsg(peerId, msg),
+      )
+      .onMessage(MSG.DICE_LOCK, (peerId, msg) =>
+        this.handleDiceLockMsg(peerId, msg),
+      );
   }
 
   // === MANAGER EVENTS SETUP ===
@@ -60,16 +74,16 @@ class DiceBoxApp {
         // Session should be automatically restored by signaling client
       },
       onReconnectFailed: () => {},
-      onServerError: () => {}
+      onServerError: () => {},
     });
 
     // Room manager events
     this.roomManager.setupSignalingEvents({
       onCreateRoomFailed: ({ reason }) => {
-        console.error('Failed to create room:', reason);
+        console.error("Failed to create room:", reason);
       },
       onJoinFailed: ({ reason }) => {
-        console.error('Failed to join room:', reason);
+        console.error("Failed to join room:", reason);
       },
       onPeerDisconnected: ({ peerId }) => {
         // Handle WebRTC disconnection
@@ -80,22 +94,22 @@ class DiceBoxApp {
         this.updateDiceRollerState();
       },
       onSessionRestored: ({ roomId }) => {
-        if (roomId && this.roomView.classList.contains('active')) {
-          console.log('Session restored while in room, reconnecting...');
+        if (roomId && this.roomView.classList.contains("active")) {
+          console.log("Session restored while in room, reconnecting...");
           if (this.peerList) {
-            this.peerList.setSelfStatus('connecting');
+            this.peerList.setSelfStatus("connecting");
           }
           // Re-query room to get current peers
           signalingClient.queryRoom(roomId);
         }
-      }
+      },
     });
 
-    this.roomManager.addEventListener('room-created', () => {
+    this.roomManager.addEventListener("room-created", () => {
       this.enterRoom();
     });
 
-    this.roomManager.addEventListener('peer-left', (e) => {
+    this.roomManager.addEventListener("peer-left", (e) => {
       const { peerId, username } = e.detail;
       if (this.peerList) {
         this.peerList.removePeer(peerId);
@@ -114,7 +128,7 @@ class DiceBoxApp {
 
   setupEventListeners() {
     // Room join UI events
-    document.addEventListener('join-room', (e) => {
+    document.addEventListener("join-room", (e) => {
       const { roomId, username, isHost, diceConfig } = e.detail;
       if (isHost) {
         this.roomManager.createRoom(
@@ -122,35 +136,39 @@ class DiceBoxApp {
           username,
           this.connectionManager.getEffectiveId(),
           this.connectionManager.serverConnected,
-          diceConfig
+          diceConfig,
         );
       } else {
-        this.roomManager.joinRoom(roomId, username, this.connectionManager.serverConnected);
+        this.roomManager.joinRoom(
+          roomId,
+          username,
+          this.connectionManager.serverConnected,
+        );
       }
     });
 
-    document.addEventListener('leave-room', () => {
+    document.addEventListener("leave-room", () => {
       this.leaveRoom();
     });
 
-    document.addEventListener('retry-connection', () => {
+    document.addEventListener("retry-connection", () => {
       this.retryConnection();
     });
 
     // Dice events
-    document.addEventListener('dice-rolled', (e) => {
+    document.addEventListener("dice-rolled", (e) => {
       this.handleLocalDiceRoll(e.detail);
     });
 
-    document.addEventListener('dice-grabbed', (e) => {
+    document.addEventListener("dice-grabbed", (e) => {
       this.handleLocalDiceGrab(e);
     });
 
-    document.addEventListener('dice-dropped', () => {
+    document.addEventListener("dice-dropped", () => {
       this.handleLocalDiceDrop();
     });
 
-    document.addEventListener('dice-lock-changed', (e) => {
+    document.addEventListener("dice-lock-changed", (e) => {
       this.handleLocalDiceLock(e.detail);
     });
 
@@ -163,14 +181,14 @@ class DiceBoxApp {
   }
 
   setupWebRTCEvents() {
-    webrtcManager.addEventListener('channel-open', (e) => {
+    webrtcManager.addEventListener("channel-open", (e) => {
       const { peerId, channel } = e.detail;
       console.log(`Channel opened with ${peerId}`);
 
       // Reset self status to connected when we establish a peer connection
       // This handles the case where self was set to 'connecting' during session restoration
       if (this.peerList) {
-        this.peerList.setSelfStatus('connected');
+        this.peerList.setSelfStatus("connected");
       }
 
       this.roomManager.markPeerConnected(peerId);
@@ -178,33 +196,36 @@ class DiceBoxApp {
       // Send HELLO to introduce ourselves
       this.messageRouter.sendToPeer(peerId, {
         type: MSG.HELLO,
-        username: this.roomManager.username
+        username: this.roomManager.username,
       });
 
       // If we don't have state yet, request it from this peer
       if (!this.roomManager.hasReceivedState() && this.roomManager.inRoom()) {
         this.messageRouter.sendToPeer(peerId, {
-          type: MSG.REQUEST_STATE
+          type: MSG.REQUEST_STATE,
         });
       }
     });
 
-    webrtcManager.addEventListener('message', (e) => {
+    webrtcManager.addEventListener("message", (e) => {
       this.messageRouter.route(e.detail.peerId, e.detail.message);
     });
 
-    webrtcManager.addEventListener('peer-disconnected', (e) => {
+    webrtcManager.addEventListener("peer-disconnected", (e) => {
       this.handlePeerDisconnected(e.detail.peerId);
     });
 
-    webrtcManager.addEventListener('connection-state-change', (e) => {
+    webrtcManager.addEventListener("connection-state-change", (e) => {
       const { peerId, state } = e.detail;
       if (this.peerList) {
-        this.peerList.updatePeerStatus(peerId, state === 'connected' ? 'connected' : 'connecting');
+        this.peerList.updatePeerStatus(
+          peerId,
+          state === "connected" ? "connected" : "connecting",
+        );
       }
     });
 
-    webrtcManager.addEventListener('connection-timeout', (e) => {
+    webrtcManager.addEventListener("connection-timeout", (e) => {
       const { peerId } = e.detail;
       console.log(`Connection to ${peerId} timed out`);
       this.handlePeerDisconnected(peerId);
@@ -222,16 +243,19 @@ class DiceBoxApp {
 
     // Add to UI
     if (this.peerList) {
-      this.peerList.addPeer(peerId, username, 'connected');
+      this.peerList.addPeer(peerId, username, "connected");
     }
 
     // If we already have state, broadcast that this peer joined to others
     if (this.roomManager.hasReceivedState()) {
-      this.messageRouter.broadcast({
-        type: MSG.PEER_JOINED,
+      this.messageRouter.broadcast(
+        {
+          type: MSG.PEER_JOINED,
+          peerId,
+          username,
+        },
         peerId,
-        username
-      }, peerId);
+      );
     }
   }
 
@@ -242,7 +266,7 @@ class DiceBoxApp {
     // Send our current state to this peer
     this.messageRouter.sendToPeer(peerId, {
       type: MSG.WELCOME,
-      state: meshState.getSnapshot()
+      state: meshState.getSnapshot(),
     });
   }
 
@@ -251,7 +275,7 @@ class DiceBoxApp {
 
     // Only accept state if we haven't received it yet
     if (this.roomManager.hasReceivedState()) {
-      console.log('Already have state, ignoring');
+      console.log("Already have state, ignoring");
       return;
     }
 
@@ -265,9 +289,9 @@ class DiceBoxApp {
     this.enterRoom();
 
     // Populate peer list and history from state
-    for (const peer of (state.peers || [])) {
+    for (const peer of state.peers || []) {
       if (peer.peerId !== this.connectionManager.peerId) {
-        this.peerList.addPeer(peer.peerId, peer.username, 'connected');
+        this.peerList.addPeer(peer.peerId, peer.username, "connected");
       }
     }
 
@@ -285,7 +309,7 @@ class DiceBoxApp {
     meshState.addPeer(newPeerId, username);
 
     if (this.peerList) {
-      this.peerList.addPeer(newPeerId, username, 'connected');
+      this.peerList.addPeer(newPeerId, username, "connected");
     }
   }
 
@@ -314,16 +338,20 @@ class DiceBoxApp {
 
     // Convert setResults to rollResults format for display
     const rollResults = {};
-    for (const sr of (roll.setResults || [])) {
+    for (const sr of roll.setResults || []) {
       rollResults[sr.setId] = sr.values;
 
       // Clear saved states for this set (dice have been rolled by someone)
       meshState.clearSavedStateForSet(sr.setId);
 
       // Update lock state from roll
-      const lockInfo = roll.lockedDice?.find(l => l.setId === sr.setId);
+      const lockInfo = roll.lockedDice?.find((l) => l.setId === sr.setId);
       if (lockInfo && lockInfo.lockedIndices.length > 0) {
-        meshState.setLockState(sr.setId, lockInfo.lockedIndices, lockInfo.values);
+        meshState.setLockState(
+          sr.setId,
+          lockInfo.lockedIndices,
+          lockInfo.values,
+        );
       } else {
         meshState.clearLocksForSet(sr.setId);
       }
@@ -361,8 +389,16 @@ class DiceBoxApp {
     meshState.setHolder(setId, peerId, username);
 
     // Restore lock state if provided (same user picking up their dice)
-    if (restoredLock && restoredLock.lockedIndices && restoredLock.lockedIndices.length > 0) {
-      meshState.setLockState(setId, restoredLock.lockedIndices, restoredLock.values);
+    if (
+      restoredLock &&
+      restoredLock.lockedIndices &&
+      restoredLock.lockedIndices.length > 0
+    ) {
+      meshState.setLockState(
+        setId,
+        restoredLock.lockedIndices,
+        restoredLock.values,
+      );
       meshState.setHolderHasRolled(setId); // They had rolled before
     }
 
@@ -408,7 +444,7 @@ class DiceBoxApp {
         this.messageRouter.broadcast({
           type: MSG.DICE_DROP,
           setId,
-          peerId
+          peerId,
         });
       }
 
@@ -418,7 +454,7 @@ class DiceBoxApp {
       this.messageRouter.broadcast({
         type: MSG.PEER_LEFT,
         peerId,
-        username: peer.username
+        username: peer.username,
       });
 
       if (this.peerList) {
@@ -433,25 +469,34 @@ class DiceBoxApp {
 
   enterRoom() {
     // Hide join-related elements
-    if (this.roomJoin) this.roomJoin.style.display = 'none';
+    if (this.roomJoin) this.roomJoin.style.display = "none";
 
     // Hide any views in the play page
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.mode-selection').forEach(v => v.classList.remove('active'));
+    document
+      .querySelectorAll(".view")
+      .forEach((v) => v.classList.remove("active"));
+    document
+      .querySelectorAll(".mode-selection")
+      .forEach((v) => v.classList.remove("active"));
 
     this.roomView.show();
     this.headerBar.showRoomView(this.roomManager.roomId);
 
-    this.diceRoller = this.roomView.querySelector('dice-roller');
-    this.diceHistory = this.roomView.querySelector('dice-history');
-    this.peerList = this.roomView.querySelector('peer-list');
+    this.diceRoller = this.roomView.querySelector("dice-roller");
+    this.diceHistory = this.roomView.querySelector("dice-history");
+    this.peerList = this.roomView.querySelector("peer-list");
 
-    this.peerList.setSelf(this.connectionManager.getEffectiveId(), this.roomManager.username);
+    this.peerList.setSelf(
+      this.connectionManager.getEffectiveId(),
+      this.roomManager.username,
+    );
     this.diceHistory.peerId = this.connectionManager.getEffectiveId();
 
     this.updateDiceRollerState();
 
-    console.log(`Entered room ${this.roomManager.roomId} as ${this.roomManager.username}`);
+    console.log(
+      `Entered room ${this.roomManager.roomId} as ${this.roomManager.username}`,
+    );
   }
 
   // === LOCAL DICE ACTIONS ===
@@ -471,7 +516,9 @@ class DiceBoxApp {
     const allowLocking = diceConfig?.allowLocking || false;
 
     // Check if user has saved state to restore
-    const savedState = allowLocking ? meshState.getSavedDiceState(setId, myId) : null;
+    const savedState = allowLocking
+      ? meshState.getSavedDiceState(setId, myId)
+      : null;
 
     // Check if user is the lastRoller (they may have locked dice after rolling)
     const lastRoller = meshState.getLastRoller(setId);
@@ -494,7 +541,7 @@ class DiceBoxApp {
           lockedIndices: [...currentLocks.lockedIndices],
           values: Array.isArray(currentLocks.values)
             ? [...currentLocks.values]
-            : [...currentLocks.values.values()]
+            : [...currentLocks.values.values()],
         };
       } else if (savedState) {
         // Restore from saved state (dropped dice scenario)
@@ -507,7 +554,11 @@ class DiceBoxApp {
 
       // Restore lock state if applicable
       if (lockToRestore) {
-        meshState.setLockState(setId, lockToRestore.lockedIndices, lockToRestore.values);
+        meshState.setLockState(
+          setId,
+          lockToRestore.lockedIndices,
+          lockToRestore.values,
+        );
         meshState.setHolderHasRolled(setId); // They had rolled before, so can continue locking
 
         // Update dice roller current values with locked values
@@ -528,10 +579,12 @@ class DiceBoxApp {
         setId,
         peerId: myId,
         username: this.roomManager.username,
-        restoredLock: lockToRestore ? {
-          lockedIndices: lockToRestore.lockedIndices,
-          values: lockToRestore.values
-        } : null
+        restoredLock: lockToRestore
+          ? {
+              lockedIndices: lockToRestore.lockedIndices,
+              values: lockToRestore.values,
+            }
+          : null,
       });
 
       this.updateDiceRollerState();
@@ -556,7 +609,7 @@ class DiceBoxApp {
 
         if (lockedMap && lockedMap.size > 0) {
           const lockedIndices = [...lockedMap.keys()];
-          const lockedValues = lockedIndices.map(idx => lockedMap.get(idx));
+          const lockedValues = lockedIndices.map((idx) => lockedMap.get(idx));
           meshState.saveDiceState(setId, myId, lockedIndices, currentValues);
         } else if (meshState.hasHolderRolled(setId)) {
           // Save current values even without locks if they've rolled
@@ -571,7 +624,7 @@ class DiceBoxApp {
       this.messageRouter.broadcast({
         type: MSG.DICE_DROP,
         setId,
-        peerId: myId
+        peerId: myId,
       });
     }
 
@@ -602,7 +655,7 @@ class DiceBoxApp {
         color: set.color,
         values,
         holderId: holder?.peerId || myId,
-        holderUsername: holder?.username || this.roomManager.username
+        holderUsername: holder?.username || this.roomManager.username,
       });
 
       // Mark that holder has rolled (for locking)
@@ -612,7 +665,7 @@ class DiceBoxApp {
       meshState.clearSavedStateForSet(set.id);
 
       // Update lock state in mesh state
-      const lockInfo = lockedDice?.find(l => l.setId === set.id);
+      const lockInfo = lockedDice?.find((l) => l.setId === set.id);
       if (lockInfo && lockInfo.lockedIndices.length > 0) {
         meshState.setLockState(set.id, lockInfo.lockedIndices, lockInfo.values);
       } else {
@@ -631,7 +684,7 @@ class DiceBoxApp {
       total,
       rollId,
       timestamp: Date.now(),
-      lockedDice: lockedDice || []
+      lockedDice: lockedDice || [],
     };
 
     // Add to local state
@@ -640,7 +693,7 @@ class DiceBoxApp {
     // Broadcast to all peers
     this.messageRouter.broadcast({
       type: MSG.DICE_ROLL,
-      ...roll
+      ...roll,
     });
 
     // Update local UI
@@ -669,7 +722,7 @@ class DiceBoxApp {
       dieIndex,
       locked,
       value,
-      peerId: myId
+      peerId: myId,
     });
   }
 
@@ -696,19 +749,22 @@ class DiceBoxApp {
 
     // Prepare locked dice info for dice roller
     const lockedDice = [];
-    for (const set of (diceConfig?.diceSets || [])) {
+    for (const set of diceConfig?.diceSets || []) {
       const lock = meshState.getLockedDice(set.id);
       if (lock) {
-        lockedDice.push([set.id, {
-          lockedIndices: [...lock.lockedIndices],
-          values: lock.values
-        }]);
+        lockedDice.push([
+          set.id,
+          {
+            lockedIndices: [...lock.lockedIndices],
+            values: lock.values,
+          },
+        ]);
       }
     }
 
     // Prepare holder rolled state
     const holderHasRolled = [];
-    for (const set of (diceConfig?.diceSets || [])) {
+    for (const set of diceConfig?.diceSets || []) {
       if (meshState.hasHolderRolled(set.id)) {
         holderHasRolled.push([set.id, true]);
       }
@@ -716,7 +772,7 @@ class DiceBoxApp {
 
     // Prepare last roller info
     const lastRoller = [];
-    for (const set of (diceConfig?.diceSets || [])) {
+    for (const set of diceConfig?.diceSets || []) {
       const roller = meshState.getLastRoller(set.id);
       if (roller) {
         lastRoller.push([set.id, roller]);
@@ -730,15 +786,15 @@ class DiceBoxApp {
       allowLocking: diceConfig?.allowLocking || false,
       lockedDice,
       holderHasRolled,
-      lastRoller
+      lastRoller,
     });
 
     if (this.peerList && diceConfig) {
       const holderInfo = new Map();
       for (const [setId, holder] of holders) {
         if (!holderInfo.has(holder.peerId)) {
-          const set = diceConfig.diceSets.find(s => s.id === setId);
-          holderInfo.set(holder.peerId, set?.color || '#f59e0b');
+          const set = diceConfig.diceSets.find((s) => s.id === setId);
+          holderInfo.set(holder.peerId, set?.color || "#f59e0b");
         }
       }
       this.peerList.setHolders(holderInfo);
@@ -752,7 +808,7 @@ class DiceBoxApp {
     this.messageRouter.broadcast({
       type: MSG.PEER_LEFT,
       peerId: this.connectionManager.peerId,
-      username: this.roomManager.username
+      username: this.roomManager.username,
     });
 
     this.roomManager.leaveRoom();
@@ -762,7 +818,7 @@ class DiceBoxApp {
     if (this.diceHistory) this.diceHistory.clear();
 
     // Redirect to play page mode selection
-    window.location.href = window.location.pathname.replace(/\?.*$/, '');
+    window.location.href = window.location.pathname.replace(/\?.*$/, "");
   }
 }
 

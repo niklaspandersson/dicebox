@@ -947,7 +947,7 @@ dice-config .color-dropdown-arrow {
 
 dice-config .color-dropdown {
   display: none;
-  position: fixed;
+  position: absolute;
   margin-top: 4px;
   padding: 8px;
   background: var(--surface);
@@ -955,7 +955,7 @@ dice-config .color-dropdown {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   z-index: 1100;
   flex-wrap: wrap;
-  width: 140px;
+  width: 113px;
   gap: 6px;
 }
 
@@ -971,6 +971,8 @@ dice-config .color-option {
   border: 2px solid transparent;
   cursor: pointer;
   box-shadow: none;
+  border: 2px solid oklch(from attr(data-color type(<color>)) calc(l - 0.3) c h);
+  background-color: attr(data-color type(<color>));
 }
 
 dice-config .color-option:hover {
@@ -990,6 +992,7 @@ dice-config .count-controls {
 }
 
 dice-config .config-btn {
+  font-family: Arial, Helvetica, sans-serif;
   width: 32px;
   height: 32px;
   padding: 0;

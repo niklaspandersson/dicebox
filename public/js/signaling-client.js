@@ -3,7 +3,7 @@
  * Handles: peer ID assignment, room queries, room creation/joining, and WebRTC signaling
  */
 
-import { getWebSocketUrl } from './config.js';
+import { getWebSocketUrl } from "./config.js";
 
 // Heartbeat interval (should be less than server's SESSION_EXPIRY)
 const HEARTBEAT_INTERVAL = 30000; // 30 seconds
@@ -30,12 +30,12 @@ export class SignalingClient extends EventTarget {
     }
 
     // Try to get existing token from sessionStorage
-    this._sessionToken = sessionStorage.getItem('dicebox-session-token');
+    this._sessionToken = sessionStorage.getItem("dicebox-session-token");
 
     if (!this._sessionToken) {
       // Generate new token (UUID-like format)
       this._sessionToken = crypto.randomUUID();
-      sessionStorage.setItem('dicebox-session-token', this._sessionToken);
+      sessionStorage.setItem("dicebox-session-token", this._sessionToken);
     }
 
     return this._sessionToken;
@@ -61,22 +61,22 @@ export class SignalingClient extends EventTarget {
       const connectionTimeout = setTimeout(() => {
         this._connectPromise = null;
         this.ws?.close();
-        reject(new Error('Connection timeout'));
+        reject(new Error("Connection timeout"));
       }, 10000);
 
       this.ws.onopen = () => {
-        console.log('Connected to signaling server, sending hello...');
+        console.log("Connected to signaling server, sending hello...");
         this.reconnectAttempts = 0;
 
         // Send hello with session token
         const sessionToken = this.getSessionToken();
-        this.send({ type: 'hello', sessionToken });
+        this.send({ type: "hello", sessionToken });
 
-        this.dispatchEvent(new CustomEvent('connected'));
+        this.dispatchEvent(new CustomEvent("connected"));
       };
 
       this.ws.onclose = (event) => {
-        console.log('Disconnected from signaling server', event.code);
+        console.log("Disconnected from signaling server", event.code);
         clearTimeout(connectionTimeout);
         this._connectPromise = null;
         this.stopHeartbeat();
@@ -85,15 +85,17 @@ export class SignalingClient extends EventTarget {
         const previousRoomId = this.roomId;
 
         // Don't clear peerId/roomId - session may be restored on reconnect
-        this.dispatchEvent(new CustomEvent('disconnected', {
-          detail: { wasConnected, previousRoomId }
-        }));
+        this.dispatchEvent(
+          new CustomEvent("disconnected", {
+            detail: { wasConnected, previousRoomId },
+          }),
+        );
 
         this.attemptReconnect();
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error("WebSocket error:", error);
         clearTimeout(connectionTimeout);
         this._connectPromise = null;
         reject(error);
@@ -104,23 +106,30 @@ export class SignalingClient extends EventTarget {
         try {
           message = JSON.parse(event.data);
         } catch (error) {
-          console.error('Failed to parse message from server:', error);
+          console.error("Failed to parse message from server:", error);
           return;
         }
 
         // Handle peer-id specially to resolve connect promise
-        if (message.type === 'peer-id') {
+        if (message.type === "peer-id") {
           this.peerId = message.peerId;
 
           if (message.restored) {
-            console.log('Session restored, peer ID:', this.peerId, 'room:', message.roomId);
+            console.log(
+              "Session restored, peer ID:",
+              this.peerId,
+              "room:",
+              message.roomId,
+            );
             this.roomId = message.roomId || null;
             // Dispatch session-restored event for app to handle
-            this.dispatchEvent(new CustomEvent('session-restored', {
-              detail: { peerId: this.peerId, roomId: this.roomId }
-            }));
+            this.dispatchEvent(
+              new CustomEvent("session-restored", {
+                detail: { peerId: this.peerId, roomId: this.roomId },
+              }),
+            );
           } else {
-            console.log('New session, peer ID:', this.peerId);
+            console.log("New session, peer ID:", this.peerId);
           }
 
           clearTimeout(connectionTimeout);
@@ -131,14 +140,16 @@ export class SignalingClient extends EventTarget {
         }
 
         // Handle heartbeat ack (just ignore, it's just to confirm connection is alive)
-        if (message.type === 'heartbeat-ack') {
+        if (message.type === "heartbeat-ack") {
           return;
         }
 
         // Handle server errors
-        if (message.type === 'error') {
-          console.error('Server error:', message.errorType, message.reason);
-          this.dispatchEvent(new CustomEvent('server-error', { detail: message }));
+        if (message.type === "error") {
+          console.error("Server error:", message.errorType, message.reason);
+          this.dispatchEvent(
+            new CustomEvent("server-error", { detail: message }),
+          );
           return;
         }
 
@@ -153,7 +164,7 @@ export class SignalingClient extends EventTarget {
     this.stopHeartbeat();
     this._heartbeatInterval = setInterval(() => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.send({ type: 'heartbeat' });
+        this.send({ type: "heartbeat" });
       }
     }, HEARTBEAT_INTERVAL);
   }
@@ -167,22 +178,26 @@ export class SignalingClient extends EventTarget {
 
   attemptReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('Max reconnection attempts reached');
-      this.dispatchEvent(new CustomEvent('reconnect-failed'));
+      console.log("Max reconnection attempts reached");
+      this.dispatchEvent(new CustomEvent("reconnect-failed"));
       return;
     }
 
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
 
-    console.log(`Attempting reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+    console.log(
+      `Attempting reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`,
+    );
     setTimeout(() => {
       this.connect()
         .then(() => {
           // Emit reconnected event so app can re-register if needed
-          this.dispatchEvent(new CustomEvent('reconnected', {
-            detail: { peerId: this.peerId }
-          }));
+          this.dispatchEvent(
+            new CustomEvent("reconnected", {
+              detail: { peerId: this.peerId },
+            }),
+          );
         })
         .catch(() => {
           // Will trigger another attemptReconnect via onclose
@@ -205,7 +220,7 @@ export class SignalingClient extends EventTarget {
         this.ws.send(JSON.stringify(message));
         return true;
       } catch (error) {
-        console.error('Failed to send message:', error);
+        console.error("Failed to send message:", error);
         return false;
       }
     }
@@ -217,17 +232,21 @@ export class SignalingClient extends EventTarget {
    * @returns {boolean}
    */
   isConnected() {
-    return this.ws !== null && this.ws.readyState === WebSocket.OPEN && this.peerId !== null;
+    return (
+      this.ws !== null &&
+      this.ws.readyState === WebSocket.OPEN &&
+      this.peerId !== null
+    );
   }
 
   // Query if a room exists and get all peer IDs
   queryRoom(roomId) {
-    return this.send({ type: 'query-room', roomId });
+    return this.send({ type: "query-room", roomId });
   }
 
   // Create a new room with dice config
   createRoom(roomId, diceConfig) {
-    if (this.send({ type: 'create-room', roomId, diceConfig })) {
+    if (this.send({ type: "create-room", roomId, diceConfig })) {
       this.roomId = roomId;
       return true;
     }
@@ -236,7 +255,7 @@ export class SignalingClient extends EventTarget {
 
   // Join an existing room
   joinRoom(roomId) {
-    if (this.send({ type: 'join-room', roomId })) {
+    if (this.send({ type: "join-room", roomId })) {
       this.roomId = roomId;
       return true;
     }
@@ -245,28 +264,28 @@ export class SignalingClient extends EventTarget {
 
   // Leave current room
   leaveRoom() {
-    const success = this.send({ type: 'leave-room' });
+    const success = this.send({ type: "leave-room" });
     this.roomId = null;
     return success;
   }
 
   // WebRTC signaling
   sendOffer(targetPeerId, offer) {
-    return this.send({ type: 'offer', targetPeerId, offer });
+    return this.send({ type: "offer", targetPeerId, offer });
   }
 
   sendAnswer(targetPeerId, answer) {
-    return this.send({ type: 'answer', targetPeerId, answer });
+    return this.send({ type: "answer", targetPeerId, answer });
   }
 
   sendIceCandidate(targetPeerId, candidate) {
-    return this.send({ type: 'ice-candidate', targetPeerId, candidate });
+    return this.send({ type: "ice-candidate", targetPeerId, candidate });
   }
 
   disconnect() {
     this.stopHeartbeat();
     if (this.ws) {
-      this.send({ type: 'leave-room' });
+      this.send({ type: "leave-room" });
       this.ws.close();
       this.ws = null;
     }
@@ -282,7 +301,7 @@ export class SignalingClient extends EventTarget {
 
   // Clear session (for explicit logout/new session)
   clearSession() {
-    sessionStorage.removeItem('dicebox-session-token');
+    sessionStorage.removeItem("dicebox-session-token");
     this._sessionToken = null;
   }
 }

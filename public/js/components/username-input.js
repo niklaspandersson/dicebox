@@ -3,7 +3,7 @@
  */
 class UsernameInput extends HTMLElement {
   connectedCallback() {
-    const saved = localStorage.getItem('dicebox-username') || '';
+    const saved = localStorage.getItem("dicebox-username") || "";
     this.innerHTML = `
       <div class="form-group">
         <label for="username">Your Name</label>
@@ -11,17 +11,19 @@ class UsernameInput extends HTMLElement {
                maxlength="20" autocomplete="off" value="${saved}">
       </div>
     `;
-    this._input = this.querySelector('input');
-    this._input.addEventListener('input', () => this._emitChange());
-    this._input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        this.dispatchEvent(new CustomEvent('username-submit', { bubbles: true }));
+    this._input = this.querySelector("input");
+    this._input.addEventListener("input", () => this._emitChange());
+    this._input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        this.dispatchEvent(
+          new CustomEvent("username-submit", { bubbles: true }),
+        );
       }
     });
   }
 
   get value() {
-    return this._input?.value.trim() || '';
+    return this._input?.value.trim() || "";
   }
 
   focus() {
@@ -29,15 +31,17 @@ class UsernameInput extends HTMLElement {
   }
 
   saveToStorage() {
-    localStorage.setItem('dicebox-username', this.value);
+    localStorage.setItem("dicebox-username", this.value);
   }
 
   _emitChange() {
-    this.dispatchEvent(new CustomEvent('username-changed', {
-      bubbles: true,
-      detail: { username: this.value }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("username-changed", {
+        bubbles: true,
+        detail: { username: this.value },
+      }),
+    );
   }
 }
 
-customElements.define('username-input', UsernameInput);
+customElements.define("username-input", UsernameInput);

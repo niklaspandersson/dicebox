@@ -23,17 +23,17 @@
  * - coturn (self-hosted, open source)
  * - Cloudflare Calls (beta)
  */
-import { signalingClient } from './signaling-client.js';
-import { getApiBaseUrl } from './config.js';
+import { signalingClient } from "./signaling-client.js";
+import { getApiBaseUrl } from "./config.js";
 
 // Default STUN servers (free, public)
 const DEFAULT_STUN_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun3.l.google.com:19302' },
-  { urls: 'stun:stun4.l.google.com:19302' },
-  { urls: 'stun:stun.stunprotocol.org:3478' },
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:stun.stunprotocol.org:3478" },
 ];
 
 // Connection timeout in milliseconds
@@ -45,9 +45,9 @@ const TURN_CREDENTIAL_REFRESH_BUFFER = 5 * 60 * 1000;
 export class WebRTCManager extends EventTarget {
   constructor() {
     super();
-    this.peerConnections = new Map();   // peerId -> RTCPeerConnection
-    this.dataChannels = new Map();       // peerId -> RTCDataChannel
-    this.pendingCandidates = new Map();  // peerId -> ICE candidates received before connection ready
+    this.peerConnections = new Map(); // peerId -> RTCPeerConnection
+    this.dataChannels = new Map(); // peerId -> RTCDataChannel
+    this.pendingCandidates = new Map(); // peerId -> ICE candidates received before connection ready
     this.connectionTimeouts = new Map(); // peerId -> timeout ID
 
     // ICE server configuration
@@ -93,13 +93,15 @@ export class WebRTCManager extends EventTarget {
       this.refreshTurnCredentials();
     }
 
-    this.dispatchEvent(new CustomEvent('configured', {
-      detail: {
-        stunCount: this.stunServers.length,
-        turnCount: this.turnServers.length,
-        hasDynamicCredentials: !!this.turnCredentialsEndpoint
-      }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("configured", {
+        detail: {
+          stunCount: this.stunServers.length,
+          turnCount: this.turnServers.length,
+          hasDynamicCredentials: !!this.turnCredentialsEndpoint,
+        },
+      }),
+    );
   }
 
   /**
@@ -114,7 +116,9 @@ export class WebRTCManager extends EventTarget {
 
       // Handle 404 gracefully - TURN server not configured is a valid state
       if (response.status === 404) {
-        console.info('TURN credentials endpoint not configured (404), using STUN only');
+        console.info(
+          "TURN credentials endpoint not configured (404), using STUN only",
+        );
         return;
       }
 
@@ -128,28 +132,38 @@ export class WebRTCManager extends EventTarget {
         this.turnServers = credentials.servers;
       } else if (credentials.urls) {
         // Single server format
-        this.turnServers = [{
-          urls: credentials.urls,
-          username: credentials.username,
-          credential: credentials.credential
-        }];
+        this.turnServers = [
+          {
+            urls: credentials.urls,
+            username: credentials.username,
+            credential: credentials.credential,
+          },
+        ];
       }
 
       // Schedule credential refresh before expiry
       if (credentials.ttl) {
-        this.turnCredentialExpiry = Date.now() + (credentials.ttl * 1000);
+        this.turnCredentialExpiry = Date.now() + credentials.ttl * 1000;
         this.scheduleTurnCredentialRefresh(credentials.ttl * 1000);
       }
 
-      console.log(`TURN credentials refreshed, ${this.turnServers.length} server(s), expires in ${credentials.ttl}s`);
+      console.log(
+        `TURN credentials refreshed, ${this.turnServers.length} server(s), expires in ${credentials.ttl}s`,
+      );
 
-      this.dispatchEvent(new CustomEvent('turn-credentials-refreshed', {
-        detail: { serverCount: this.turnServers.length, ttl: credentials.ttl }
-      }));
-
+      this.dispatchEvent(
+        new CustomEvent("turn-credentials-refreshed", {
+          detail: {
+            serverCount: this.turnServers.length,
+            ttl: credentials.ttl,
+          },
+        }),
+      );
     } catch (error) {
-      console.error('Failed to fetch TURN credentials:', error);
-      this.dispatchEvent(new CustomEvent('turn-credentials-error', { detail: { error } }));
+      console.error("Failed to fetch TURN credentials:", error);
+      this.dispatchEvent(
+        new CustomEvent("turn-credentials-error", { detail: { error } }),
+      );
     }
   }
 
@@ -175,7 +189,7 @@ export class WebRTCManager extends EventTarget {
     if (this.turnServers.length > 0) {
       // Check if credentials are still valid
       if (this.turnCredentialExpiry && Date.now() > this.turnCredentialExpiry) {
-        console.warn('TURN credentials expired, using STUN only');
+        console.warn("TURN credentials expired, using STUN only");
       } else {
         servers.push(...this.turnServers);
       }
@@ -189,13 +203,14 @@ export class WebRTCManager extends EventTarget {
    */
   hasTurnServers() {
     if (this.turnServers.length === 0) return false;
-    if (this.turnCredentialExpiry && Date.now() > this.turnCredentialExpiry) return false;
+    if (this.turnCredentialExpiry && Date.now() > this.turnCredentialExpiry)
+      return false;
     return true;
   }
 
   setupSignalingHandlers() {
     // Handle incoming WebRTC offers
-    signalingClient.addEventListener('offer', async (e) => {
+    signalingClient.addEventListener("offer", async (e) => {
       const { fromPeerId, offer } = e.detail;
       console.log(`Received offer from: ${fromPeerId}`);
       try {
@@ -207,7 +222,7 @@ export class WebRTCManager extends EventTarget {
     });
 
     // Handle incoming WebRTC answers
-    signalingClient.addEventListener('answer', async (e) => {
+    signalingClient.addEventListener("answer", async (e) => {
       const { fromPeerId, answer } = e.detail;
       console.log(`Received answer from: ${fromPeerId}`);
       try {
@@ -219,12 +234,15 @@ export class WebRTCManager extends EventTarget {
     });
 
     // Handle incoming ICE candidates
-    signalingClient.addEventListener('ice-candidate', async (e) => {
+    signalingClient.addEventListener("ice-candidate", async (e) => {
       const { fromPeerId, candidate } = e.detail;
       try {
         await this.handleIceCandidate(fromPeerId, candidate);
       } catch (error) {
-        console.error(`Failed to handle ICE candidate from ${fromPeerId}:`, error);
+        console.error(
+          `Failed to handle ICE candidate from ${fromPeerId}:`,
+          error,
+        );
       }
     });
   }
@@ -247,10 +265,12 @@ export class WebRTCManager extends EventTarget {
 
     const timeoutId = setTimeout(() => {
       const pc = this.peerConnections.get(peerId);
-      if (pc && pc.connectionState !== 'connected') {
+      if (pc && pc.connectionState !== "connected") {
         console.log(`Connection to ${peerId} timed out`);
         this.closePeerConnection(peerId);
-        this.dispatchEvent(new CustomEvent('connection-timeout', { detail: { peerId } }));
+        this.dispatchEvent(
+          new CustomEvent("connection-timeout", { detail: { peerId } }),
+        );
       }
     }, CONNECTION_TIMEOUT);
 
@@ -303,25 +323,33 @@ export class WebRTCManager extends EventTarget {
 
     // Track ICE gathering state for debugging
     pc.onicegatheringstatechange = () => {
-      console.log(`ICE gathering state with ${peerId}: ${pc.iceGatheringState}`);
-      if (pc.iceGatheringState === 'complete') {
-        this.dispatchEvent(new CustomEvent('ice-gathering-complete', {
-          detail: { peerId }
-        }));
+      console.log(
+        `ICE gathering state with ${peerId}: ${pc.iceGatheringState}`,
+      );
+      if (pc.iceGatheringState === "complete") {
+        this.dispatchEvent(
+          new CustomEvent("ice-gathering-complete", {
+            detail: { peerId },
+          }),
+        );
       }
     };
 
     pc.onconnectionstatechange = () => {
       console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
-      this.dispatchEvent(new CustomEvent('connection-state-change', {
-        detail: { peerId, state: pc.connectionState }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("connection-state-change", {
+          detail: { peerId, state: pc.connectionState },
+        }),
+      );
 
-      if (pc.connectionState === 'connected') {
+      if (pc.connectionState === "connected") {
         this.clearConnectionTimeout(peerId);
         this.logConnectionType(peerId, pc);
-        this.dispatchEvent(new CustomEvent('peer-connected', { detail: { peerId } }));
-      } else if (pc.connectionState === 'failed') {
+        this.dispatchEvent(
+          new CustomEvent("peer-connected", { detail: { peerId } }),
+        );
+      } else if (pc.connectionState === "failed") {
         // Only close on 'failed', not 'disconnected'
         // 'disconnected' is often temporary and can recover (e.g., when switching from IPv6 to IPv4)
         this.closePeerConnection(peerId);
@@ -329,10 +357,12 @@ export class WebRTCManager extends EventTarget {
     };
 
     pc.oniceconnectionstatechange = () => {
-      console.log(`ICE connection state with ${peerId}: ${pc.iceConnectionState}`);
+      console.log(
+        `ICE connection state with ${peerId}: ${pc.iceConnectionState}`,
+      );
 
       // Handle ICE restart if connection fails but peer connection is still valid
-      if (pc.iceConnectionState === 'failed') {
+      if (pc.iceConnectionState === "failed") {
         console.log(`ICE connection failed for ${peerId}, closing...`);
         this.closePeerConnection(peerId);
       }
@@ -344,7 +374,7 @@ export class WebRTCManager extends EventTarget {
     };
 
     if (initiator) {
-      const channel = pc.createDataChannel('dice', { ordered: true });
+      const channel = pc.createDataChannel("dice", { ordered: true });
       this.setupDataChannel(peerId, channel);
 
       try {
@@ -366,20 +396,24 @@ export class WebRTCManager extends EventTarget {
   async logConnectionType(peerId, pc) {
     try {
       const stats = await pc.getStats();
-      stats.forEach(report => {
-        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+      stats.forEach((report) => {
+        if (report.type === "candidate-pair" && report.state === "succeeded") {
           const localCandidate = stats.get(report.localCandidateId);
           const remoteCandidate = stats.get(report.remoteCandidateId);
 
-          const localType = localCandidate?.candidateType || 'unknown';
-          const remoteType = remoteCandidate?.candidateType || 'unknown';
+          const localType = localCandidate?.candidateType || "unknown";
+          const remoteType = remoteCandidate?.candidateType || "unknown";
 
-          const isRelayed = localType === 'relay' || remoteType === 'relay';
-          console.log(`Connection to ${peerId}: ${isRelayed ? 'RELAYED (TURN)' : 'DIRECT'} (local: ${localType}, remote: ${remoteType})`);
+          const isRelayed = localType === "relay" || remoteType === "relay";
+          console.log(
+            `Connection to ${peerId}: ${isRelayed ? "RELAYED (TURN)" : "DIRECT"} (local: ${localType}, remote: ${remoteType})`,
+          );
 
-          this.dispatchEvent(new CustomEvent('connection-type-determined', {
-            detail: { peerId, isRelayed, localType, remoteType }
-          }));
+          this.dispatchEvent(
+            new CustomEvent("connection-type-determined", {
+              detail: { peerId, isRelayed, localType, remoteType },
+            }),
+          );
         }
       });
     } catch (e) {
@@ -392,40 +426,48 @@ export class WebRTCManager extends EventTarget {
 
     const dispatchOpen = () => {
       console.log(`Data channel with ${peerId} opened`);
-      this.dispatchEvent(new CustomEvent('channel-open', {
-        detail: { peerId, channel }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("channel-open", {
+          detail: { peerId, channel },
+        }),
+      );
     };
 
     channel.onopen = dispatchOpen;
 
     // If channel is already open (can happen when ondatachannel fires with
     // an already-established channel), dispatch the event immediately
-    if (channel.readyState === 'open') {
+    if (channel.readyState === "open") {
       dispatchOpen();
     }
 
     channel.onclose = () => {
       console.log(`Data channel with ${peerId} closed`);
       this.dataChannels.delete(peerId);
-      this.dispatchEvent(new CustomEvent('channel-closed', { detail: { peerId } }));
+      this.dispatchEvent(
+        new CustomEvent("channel-closed", { detail: { peerId } }),
+      );
     };
 
     channel.onerror = (error) => {
       console.error(`Data channel error with ${peerId}:`, error);
-      this.dispatchEvent(new CustomEvent('channel-error', {
-        detail: { peerId, error }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("channel-error", {
+          detail: { peerId, error },
+        }),
+      );
     };
 
     channel.onmessage = (e) => {
       try {
         const message = JSON.parse(e.data);
-        this.dispatchEvent(new CustomEvent('message', {
-          detail: { peerId, message }
-        }));
+        this.dispatchEvent(
+          new CustomEvent("message", {
+            detail: { peerId, message },
+          }),
+        );
       } catch (err) {
-        console.error('Error parsing message from peer:', err);
+        console.error("Error parsing message from peer:", err);
       }
     };
   }
@@ -475,7 +517,7 @@ export class WebRTCManager extends EventTarget {
       // Pass candidate directly - modern browsers handle plain objects
       await pc.addIceCandidate(candidate);
     } catch (e) {
-      console.error('Error adding ICE candidate:', e);
+      console.error("Error adding ICE candidate:", e);
     }
   }
 
@@ -491,7 +533,7 @@ export class WebRTCManager extends EventTarget {
         // Pass candidate directly - modern browsers handle plain objects
         await pc.addIceCandidate(candidate);
       } catch (e) {
-        console.error('Error adding buffered ICE candidate:', e);
+        console.error("Error adding buffered ICE candidate:", e);
       }
     }
 
@@ -514,7 +556,9 @@ export class WebRTCManager extends EventTarget {
       this.dataChannels.delete(peerId);
     }
 
-    this.dispatchEvent(new CustomEvent('peer-disconnected', { detail: { peerId } }));
+    this.dispatchEvent(
+      new CustomEvent("peer-disconnected", { detail: { peerId } }),
+    );
   }
 
   getDataChannel(peerId) {
@@ -523,7 +567,7 @@ export class WebRTCManager extends EventTarget {
 
   sendToPeer(peerId, message) {
     const channel = this.dataChannels.get(peerId);
-    if (channel && channel.readyState === 'open') {
+    if (channel && channel.readyState === "open") {
       try {
         channel.send(JSON.stringify(message));
         return true;
@@ -538,7 +582,7 @@ export class WebRTCManager extends EventTarget {
   broadcast(message, excludePeerId = null) {
     const messageStr = JSON.stringify(message);
     for (const [peerId, channel] of this.dataChannels) {
-      if (peerId !== excludePeerId && channel.readyState === 'open') {
+      if (peerId !== excludePeerId && channel.readyState === "open") {
         try {
           channel.send(messageStr);
         } catch (error) {
@@ -564,13 +608,13 @@ export class WebRTCManager extends EventTarget {
 
   getConnectedPeers() {
     return Array.from(this.dataChannels.entries())
-      .filter(([_, channel]) => channel.readyState === 'open')
+      .filter(([_, channel]) => channel.readyState === "open")
       .map(([peerId]) => peerId);
   }
 
   isConnectedTo(peerId) {
     const channel = this.dataChannels.get(peerId);
-    return channel && channel.readyState === 'open';
+    return channel && channel.readyState === "open";
   }
 
   /**
@@ -583,30 +627,33 @@ export class WebRTCManager extends EventTarget {
     try {
       const stats = await pc.getStats();
       const result = {
-        connectionType: 'unknown',
+        connectionType: "unknown",
         localCandidateType: null,
         remoteCandidateType: null,
         bytesReceived: 0,
         bytesSent: 0,
         packetsLost: 0,
-        roundTripTime: null
+        roundTripTime: null,
       };
 
-      stats.forEach(report => {
-        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+      stats.forEach((report) => {
+        if (report.type === "candidate-pair" && report.state === "succeeded") {
           const localCandidate = stats.get(report.localCandidateId);
           const remoteCandidate = stats.get(report.remoteCandidateId);
 
           result.localCandidateType = localCandidate?.candidateType;
           result.remoteCandidateType = remoteCandidate?.candidateType;
-          result.connectionType = (result.localCandidateType === 'relay' || result.remoteCandidateType === 'relay')
-            ? 'relay' : 'direct';
+          result.connectionType =
+            result.localCandidateType === "relay" ||
+            result.remoteCandidateType === "relay"
+              ? "relay"
+              : "direct";
           result.bytesReceived = report.bytesReceived || 0;
           result.bytesSent = report.bytesSent || 0;
           result.roundTripTime = report.currentRoundTripTime;
         }
 
-        if (report.type === 'inbound-rtp') {
+        if (report.type === "inbound-rtp") {
           result.packetsLost += report.packetsLost || 0;
         }
       });
