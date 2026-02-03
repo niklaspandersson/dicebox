@@ -13,24 +13,14 @@ class RoomView extends HTMLElement {
 
   render() {
     this.innerHTML = `
-      <play-frame>
-        <div class="room-content">
-          <peer-list></peer-list>
-          <div class="main-area">
-            <dice-roller></dice-roller>
-            <dice-history></dice-history>
-          </div>
+      <div class="room-content">
+        <peer-list></peer-list>
+        <div class="main-area">
+          <dice-roller></dice-roller>
+          <dice-history></dice-history>
         </div>
-      </play-frame>
+      </div>
     `;
-  }
-
-  show() {
-    this.classList.add("active");
-  }
-
-  hide() {
-    this.classList.remove("active");
   }
 }
 

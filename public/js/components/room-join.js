@@ -7,12 +7,10 @@ import "./room-code-input.js";
 class RoomJoin extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
-      <div class="card join-form">
-        <username-input></username-input>
-        <room-code-input></room-code-input>
-        <div class="join-buttons">
-          <button class="btn-join" id="submit-btn">Enter Room</button>
-        </div>
+      <username-input></username-input>
+      <room-code-input></room-code-input>
+      <div class="join-buttons">
+        <button class="btn-join" id="submit-btn">Enter Room</button>
       </div>
     `;
 

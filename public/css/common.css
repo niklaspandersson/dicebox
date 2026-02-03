@@ -25,6 +25,8 @@
   /* Design tokens */
   --border-radius: 0px;
   --shadow: 3px 3px 0 var(--navy);
+
+  --frame-width: 520px;
 }
 
 /* Base Reset */
@@ -165,10 +167,7 @@ input::placeholder {
 
 /* Play Frame Component - Decorative frame with corners */
 play-frame {
-  display: block;
-  width: 100%;
-  max-width: 620px;
-  margin: 0 auto;
+  /* margin: 0 auto; */
 }
 
 play-frame .play-frame-outer {

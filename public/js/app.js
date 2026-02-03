@@ -17,13 +17,19 @@ class DiceBoxApp {
 
     // UI components
     this.headerBar = document.querySelector("header-bar");
-    this.roomJoin = document.querySelector("room-join");
-    this.roomView = document.querySelector("room-view");
+    this.roomView = document.getElementById("room-view");
     this.diceRoller = null;
     this.diceHistory = null;
     this.peerList = null;
 
     this.init();
+  }
+
+  #showView(id) {
+    const fullId = `${id}-view`
+    for(const view of document.querySelectorAll('.view')) {
+      view.classList.toggle("active", fullId === view.id)
+    }
   }
 
   async init() {
@@ -171,6 +177,11 @@ class DiceBoxApp {
     document.addEventListener("dice-lock-changed", (e) => {
       this.handleLocalDiceLock(e.detail);
     });
+
+    document.addEventListener("dblclick", e => {
+      e.preventDefault();
+      e.stopPropagation();
+    })
 
     // WebRTC events
     this.setupWebRTCEvents();
@@ -468,18 +479,9 @@ class DiceBoxApp {
   // === ROOM UI ===
 
   enterRoom() {
-    // Hide join-related elements
-    if (this.roomJoin) this.roomJoin.style.display = "none";
-
     // Hide any views in the play page
-    document
-      .querySelectorAll(".view")
-      .forEach((v) => v.classList.remove("active"));
-    document
-      .querySelectorAll(".mode-selection")
-      .forEach((v) => v.classList.remove("active"));
+    this.#showView("room")
 
-    this.roomView.show();
     this.headerBar.showRoomView(this.roomManager.roomId);
 
     this.diceRoller = this.roomView.querySelector("dice-roller");

@@ -200,10 +200,10 @@ class DiceRoller extends HTMLElement {
         lockHint =
           '<div class="lock-hint">Tap dice to lock/unlock, tap outside to grab</div>';
       } else {
-        grabHint = '<div class="grab-hint">Click to grab</div>';
+        grabHint = '<div class="hint">Click to grab</div>';
       }
     } else if (canLock) {
-      lockHint = '<div class="lock-hint">Click dice to lock/unlock</div>';
+      lockHint = '<div class="hint">Click dice to lock/unlock</div>';
     }
 
     return `
@@ -586,7 +586,7 @@ class DiceRoller extends HTMLElement {
               )
               .join("")}
           </div>
-          <div class="grab-hint">Click to grab</div>
+          <div class="hint">Click to grab</div>
         `;
       }
     });

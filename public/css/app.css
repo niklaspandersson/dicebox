@@ -14,6 +14,19 @@
   flex-direction: column;
 }
 
+* {
+  user-select: inherit;
+}
+
+body {
+  user-select: none;
+}
+
+input {
+  user-select: unset;
+}
+
+
 /* Subtle paper texture */
 .play-page::before {
   content: '';
@@ -33,7 +46,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   padding: 30px 20px 50px;
   position: relative;
@@ -56,7 +69,8 @@
 
 .play-shell {
   width: 100%;
-  max-width: 620px;
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 /* Override play-frame inner padding for play page views */
@@ -86,12 +100,6 @@
   padding: 30px 20px 50px;
   justify-content: flex-start;
 }
-
-/* Hide play shell (mode selection container) */
-#app.in-room .play-shell {
-  display: none;
-}
-
 
 /* Show header bar when in room */
 #app.in-room header-bar {
@@ -131,11 +139,6 @@
 
 #app.in-room header-bar .room-info .room-id {
   font-size: 0.8rem;
-}
-
-/* Room view visibility */
-#app.in-room room-view.active {
-  display: block;
 }
 
 /* ==========================================================================
@@ -226,11 +229,8 @@
 }
 
 /* Views management */
-.view {
+.view, .room-content {
   display: none;
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
 }
 
 .view.active {
@@ -435,14 +435,6 @@ room-create {
   display: block;
 }
 
-room-join .join-form,
-room-create .join-form {
-  background: hsl(from var(--cream) h calc(s - 20) calc(l - 3));
-  border: 3px solid var(--brown);
-  padding: 30px;
-  position: relative;
-}
-
 room-join .form-group,
 room-create .form-group {
   margin-bottom: 20px;
@@ -596,14 +588,6 @@ room-create .checkbox-hint {
 }
 
 /* --- Room View --- */
-room-view {
-  display: none;
-}
-
-room-view.active {
-  display: block;
-}
-
 room-view .room-content {
   display: flex;
   flex-direction: column;
@@ -755,13 +739,6 @@ dice-roller .die-placeholder svg {
   display: block;
 }
 
-dice-roller .grab-hint {
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 8px;
-}
-
 dice-roller .dice-display-container {
   position: relative;
 }
@@ -834,11 +811,12 @@ dice-roller .lock-indicator {
   z-index: 1;
 }
 
-dice-roller .lock-hint {
+dice-roller .hint {
   text-align: center;
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 4px;
+  user-select: none;
 }
 
 dice-roller .dice-set.has-locked .holder-info {

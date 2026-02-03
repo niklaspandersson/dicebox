@@ -7,21 +7,19 @@ import "./dice-config.js";
 class RoomCreate extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
-      <div class="card join-form">
-        <username-input></username-input>
-        <div class="dice-config-group">
-          <dice-config></dice-config>
-          <div class="room-options">
-            <label class="checkbox-label">
-              <input type="checkbox" id="allow-locking">
-              <span class="checkbox-text">Allow dice locking</span>
-              <span class="checkbox-hint">Players can set aside dice between rolls</span>
-            </label>
-          </div>
+      <username-input></username-input>
+      <div class="dice-config-group">
+        <dice-config></dice-config>
+        <div class="room-options">
+          <label class="checkbox-label">
+            <input type="checkbox" id="allow-locking">
+            <span class="checkbox-text">Allow dice locking</span>
+            <span class="checkbox-hint">Players can set aside dice between rolls</span>
+          </label>
         </div>
-        <div class="join-buttons">
-          <button class="btn-create" id="submit-btn">Start Room</button>
-        </div>
+      </div>
+      <div class="join-buttons">
+        <button class="btn-create" id="submit-btn">Start Room</button>
       </div>
     `;
 

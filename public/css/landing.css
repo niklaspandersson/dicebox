@@ -16,7 +16,10 @@ body::before {
 
 /* Hero Section */
 .hero {
-  padding: 30px 20px 40px;
+  box-sizing: content-box;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding-top: 30px;
   text-align: center;
 }
 
@@ -24,8 +27,6 @@ body::before {
   background: var(--red);
   padding: 6px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-  max-width: 600px;
-  margin: 0 auto;
 }
 
 .hero-inner {

@@ -68,11 +68,13 @@
             </div>
             <room-join></room-join>
           </div>
+
+          <!-- Room View (hidden until joined) -->
+          <div class="view" id="room-view">
+            <room-view></room-view>
+          </div>
         </play-frame>
       </section>
-
-      <!-- Room View (hidden until joined) -->
-      <room-view></room-view>
     </main>
   </div>
 
@@ -92,26 +94,10 @@
   <!-- Client-side routing -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const modeView = document.getElementById('mode-view');
-      const createView = document.getElementById('create-view');
-      const joinView = document.getElementById('join-view');
-
-      function showView(viewName) {
-        // Hide all views
-        modeView.classList.remove('active');
-        createView.classList.remove('active');
-        joinView.classList.remove('active');
-
-        // Show selected view
-        switch (viewName) {
-          case 'create':
-            createView.classList.add('active');
-            break;
-          case 'join':
-            joinView.classList.add('active');
-            break;
-          default:
-            modeView.classList.add('active');
+      function showView(id) {
+        const fullId = `${id}-view`
+        for(const view of document.querySelectorAll('.view')) {
+          view.classList.toggle("active", fullId === view.id)
         }
       }
 
