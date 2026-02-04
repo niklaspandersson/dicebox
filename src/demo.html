@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DiceBox - New Architecture Demo</title>
+  <title>DiceBox - Architecture Demo</title>
   <style>
     * {
       box-sizing: border-box;
@@ -31,7 +31,7 @@
     }
 
     .demo-container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
     }
 
@@ -92,7 +92,7 @@
       padding: 12px;
       font-family: monospace;
       font-size: 12px;
-      max-height: 200px;
+      max-height: 150px;
       overflow-y: auto;
     }
 
@@ -117,22 +117,41 @@
       color: #fbbf24;
     }
 
-    .player-selector {
+    .player-selector, .strategy-selector {
       display: flex;
       gap: 8px;
-      margin-bottom: 16px;
+      flex-wrap: wrap;
     }
 
-    .player-btn {
+    .player-btn, .strategy-btn {
       padding: 8px 16px;
       border-radius: 6px;
       background: #334155;
       border: 2px solid transparent;
+      font-size: 13px;
     }
 
-    .player-btn.active {
+    .player-btn.active, .strategy-btn.active {
       border-color: #3b82f6;
       background: #1e3a5f;
+    }
+
+    .strategy-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 200px;
+      text-align: left;
+    }
+
+    .strategy-btn__name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .strategy-btn__desc {
+      font-size: 11px;
+      color: #94a3b8;
     }
 
     dice-roller-container {
@@ -142,7 +161,7 @@
 
     .state-display {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
     }
 
@@ -165,12 +184,51 @@
       color: #94a3b8;
       white-space: pre-wrap;
     }
+
+    .highlight-box {
+      background: #1e3a5f;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .highlight-box p {
+      margin: 0;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .highlight-box strong {
+      color: #60a5fa;
+    }
+
+    .highlight-box code {
+      background: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
   <div class="demo-container">
     <h1>DiceBox Architecture Demo</h1>
-    <p class="subtitle">Testing the new Strategy pattern with View Factory</p>
+    <p class="subtitle">Demonstrating the Strategy + View Factory Pattern</p>
+
+    <!-- Strategy Selection -->
+    <div class="section">
+      <h2>Strategy Selection (View Factory in Action)</h2>
+      <div class="highlight-box">
+        <p>
+          <strong>Key concept:</strong> Each strategy provides its own View component via <code>createView()</code>.
+          Switch strategies to see completely different UIs - same dice state, different interaction models.
+        </p>
+      </div>
+      <div class="strategy-selector" id="strategy-selector">
+        <!-- Populated by JS -->
+      </div>
+    </div>
 
     <!-- Player Simulation -->
     <div class="section">
@@ -180,21 +238,25 @@
         <button class="player-btn" data-player="bob">Bob</button>
         <button class="player-btn" data-player="carol">Carol</button>
       </div>
-      <p style="color: #64748b; font-size: 13px;">
-        Switch between players to test grab/roll mechanics. In real app, each player would be on a different device.
+      <p style="color: #64748b; font-size: 13px; margin-top: 12px; margin-bottom: 0;">
+        Switch players to test multi-player mechanics. GrabAndRoll uses holders; DragSelect lets anyone roll anytime.
       </p>
     </div>
 
     <!-- Dice Roller -->
     <div class="section">
-      <h2>Dice Roller (GrabAndRoll Strategy)</h2>
-      <dice-roller-container></dice-roller-container>
+      <h2>Dice Roller</h2>
+      <div id="dice-mount"></div>
     </div>
 
     <!-- State Display -->
     <div class="section">
       <h2>Current State</h2>
       <div class="state-display">
+        <div class="state-card">
+          <h3>Strategy</h3>
+          <pre id="strategy-display">-</pre>
+        </div>
         <div class="state-card">
           <h3>Holders</h3>
           <pre id="holders-display">No holders</pre>
@@ -204,15 +266,15 @@
           <pre id="values-display">No values</pre>
         </div>
         <div class="state-card">
-          <h3>Locked Dice</h3>
-          <pre id="locked-display">No locks</pre>
+          <h3>Last Roller</h3>
+          <pre id="roller-display">None</pre>
         </div>
       </div>
     </div>
 
     <!-- Event Log -->
     <div class="section">
-      <h2>Event Log</h2>
+      <h2>Network Messages (Simulated)</h2>
       <div class="controls">
         <button id="clear-log" class="secondary">Clear Log</button>
       </div>
@@ -221,12 +283,7 @@
   </div>
 
   <script type="module">
-    // Import the new architecture components
-    import { Container } from './app/Container.js';
-    import { DiceStore } from './features/dice-rolling/state/DiceStore.js';
-    import { GrabAndRollStrategy } from './features/dice-rolling/strategies/grab-and-roll/GrabAndRollStrategy.js';
-    import './ui/containers/DiceRollerContainer.js';
-    import './ui/components/dice/Die.js';
+    import { createApp } from './app/App.js';
 
     // ─────────────────────────────────────────────────────────────
     // LOGGING
@@ -250,7 +307,7 @@
     // SETUP
     // ─────────────────────────────────────────────────────────────
 
-    // Players (simulated - normally from network)
+    // Players (simulated)
     const players = {
       alice: { id: 'player-alice', username: 'Alice' },
       bob: { id: 'player-bob', username: 'Bob' },
@@ -259,87 +316,111 @@
 
     let currentPlayer = players.alice;
 
-    // Mock network service (logs broadcasts instead of sending)
+    // Mock network service
     const mockNetwork = {
       broadcast: (type, payload) => {
-        log(`BROADCAST: ${type} - ${JSON.stringify(payload)}`, 'info');
+        log(`${type}: ${JSON.stringify(payload)}`, 'info');
       },
     };
 
-    // Create container and register services
-    const container = new Container();
-
-    // Create and configure dice store
-    const diceStore = new DiceStore();
-    diceStore.setConfig({
-      diceSets: [
-        { id: 'red', count: 5, color: '#ef4444' },
-        { id: 'blue', count: 5, color: '#3b82f6' },
-      ],
-      allowLocking: true,
+    // Create app
+    const app = createApp({
+      diceConfig: {
+        diceSets: [
+          { id: 'red', count: 5, color: '#ef4444' },
+          { id: 'blue', count: 5, color: '#3b82f6' },
+        ],
+        allowLocking: true,
+      },
+      localPlayer: currentPlayer,
+      network: mockNetwork,
+      strategyId: 'grab-and-roll',
     });
 
-    container.registerInstance('diceStore', diceStore);
-    container.registerInstance('network', mockNetwork);
+    // Mount dice roller
+    app.mount('#dice-mount');
 
-    // Function to create strategy with current player
-    function createStrategy() {
-      return new GrabAndRollStrategy({
-        state: diceStore,
-        network: mockNetwork,
-        localPlayer: currentPlayer,
-      });
-    }
+    log('App initialized with GrabAndRoll strategy', 'success');
 
-    let strategy = createStrategy();
+    // ─────────────────────────────────────────────────────────────
+    // STRATEGY SWITCHER
+    // ─────────────────────────────────────────────────────────────
 
-    // Mount strategy in container
-    const rollerContainer = document.querySelector('dice-roller-container');
-    rollerContainer.setStrategy(strategy);
+    const strategySelectorEl = document.getElementById('strategy-selector');
+    const availableStrategies = app.getAvailableStrategies();
 
-    log('Demo initialized with GrabAndRoll strategy', 'success');
+    availableStrategies.forEach((strat) => {
+      const btn = document.createElement('button');
+      btn.className = `strategy-btn ${strat.id === app.currentStrategyId ? 'active' : ''}`;
+      btn.dataset.strategyId = strat.id;
+      btn.innerHTML = `
+        <span class="strategy-btn__name">${strat.name}</span>
+        <span class="strategy-btn__desc">${strat.description}</span>
+      `;
+      strategySelectorEl.appendChild(btn);
+    });
+
+    strategySelectorEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.strategy-btn');
+      if (!btn) return;
+
+      const strategyId = btn.dataset.strategyId;
+      if (strategyId === app.currentStrategyId) return;
+
+      // Update UI
+      document.querySelectorAll('.strategy-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Switch strategy
+      app.setStrategy(strategyId);
+      updateStateDisplay();
+
+      log(`Switched to strategy: ${strategyId}`, 'warn');
+    });
 
     // ─────────────────────────────────────────────────────────────
     // STATE DISPLAY
     // ─────────────────────────────────────────────────────────────
 
     function updateStateDisplay() {
+      const store = app.diceStore;
+
+      // Strategy
+      document.getElementById('strategy-display').textContent = app.currentStrategyId;
+
       // Holders
       const holdersEl = document.getElementById('holders-display');
-      if (diceStore.holders.size === 0) {
+      if (store.holders.size === 0) {
         holdersEl.textContent = 'No holders';
       } else {
-        const holders = [...diceStore.holders.entries()]
+        holdersEl.textContent = [...store.holders.entries()]
           .map(([setId, h]) => `${setId}: ${h.username}`)
           .join('\n');
-        holdersEl.textContent = holders;
       }
 
       // Values
       const valuesEl = document.getElementById('values-display');
-      if (diceStore.diceValues.size === 0) {
+      if (store.diceValues.size === 0) {
         valuesEl.textContent = 'No values';
       } else {
-        const values = [...diceStore.diceValues.entries()]
+        valuesEl.textContent = [...store.diceValues.entries()]
           .map(([setId, v]) => `${setId}: [${v.join(', ')}]`)
           .join('\n');
-        valuesEl.textContent = values;
       }
 
-      // Locked
-      const lockedEl = document.getElementById('locked-display');
-      if (diceStore.lockedDice.size === 0) {
-        lockedEl.textContent = 'No locks';
+      // Last Roller
+      const rollerEl = document.getElementById('roller-display');
+      if (store.lastRoller.size === 0) {
+        rollerEl.textContent = 'None';
       } else {
-        const locked = [...diceStore.lockedDice.entries()]
-          .map(([setId, indices]) => `${setId}: [${[...indices].join(', ')}]`)
+        rollerEl.textContent = [...store.lastRoller.entries()]
+          .map(([setId, r]) => `${setId}: ${r.username}`)
           .join('\n');
-        lockedEl.textContent = locked;
       }
     }
 
     // Subscribe to state changes
-    diceStore.subscribe(() => {
+    app.diceStore.subscribe(() => {
       updateStateDisplay();
     });
 
@@ -359,24 +440,24 @@
         const playerId = btn.dataset.player;
         currentPlayer = players[playerId];
 
-        // Recreate strategy with new player
-        strategy = createStrategy();
-        rollerContainer.setStrategy(strategy);
+        // Update app's local player reference
+        app.container.registerInstance('localPlayer', currentPlayer);
+
+        // Recreate strategy with new player context
+        app.setStrategy(app.currentStrategyId);
 
         log(`Switched to player: ${currentPlayer.username}`, 'warn');
       });
     });
 
-    // Make available globally for debugging
-    window.demo = {
-      container,
-      diceStore,
-      strategy,
-      players,
-      get currentPlayer() { return currentPlayer; },
-    };
+    // ─────────────────────────────────────────────────────────────
+    // EXPOSE FOR DEBUGGING
+    // ─────────────────────────────────────────────────────────────
 
-    log('Open browser console and access window.demo for debugging', 'info');
+    window.app = app;
+    window.players = players;
+
+    log('Access window.app in console for debugging', 'info');
   </script>
 </body>
 </html>

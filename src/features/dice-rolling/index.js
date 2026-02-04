@@ -17,6 +17,7 @@ export {
 
 // Concrete strategies
 export { GrabAndRollStrategy } from './strategies/grab-and-roll/GrabAndRollStrategy.js';
+export { DragSelectStrategy } from './strategies/drag-select/DragSelectStrategy.js';
 
 // State
 export { DiceStore } from './state/DiceStore.js';
