@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiceBox - New Architecture Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      color: #60a5fa;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 24px;
+    }
+
+    .demo-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .section {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .section h2 {
+      color: #94a3b8;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #475569;
+    }
+
+    button.secondary:hover {
+      background: #64748b;
+    }
+
+    .log {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .log-entry.info {
+      background: #1e3a5f;
+      color: #60a5fa;
+    }
+
+    .log-entry.success {
+      background: #14532d;
+      color: #4ade80;
+    }
+
+    .log-entry.warn {
+      background: #422006;
+      color: #fbbf24;
+    }
+
+    .player-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .player-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: #334155;
+      border: 2px solid transparent;
+    }
+
+    .player-btn.active {
+      border-color: #3b82f6;
+      background: #1e3a5f;
+    }
+
+    dice-roller-container {
+      display: block;
+      min-height: 200px;
+    }
+
+    .state-display {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .state-card {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .state-card h3 {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0 0 8px 0;
+      text-transform: uppercase;
+    }
+
+    .state-card pre {
+      margin: 0;
+      font-size: 11px;
+      color: #94a3b8;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1>DiceBox Architecture Demo</h1>
+    <p class="subtitle">Testing the new Strategy pattern with View Factory</p>
+
+    <!-- Player Simulation -->
+    <div class="section">
+      <h2>Simulate Player</h2>
+      <div class="player-selector">
+        <button class="player-btn active" data-player="alice">Alice</button>
+        <button class="player-btn" data-player="bob">Bob</button>
+        <button class="player-btn" data-player="carol">Carol</button>
+      </div>
+      <p style="color: #64748b; font-size: 13px;">
+        Switch between players to test grab/roll mechanics. In real app, each player would be on a different device.
+      </p>
+    </div>
+
+    <!-- Dice Roller -->
+    <div class="section">
+      <h2>Dice Roller (GrabAndRoll Strategy)</h2>
+      <dice-roller-container></dice-roller-container>
+    </div>
+
+    <!-- State Display -->
+    <div class="section">
+      <h2>Current State</h2>
+      <div class="state-display">
+        <div class="state-card">
+          <h3>Holders</h3>
+          <pre id="holders-display">No holders</pre>
+        </div>
+        <div class="state-card">
+          <h3>Dice Values</h3>
+          <pre id="values-display">No values</pre>
+        </div>
+        <div class="state-card">
+          <h3>Locked Dice</h3>
+          <pre id="locked-display">No locks</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="section">
+      <h2>Event Log</h2>
+      <div class="controls">
+        <button id="clear-log" class="secondary">Clear Log</button>
+      </div>
+      <div class="log" id="event-log"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import the new architecture components
+    import { Container } from './app/Container.js';
+    import { DiceStore } from './features/dice-rolling/state/DiceStore.js';
+    import { GrabAndRollStrategy } from './features/dice-rolling/strategies/grab-and-roll/GrabAndRollStrategy.js';
+    import './ui/containers/DiceRollerContainer.js';
+    import './ui/components/dice/Die.js';
+
+    // ─────────────────────────────────────────────────────────────
+    // LOGGING
+    // ─────────────────────────────────────────────────────────────
+
+    const logEl = document.getElementById('event-log');
+
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    document.getElementById('clear-log').addEventListener('click', () => {
+      logEl.innerHTML = '';
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // SETUP
+    // ─────────────────────────────────────────────────────────────
+
+    // Players (simulated - normally from network)
+    const players = {
+      alice: { id: 'player-alice', username: 'Alice' },
+      bob: { id: 'player-bob', username: 'Bob' },
+      carol: { id: 'player-carol', username: 'Carol' },
+    };
+
+    let currentPlayer = players.alice;
+
+    // Mock network service (logs broadcasts instead of sending)
+    const mockNetwork = {
+      broadcast: (type, payload) => {
+        log(`BROADCAST: ${type} - ${JSON.stringify(payload)}`, 'info');
+      },
+    };
+
+    // Create container and register services
+    const container = new Container();
+
+    // Create and configure dice store
+    const diceStore = new DiceStore();
+    diceStore.setConfig({
+      diceSets: [
+        { id: 'red', count: 5, color: '#ef4444' },
+        { id: 'blue', count: 5, color: '#3b82f6' },
+      ],
+      allowLocking: true,
+    });
+
+    container.registerInstance('diceStore', diceStore);
+    container.registerInstance('network', mockNetwork);
+
+    // Function to create strategy with current player
+    function createStrategy() {
+      return new GrabAndRollStrategy({
+        state: diceStore,
+        network: mockNetwork,
+        localPlayer: currentPlayer,
+      });
+    }
+
+    let strategy = createStrategy();
+
+    // Mount strategy in container
+    const rollerContainer = document.querySelector('dice-roller-container');
+    rollerContainer.setStrategy(strategy);
+
+    log('Demo initialized with GrabAndRoll strategy', 'success');
+
+    // ─────────────────────────────────────────────────────────────
+    // STATE DISPLAY
+    // ─────────────────────────────────────────────────────────────
+
+    function updateStateDisplay() {
+      // Holders
+      const holdersEl = document.getElementById('holders-display');
+      if (diceStore.holders.size === 0) {
+        holdersEl.textContent = 'No holders';
+      } else {
+        const holders = [...diceStore.holders.entries()]
+          .map(([setId, h]) => `${setId}: ${h.username}`)
+          .join('\n');
+        holdersEl.textContent = holders;
+      }
+
+      // Values
+      const valuesEl = document.getElementById('values-display');
+      if (diceStore.diceValues.size === 0) {
+        valuesEl.textContent = 'No values';
+      } else {
+        const values = [...diceStore.diceValues.entries()]
+          .map(([setId, v]) => `${setId}: [${v.join(', ')}]`)
+          .join('\n');
+        valuesEl.textContent = values;
+      }
+
+      // Locked
+      const lockedEl = document.getElementById('locked-display');
+      if (diceStore.lockedDice.size === 0) {
+        lockedEl.textContent = 'No locks';
+      } else {
+        const locked = [...diceStore.lockedDice.entries()]
+          .map(([setId, indices]) => `${setId}: [${[...indices].join(', ')}]`)
+          .join('\n');
+        lockedEl.textContent = locked;
+      }
+    }
+
+    // Subscribe to state changes
+    diceStore.subscribe(() => {
+      updateStateDisplay();
+    });
+
+    updateStateDisplay();
+
+    // ─────────────────────────────────────────────────────────────
+    // PLAYER SWITCHING
+    // ─────────────────────────────────────────────────────────────
+
+    document.querySelectorAll('.player-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        // Update UI
+        document.querySelectorAll('.player-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Switch player
+        const playerId = btn.dataset.player;
+        currentPlayer = players[playerId];
+
+        // Recreate strategy with new player
+        strategy = createStrategy();
+        rollerContainer.setStrategy(strategy);
+
+        log(`Switched to player: ${currentPlayer.username}`, 'warn');
+      });
+    });
+
+    // Make available globally for debugging
+    window.demo = {
+      container,
+      diceStore,
+      strategy,
+      players,
+      get currentPlayer() { return currentPlayer; },
+    };
+
+    log('Open browser console and access window.demo for debugging', 'info');
+  </script>
+</body>
+</html>

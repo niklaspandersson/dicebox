@@ -1,4 +1,4 @@
-import '../../../ui/components/dice/Die.js';
+import '../../../../ui/components/dice/Die.js';
 
 /**
  * View component for the "Grab and Roll" strategy.
