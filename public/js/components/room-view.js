@@ -1,6 +1,8 @@
 /**
  * RoomView - Web Component for the main room interface
  * Contains the peer list, dice roller, and dice history components
+ *
+ * Now uses the new strategy-based dice-roller-container.
  */
 class RoomView extends HTMLElement {
   constructor() {
@@ -16,7 +18,7 @@ class RoomView extends HTMLElement {
       <div class="room-content">
         <peer-list></peer-list>
         <div class="main-area">
-          <dice-roller></dice-roller>
+          <dice-roller-container></dice-roller-container>
           <dice-history></dice-history>
         </div>
       </div>
