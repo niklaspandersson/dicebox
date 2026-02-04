@@ -1508,3 +1508,153 @@ peer-list .empty-message {
     padding: 20px;
   }
 }
+
+/* ==========================================================================
+   Drag Pickup Strategy
+   ========================================================================== */
+
+dice-drag-pickup {
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+dice-drag-pickup .drag-pickup-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+dice-drag-pickup .dice-display {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 90px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  touch-action: none;
+}
+
+dice-drag-pickup .dice-display.dragging {
+  background-color: rgba(0, 48, 73, 0.08);
+}
+
+dice-drag-pickup .dice-display.cancelled {
+  background-color: rgba(193, 18, 31, 0.1);
+}
+
+dice-drag-pickup .die-wrapper {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+dice-drag-pickup .die {
+  width: 60px;
+  height: 60px;
+  background: var(--set-color, #ffffff);
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  cursor: default;
+}
+
+dice-drag-pickup .die svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+dice-drag-pickup .die.picked-up {
+  transform: scale(1.15) translateY(-8px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+dice-drag-pickup .die.not-picked {
+  opacity: 0.5;
+}
+
+dice-drag-pickup .die.rolling {
+  animation: drag-pickup-roll 0.5s ease-in-out infinite;
+}
+
+@keyframes drag-pickup-roll {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(15deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(0deg) scale(1);
+  }
+  75% {
+    transform: rotate(-15deg) scale(1.1);
+  }
+}
+
+dice-drag-pickup .die-placeholder {
+  width: 60px;
+  height: 60px;
+  background: var(--set-color, #ffffff);
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  opacity: 0.5;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+dice-drag-pickup .die-placeholder.picked-up {
+  transform: scale(1.15) translateY(-8px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  opacity: 1;
+}
+
+dice-drag-pickup .die-placeholder.not-picked {
+  opacity: 0.3;
+}
+
+dice-drag-pickup .die-placeholder svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+dice-drag-pickup .hint {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 16px;
+  user-select: none;
+  min-height: 1.5em;
+}
+
+dice-drag-pickup .hint.active {
+  color: var(--navy);
+  font-weight: 600;
+}
+
+dice-drag-pickup .hint.cancelled {
+  color: var(--red);
+}
+
+dice-drag-pickup .total {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.2rem;
+  color: var(--navy);
+  margin-top: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+dice-drag-pickup .total.visible {
+  opacity: 1;
+}

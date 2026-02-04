@@ -45,9 +45,9 @@ class DiceBoxApp {
   }
 
   #showView(id) {
-    const fullId = `${id}-view`
-    for(const view of document.querySelectorAll('.view')) {
-      view.classList.toggle("active", fullId === view.id)
+    const fullId = `${id}-view`;
+    for (const view of document.querySelectorAll(".view")) {
+      view.classList.toggle("active", fullId === view.id);
     }
   }
 
@@ -187,10 +187,10 @@ class DiceBoxApp {
     // internally by the new strategy-based dice app. We only handle network
     // messages via the messageRouter handlers.
 
-    document.addEventListener("dblclick", e => {
+    document.addEventListener("dblclick", (e) => {
       e.preventDefault();
       e.stopPropagation();
-    })
+    });
 
     // WebRTC events
     this.setupWebRTCEvents();
@@ -511,12 +511,14 @@ class DiceBoxApp {
 
   enterRoom() {
     // Hide any views in the play page
-    this.#showView("room")
+    this.#showView("room");
 
     this.headerBar.showRoomView(this.roomManager.roomId);
 
     // Get UI components
-    const diceRollerContainer = this.roomView.querySelector("dice-roller-container");
+    const diceRollerContainer = this.roomView.querySelector(
+      "dice-roller-container",
+    );
     this.diceHistory = this.roomView.querySelector("dice-history");
     this.peerList = this.roomView.querySelector("peer-list");
 
@@ -529,7 +531,7 @@ class DiceBoxApp {
     // Initialize dice app
     const meshState = this.roomManager.getMeshState();
     const diceConfig = meshState.getDiceConfig() || {
-      diceSets: [{ id: 'default', count: 2, color: '#ffffff' }],
+      diceSets: [{ id: "default", count: 5, color: "#ffffff" }],
       allowLocking: false,
     };
 
@@ -544,6 +546,11 @@ class DiceBoxApp {
         const msg = this.#convertToNetworkMessage(type, payload);
         if (msg) {
           this.messageRouter.broadcast(msg);
+
+          // Also add to local history for dice rolls
+          if (type === "dice:roll" && this.diceHistory) {
+            this.diceHistory.addRoll(msg);
+          }
         }
       },
     };
@@ -553,7 +560,7 @@ class DiceBoxApp {
       diceConfig,
       localPlayer,
       network: networkAdapter,
-      strategyId: 'grab-and-roll',
+      strategyId: "drag-pickup",
     });
 
     // Mount to the container
@@ -573,33 +580,36 @@ class DiceBoxApp {
 
   #convertToNetworkMessage(type, payload) {
     switch (type) {
-      case 'dice:roll':
+      case "dice:roll":
         return {
           type: MSG.DICE_ROLL,
           rollId: payload.rollId || `roll-${Date.now()}`,
           timestamp: payload.timestamp || Date.now(),
-          total: payload.total || payload.values?.reduce((a, b) => a + b, 0) || 0,
-          setResults: payload.setResults || [{
-            setId: payload.setId,
-            values: payload.values,
-            holderId: payload.playerId,
-            holderUsername: payload.username,
-          }],
+          total:
+            payload.total || payload.values?.reduce((a, b) => a + b, 0) || 0,
+          setResults: payload.setResults || [
+            {
+              setId: payload.setId,
+              values: payload.values,
+              holderId: payload.playerId,
+              holderUsername: payload.username,
+            },
+          ],
           lockedDice: payload.lockedDice || [],
         };
-      case 'dice:grab':
+      case "dice:grab":
         return {
           type: MSG.DICE_GRAB,
           setId: payload.setId,
           peerId: payload.playerId,
           username: payload.username,
         };
-      case 'dice:drop':
+      case "dice:drop":
         return {
           type: MSG.DICE_DROP,
           setId: payload.setId,
         };
-      case 'dice:lock':
+      case "dice:lock":
         return {
           type: MSG.DICE_LOCK,
           setId: payload.setId,
@@ -646,7 +656,6 @@ class DiceBoxApp {
       this.diceApp.diceStore.setLock(setId, dieIndex, locked);
     }
   }
-
 
   // === LEAVE ROOM ===
 

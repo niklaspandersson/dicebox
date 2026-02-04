@@ -4,6 +4,7 @@
 
 import { GrabAndRollStrategy } from './grab-and-roll/GrabAndRollStrategy.js';
 import { DragSelectStrategy } from './drag-select/DragSelectStrategy.js';
+import { DragPickupStrategy } from './drag-pickup/DragPickupStrategy.js';
 
 /**
  * Available dice rolling strategies.
@@ -12,9 +13,7 @@ import { DragSelectStrategy } from './drag-select/DragSelectStrategy.js';
 export const strategies = {
   'grab-and-roll': GrabAndRollStrategy,
   'drag-select': DragSelectStrategy,
-  // Future strategies:
-  // 'sequential': SequentialStrategy,
-  // 'dice-pool': DicePoolStrategy,
+  'drag-pickup': DragPickupStrategy,
 };
 
 /**
