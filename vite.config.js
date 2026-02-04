@@ -2,24 +2,19 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
-  root: 'public',
+  root: 'src',
   base: process.env.VITE_BASE ?? '/dicebox/',
-  resolve: {
-    alias: {
-      '@dice': resolve(__dirname, 'src'),
-    },
-  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'public/index.html'),
-        play: resolve(__dirname, 'public/play/index.html'),
-        about: resolve(__dirname, 'public/about.html'),
-        help: resolve(__dirname, 'public/help.html'),
-        privacy: resolve(__dirname, 'public/privacy.html'),
-        terms: resolve(__dirname, 'public/terms.html'),
+        main: resolve(__dirname, 'src/index.html'),
+        play: resolve(__dirname, 'src/play/index.html'),
+        about: resolve(__dirname, 'src/about.html'),
+        help: resolve(__dirname, 'src/help.html'),
+        privacy: resolve(__dirname, 'src/privacy.html'),
+        terms: resolve(__dirname, 'src/terms.html'),
       },
       output: {
         // Content-hashed filenames for cache-busting (supports "cache forever" strategy)
