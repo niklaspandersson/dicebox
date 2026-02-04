@@ -10,9 +10,8 @@ import { ConnectionManager } from "./connection-manager.js";
 import { RoomManager } from "./room-manager.js";
 import { MessageRouter, MSG } from "./message-router.js";
 
-// Import new architecture
+// Import dice rolling architecture
 import { createApp } from "../../src/app/App.js";
-import { LegacyBridge } from "../../src/infrastructure/network/LegacyBridge.js";
 
 class DiceBoxApp {
   constructor() {
@@ -24,11 +23,10 @@ class DiceBoxApp {
     // UI components
     this.headerBar = document.querySelector("header-bar");
     this.roomView = document.getElementById("room-view");
-    this.diceRoller = null; // Legacy reference (unused, kept for compatibility)
     this.diceHistory = null;
     this.peerList = null;
 
-    // New strategy-based dice app
+    // Dice app
     this.diceApp = null;
 
     this.init();
@@ -134,7 +132,7 @@ class DiceBoxApp {
       const setsHeld = meshState.getSetsHeldByPeer(peerId);
       for (const setId of setsHeld) {
         meshState.clearHolder(setId);
-        // Update new DiceStore
+        // Update DiceStore
         if (this.diceApp) {
           this.diceApp.diceStore.clearHolder(setId);
         }
@@ -308,11 +306,6 @@ class DiceBoxApp {
     for (const roll of (state.rollHistory || []).slice().reverse()) {
       this.diceHistory.addRoll(roll);
     }
-
-    // Sync dice store from legacy state
-    if (this.diceApp && this.diceApp.legacyBridge) {
-      this.diceApp.legacyBridge.syncFromLegacy();
-    }
   }
 
   handlePeerJoinedMsg(peerId, { peerId: newPeerId, username }) {
@@ -334,7 +327,7 @@ class DiceBoxApp {
       this.peerList.removePeer(leftPeerId);
     }
 
-    // Clear holder in new DiceStore if peer was holding dice
+    // Clear holder in DiceStore if peer was holding dice
     if (this.diceApp) {
       const setsHeld = meshState.getSetsHeldByPeer(leftPeerId);
       for (const setId of setsHeld) {
@@ -355,7 +348,7 @@ class DiceBoxApp {
     meshState.addRoll(roll);
     meshState.clearAllHolders();
 
-    // Update new DiceStore and legacy state
+    // Update state
     for (const sr of roll.setResults || []) {
       // Clear saved states for this set (dice have been rolled by someone)
       meshState.clearSavedStateForSet(sr.setId);
@@ -378,7 +371,7 @@ class DiceBoxApp {
       // Set last roller
       meshState.setLastRoller(sr.setId, sr.holderId, sr.holderUsername);
 
-      // Update new DiceStore
+      // Update DiceStore
       if (this.diceApp) {
         this.diceApp.diceStore.applyRoll({
           setId: sr.setId,
@@ -386,7 +379,7 @@ class DiceBoxApp {
           playerId: sr.holderId,
           username: sr.holderUsername,
         });
-        // Clear holder in new store
+        // Clear holder
         this.diceApp.diceStore.clearHolder(sr.setId);
       }
     }
@@ -423,7 +416,7 @@ class DiceBoxApp {
       meshState.setHolderHasRolled(setId); // They had rolled before
     }
 
-    // Update new DiceStore
+    // Update DiceStore
     if (this.diceApp) {
       this.diceApp.diceStore.setHolder(setId, peerId, username);
     }
@@ -438,7 +431,7 @@ class DiceBoxApp {
       meshState.clearHolderRolled(setId);
       // Note: Don't clear locks here - they may be restored if same user picks up
 
-      // Update new DiceStore
+      // Update DiceStore
       if (this.diceApp) {
         this.diceApp.diceStore.clearHolder(setId);
       }
@@ -449,7 +442,7 @@ class DiceBoxApp {
         meshState.clearHolder(heldSetId);
         meshState.clearHolderRolled(heldSetId);
 
-        // Update new DiceStore
+        // Update DiceStore
         if (this.diceApp) {
           this.diceApp.diceStore.clearHolder(heldSetId);
         }
@@ -493,7 +486,7 @@ class DiceBoxApp {
         this.peerList.removePeer(peerId);
       }
 
-      // Clear holder in new DiceStore
+      // Clear holder in DiceStore
       if (this.diceApp) {
         for (const setId of setsHeld) {
           this.diceApp.diceStore.clearHolder(setId);
@@ -521,7 +514,7 @@ class DiceBoxApp {
     );
     this.diceHistory.peerId = this.connectionManager.getEffectiveId();
 
-    // Initialize the new strategy-based dice app
+    // Initialize dice app
     const meshState = this.roomManager.getMeshState();
     const diceConfig = meshState.getDiceConfig() || {
       diceSets: [{ id: 'default', count: 2, color: '#ffffff' }],
@@ -533,17 +526,17 @@ class DiceBoxApp {
       username: this.roomManager.username,
     };
 
-    // Create network adapter for the new app
+    // Create network adapter for the dice app
     const networkAdapter = {
       broadcast: (type, payload) => {
-        const legacyMsg = this.#convertToLegacyMessage(type, payload);
-        if (legacyMsg) {
-          this.messageRouter.broadcast(legacyMsg);
+        const msg = this.#convertToNetworkMessage(type, payload);
+        if (msg) {
+          this.messageRouter.broadcast(msg);
         }
       },
     };
 
-    // Create the new dice app
+    // Create dice app
     this.diceApp = createApp({
       diceConfig,
       localPlayer,
@@ -556,12 +549,6 @@ class DiceBoxApp {
       this.diceApp.mount(diceRollerContainer);
     }
 
-    // Bridge to legacy state for initial sync
-    this.diceApp.bridgeToLegacyState(meshState, {
-      syncFromLegacy: true,
-      enableTwoWaySync: false,
-    });
-
     // Subscribe to dice store changes to update peer list holder indicators
     this.diceApp.diceStore.subscribe(() => {
       this.#updatePeerListHolders();
@@ -572,17 +559,28 @@ class DiceBoxApp {
     );
   }
 
-  #convertToLegacyMessage(type, payload) {
+  #convertToNetworkMessage(type, payload) {
     switch (type) {
       case 'dice:roll':
         return {
           type: MSG.DICE_ROLL,
-          ...LegacyBridge.convertToLegacyRoll(payload),
+          rollId: payload.rollId || `roll-${Date.now()}`,
+          timestamp: payload.timestamp || Date.now(),
+          total: payload.total || payload.values?.reduce((a, b) => a + b, 0) || 0,
+          setResults: payload.setResults || [{
+            setId: payload.setId,
+            values: payload.values,
+            holderId: payload.playerId,
+            holderUsername: payload.username,
+          }],
+          lockedDice: payload.lockedDice || [],
         };
       case 'dice:grab':
         return {
           type: MSG.DICE_GRAB,
-          ...LegacyBridge.convertToLegacyGrab(payload),
+          setId: payload.setId,
+          peerId: payload.playerId,
+          username: payload.username,
         };
       case 'dice:drop':
         return {
@@ -631,14 +629,12 @@ class DiceBoxApp {
       meshState.unlockDie(setId, dieIndex);
     }
 
-    // Update new DiceStore
+    // Update DiceStore
     if (this.diceApp) {
       this.diceApp.diceStore.setLock(setId, dieIndex, locked);
     }
   }
 
-  // Note: updateDiceRollerState has been removed - the new dice app handles
-  // its own state updates through the DiceStore subscriptions.
 
   // === LEAVE ROOM ===
 

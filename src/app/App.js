@@ -3,8 +3,6 @@ import { DiceStore } from '../features/dice-rolling/state/DiceStore.js';
 import { createStrategy, getAvailableStrategies, DEFAULT_STRATEGY } from '../features/dice-rolling/strategies/index.js';
 import { MessageBus } from '../infrastructure/messaging/MessageBus.js';
 import { DiceAnimationService } from '../features/dice-rolling/services/DiceAnimationService.js';
-import { NetworkAdapter } from '../infrastructure/network/NetworkAdapter.js';
-import { LegacyBridge } from '../infrastructure/network/LegacyBridge.js';
 
 // Import UI components to register them
 import '../ui/containers/DiceRollerContainer.js';
@@ -25,16 +23,12 @@ export class App {
   #currentStrategyId;
   #currentStrategy;
   #rollerContainer;
-  #legacyBridge;
-  #networkAdapter;
 
   constructor() {
     this.#container = new Container();
     this.#currentStrategyId = null;
     this.#currentStrategy = null;
     this.#rollerContainer = null;
-    this.#legacyBridge = null;
-    this.#networkAdapter = null;
   }
 
   /**
@@ -217,114 +211,6 @@ export class App {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // LEGACY INTEGRATION
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * Connect to the legacy network layer.
-   * Creates a NetworkAdapter wrapping the existing webrtcManager.
-   *
-   * @param {object} webrtcManager - Legacy WebRTC manager instance
-   * @param {object} messageRouter - Legacy message router instance (optional)
-   * @returns {App} this for chaining
-   */
-  connectToLegacyNetwork(webrtcManager, messageRouter = null) {
-    this.#networkAdapter = new NetworkAdapter(webrtcManager, messageRouter);
-    this.#container.registerInstance('network', this.#networkAdapter);
-
-    // Re-create strategy with new network
-    if (this.#currentStrategyId) {
-      this.setStrategy(this.#currentStrategyId);
-    }
-
-    return this;
-  }
-
-  /**
-   * Create a bridge to sync with legacy MeshState.
-   *
-   * @param {MeshState} meshState - Legacy mesh state instance
-   * @param {object} options - Bridge options
-   * @param {boolean} options.syncFromLegacy - Initial sync from legacy (default: true)
-   * @param {boolean} options.enableTwoWaySync - Enable continuous sync (default: false)
-   * @returns {App} this for chaining
-   */
-  bridgeToLegacyState(meshState, options = {}) {
-    const { syncFromLegacy = true, enableTwoWaySync = false } = options;
-
-    this.#legacyBridge = new LegacyBridge(meshState, this.diceStore);
-
-    if (syncFromLegacy) {
-      this.#legacyBridge.syncFromLegacy();
-    }
-
-    if (enableTwoWaySync) {
-      this.#legacyBridge.enableTwoWaySync();
-    }
-
-    return this;
-  }
-
-  /**
-   * Get the legacy bridge instance.
-   * @returns {LegacyBridge|null}
-   */
-  get legacyBridge() {
-    return this.#legacyBridge;
-  }
-
-  /**
-   * Get the network adapter instance.
-   * @returns {NetworkAdapter|null}
-   */
-  get networkAdapter() {
-    return this.#networkAdapter;
-  }
-
-  /**
-   * Setup message handlers to route legacy messages to the current strategy.
-   * Call this after connecting to legacy network.
-   *
-   * @returns {App} this for chaining
-   */
-  setupLegacyMessageHandling() {
-    if (!this.#networkAdapter) {
-      console.warn('No network adapter connected. Call connectToLegacyNetwork first.');
-      return this;
-    }
-
-    // Route dice messages to current strategy
-    const diceMessageTypes = [
-      'dice:roll',
-      'dice:grab',
-      'dice:drop',
-      'dice:lock',
-    ];
-
-    for (const type of diceMessageTypes) {
-      this.#networkAdapter.onMessage(type, (payload, context) => {
-        this.handleMessage(type, payload, context.fromPeerId);
-      });
-    }
-
-    return this;
-  }
-
-  /**
-   * Cleanup and disconnect from legacy systems.
-   */
-  disconnectLegacy() {
-    if (this.#legacyBridge) {
-      this.#legacyBridge.disableSync();
-      this.#legacyBridge = null;
-    }
-
-    if (this.#networkAdapter) {
-      this.#networkAdapter.clear();
-      this.#networkAdapter = null;
-    }
-  }
 }
 
 /**
