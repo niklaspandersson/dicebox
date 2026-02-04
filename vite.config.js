@@ -4,6 +4,11 @@ import { resolve } from 'path';
 export default defineConfig({
   root: 'public',
   base: process.env.VITE_BASE ?? '/dicebox/',
+  resolve: {
+    alias: {
+      '@dice': resolve(__dirname, 'src'),
+    },
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,

@@ -11,7 +11,7 @@ import { RoomManager } from "./room-manager.js";
 import { MessageRouter, MSG } from "./message-router.js";
 
 // Import dice rolling architecture
-import { createApp } from "../../src/app/App.js";
+import { createApp } from "@dice/app/App.js";
 
 class DiceBoxApp {
   constructor() {
