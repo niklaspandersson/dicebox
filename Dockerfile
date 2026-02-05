@@ -8,7 +8,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Copy source files needed for build
-COPY public/ ./public/
+COPY src/ ./src/
 COPY vite.config.js ./
 
 # Build frontend assets with Vite
