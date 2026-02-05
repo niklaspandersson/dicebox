@@ -2,7 +2,6 @@ import { Container } from "./Container.js";
 import { DiceStore } from "../features/dice-rolling/state/DiceStore.js";
 import {
   createStrategy,
-  getAvailableStrategies,
   DEFAULT_STRATEGY,
 } from "../features/dice-rolling/strategies/index.js";
 import { MessageBus } from "../infrastructure/messaging/MessageBus.js";
@@ -175,14 +174,6 @@ export class App {
    */
   get messageBus() {
     return this.#container.get("messageBus");
-  }
-
-  /**
-   * Get available strategies for UI.
-   * @returns {Array<{id: string, name: string, description: string}>}
-   */
-  getAvailableStrategies() {
-    return getAvailableStrategies();
   }
 
   /**

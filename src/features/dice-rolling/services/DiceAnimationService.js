@@ -13,8 +13,6 @@
  * const result = await animationService.animateRoll({
  *   setIds: ['red', 'blue'],
  *   diceConfig: { diceSets: [...] },
- *   lockedDice: new Map(),
- *   currentValues: new Map(),
  *   onFrame: (frameValues) => updateUI(frameValues),
  * });
  */
@@ -38,8 +36,6 @@ export class DiceAnimationService {
    * @param {object} options
    * @param {string[]} options.setIds - IDs of sets to roll
    * @param {object} options.diceConfig - Dice configuration
-   * @param {Map} options.lockedDice - Map of setId -> Set of locked indices
-   * @param {Map} options.currentValues - Map of setId -> current values array
    * @param {function} options.onFrame - Callback for animation frames (optional)
    * @param {number} options.duration - Animation duration in ms (optional)
    * @returns {Promise<Map<string, number[]>>} Final values for each set
@@ -48,8 +44,6 @@ export class DiceAnimationService {
     const {
       setIds,
       diceConfig,
-      lockedDice = new Map(),
-      currentValues = new Map(),
       onFrame,
       duration = this.#defaultDuration,
     } = options;
@@ -58,12 +52,7 @@ export class DiceAnimationService {
     const endTime = startTime + duration;
 
     // Generate final values upfront
-    const finalValues = this.#generateFinalValues(
-      setIds,
-      diceConfig,
-      lockedDice,
-      currentValues,
-    );
+    const finalValues = this.#generateFinalValues(setIds, diceConfig);
 
     // If no animation callback, just return final values
     if (!onFrame) {
@@ -83,12 +72,7 @@ export class DiceAnimationService {
         }
 
         // Generate random intermediate values
-        const frameValues = this.#generateFrameValues(
-          setIds,
-          diceConfig,
-          lockedDice,
-          currentValues,
-        );
+        const frameValues = this.#generateFrameValues(setIds, diceConfig);
         onFrame(frameValues, false);
 
         // Schedule next frame
@@ -103,25 +87,16 @@ export class DiceAnimationService {
   /**
    * Generate final roll values.
    */
-  #generateFinalValues(setIds, diceConfig, lockedDice, currentValues) {
+  #generateFinalValues(setIds, diceConfig) {
     const result = new Map();
 
     for (const setId of setIds) {
       const setConfig = diceConfig.diceSets.find((s) => s.id === setId);
       if (!setConfig) continue;
 
-      const locked = lockedDice.get(setId) || new Set();
-      const current = currentValues.get(setId) || [];
       const values = [];
-
       for (let i = 0; i < setConfig.count; i++) {
-        if (locked.has(i) && current[i] !== undefined) {
-          // Keep locked value
-          values.push(current[i]);
-        } else {
-          // Generate random value
-          values.push(this.#randomDieValue());
-        }
+        values.push(this.#randomDieValue());
       }
 
       result.set(setId, values);
@@ -133,25 +108,16 @@ export class DiceAnimationService {
   /**
    * Generate random intermediate frame values for animation.
    */
-  #generateFrameValues(setIds, diceConfig, lockedDice, currentValues) {
+  #generateFrameValues(setIds, diceConfig) {
     const result = new Map();
 
     for (const setId of setIds) {
       const setConfig = diceConfig.diceSets.find((s) => s.id === setId);
       if (!setConfig) continue;
 
-      const locked = lockedDice.get(setId) || new Set();
-      const current = currentValues.get(setId) || [];
       const values = [];
-
       for (let i = 0; i < setConfig.count; i++) {
-        if (locked.has(i) && current[i] !== undefined) {
-          // Keep locked value even during animation
-          values.push(current[i]);
-        } else {
-          // Random animation frame value
-          values.push(this.#randomDieValue());
-        }
+        values.push(this.#randomDieValue());
       }
 
       result.set(setId, values);
@@ -203,7 +169,7 @@ export class DiceAnimationService {
           return;
         }
 
-        // Generate random intermediate values (unlocked dice only)
+        // Generate random intermediate values
         const frameValues = new Map();
         for (const setId of setIds) {
           const setConfig = diceConfig.diceSets.find((s) => s.id === setId);

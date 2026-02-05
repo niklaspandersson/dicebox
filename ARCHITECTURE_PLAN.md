@@ -16,7 +16,7 @@ This document outlines a complete architectural redesign of the DiceBox applicat
 |-------|-------|--------|
 | `App.js` | 828 | Orchestrates everything, 15+ event handlers, mixed concerns |
 | `WebRTCManager` | 669 | Connection creation, signaling, channels all in one |
-| `DiceRoller` | 617 | UI rendering, animation, state, locking all intertwined |
+| `DiceRoller` | 617 | UI rendering, animation, state all intertwined |
 | `MeshState` | 474 | Multiple state domains mixed together |
 
 ### Architectural Issues
@@ -101,29 +101,12 @@ This is the core module that implements the **Strategy Pattern** for different d
   ├── strategies/                 - Rolling UX strategies (each with its own view!)
   │   ├── DiceRollingStrategy.js  - Abstract interface
   │   │
-  │   ├── grab-and-roll/          - Current "grab sets, then roll" UX
-  │   │   ├── GrabAndRollStrategy.js
-  │   │   ├── GrabAndRollView.js  - Click-based card UI
-  │   │   └── grab-and-roll.css
-  │   │
-  │   ├── drag-select/            - Drag to select dice UX
-  │   │   ├── DragSelectStrategy.js
-  │   │   ├── DragSelectView.js   - Canvas with drag selection
-  │   │   └── drag-select.css
-  │   │
-  │   ├── sequential/             - Turn-based rolling
-  │   │   ├── SequentialStrategy.js
-  │   │   ├── SequentialView.js   - Turn indicator + queue
-  │   │   └── sequential.css
-  │   │
-  │   └── physics-3d/             - 3D dice with physics (optional)
-  │       ├── Physics3DStrategy.js
-  │       ├── Physics3DView.js    - WebGL canvas
-  │       └── physics-3d.css
+  │   └── drag-pickup/            - Drag across dice to pick up and roll
+  │       ├── DragPickupStrategy.js
+  │       └── DragPickupView.js   - Touch/mouse drag UI
   │
   ├── state/                      - Shared state management
   │   ├── DiceState.js            - Current dice values
-  │   ├── LockState.js            - Locked dice tracking
   │   └── RollHistory.js          - Past rolls
   │
   └── services/                   - Shared services
@@ -135,656 +118,15 @@ This is the core module that implements the **Strategy Pattern** for different d
 #### Strategy Interface
 
 The strategy uses a **View Factory pattern** - each strategy provides its own view component.
-This allows radically different UX paradigms (click-to-grab, drag-to-select, touch gestures, etc.)
-without forcing them into a shared template.
 
-```javascript
-// /src/features/dice-rolling/strategies/DiceRollingStrategy.js
-
-/**
- * Abstract base class for dice rolling UX strategies.
- * Each strategy defines both the LOGIC and the VIEW for dice interaction.
- *
- * This follows the "Widget" pattern where controller + view are bundled together,
- * enabling completely different UX paradigms per strategy.
- */
-export class DiceRollingStrategy {
-  constructor(context) {
-    this.context = context; // { state, network, localPlayer, animationService }
-  }
-
-  /** @returns {string} Human-readable name */
-  get name() { throw new Error('Not implemented'); }
-
-  /** @returns {string} Description for UI */
-  get description() { throw new Error('Not implemented'); }
-
-  // ─────────────────────────────────────────────────────────────
-  // VIEW FACTORY - The key extension point for custom UX
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * Factory method: Creates the view component for this strategy.
-   *
-   * The returned component is a Web Component that:
-   * - Receives this strategy instance as its controller
-   * - Handles all user interactions (clicks, drags, gestures, etc.)
-   * - Renders the dice UI appropriate for this strategy's UX paradigm
-   * - Subscribes to state changes and re-renders as needed
-   *
-   * @returns {HTMLElement} A Web Component instance
-   *
-   * @example
-   * // Click-to-grab strategy returns a grid of clickable dice sets
-   * // Drag-to-select strategy returns a canvas with drag selection
-   * // 3D strategy returns a WebGL canvas with physics
-   */
-  createView() {
-    throw new Error('Not implemented - each strategy must provide its own view');
-  }
-
-  /**
-   * Optional: Returns the custom element tag name for this strategy's view.
-   * Used for registering the component if not already registered.
-   * @returns {string}
-   */
-  static get viewTagName() {
-    throw new Error('Not implemented');
-  }
-
-  /**
-   * Optional: Returns the view component class for registration.
-   * @returns {typeof HTMLElement}
-   */
-  static get viewComponent() {
-    throw new Error('Not implemented');
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // CORE LOGIC - Shared interface for all strategies
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * Execute the roll action for given dice.
-   * @param {string} playerId - Who is rolling
-   * @param {string[]} setIds - Which sets to roll (strategy-dependent)
-   * @returns {Promise<RollResult>}
-   */
-  async roll(playerId, setIds) { throw new Error('Not implemented'); }
-
-  /**
-   * Handle incoming network message related to dice.
-   * @param {string} type - Message type
-   * @param {object} payload - Message data
-   * @param {string} fromPeerId - Sender
-   */
-  handleMessage(type, payload, fromPeerId) { throw new Error('Not implemented'); }
-
-  /**
-   * Get the current state for serialization/sync.
-   * @returns {object}
-   */
-  getState() { throw new Error('Not implemented'); }
-
-  /**
-   * Load state from a peer (for sync on join).
-   * @param {object} state
-   */
-  loadState(state) { throw new Error('Not implemented'); }
-
-  // ─────────────────────────────────────────────────────────────
-  // LIFECYCLE
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * Called when strategy is activated (view mounted).
-   */
-  activate() {}
-
-  /**
-   * Called when strategy is deactivated (view unmounted).
-   * Clean up subscriptions, timers, etc.
-   */
-  deactivate() {}
-}
-```
-
-#### Example Strategy: Grab and Roll (Current Behavior)
-
-```javascript
-// /src/features/dice-rolling/strategies/grab-and-roll/GrabAndRollStrategy.js
-
-import { DiceRollingStrategy } from '../DiceRollingStrategy.js';
-import { GrabAndRollView } from './GrabAndRollView.js';
-
-export class GrabAndRollStrategy extends DiceRollingStrategy {
-  get name() { return 'Grab and Roll'; }
-
-  get description() {
-    return 'Players grab dice sets, then roll together when all sets are held.';
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // VIEW FACTORY - Creates the click-to-grab UI
-  // ─────────────────────────────────────────────────────────────
-
-  static get viewTagName() { return 'dice-grab-and-roll'; }
-  static get viewComponent() { return GrabAndRollView; }
-
-  createView() {
-    const view = document.createElement('dice-grab-and-roll');
-    view.setStrategy(this);
-    return view;
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // STRATEGY-SPECIFIC LOGIC
-  // ─────────────────────────────────────────────────────────────
-
-  /** Called by view when user clicks a dice set */
-  async handleSetClick(setId) {
-    const { state, network, localPlayer } = this.context;
-    const holder = state.holders.get(setId);
-
-    if (!holder) {
-      // Grab the set
-      if (state.tryGrab(setId, localPlayer.id)) {
-        network.broadcast('dice:grab', { setId, playerId: localPlayer.id });
-      }
-    } else if (holder.playerId === localPlayer.id) {
-      if (this.canRoll()) {
-        // All held and I'm a holder - roll!
-        await this.roll(localPlayer.id, this.getMySetIds());
-      } else {
-        // Drop the set
-        state.clearHolder(setId);
-        network.broadcast('dice:drop', { setId });
-      }
-    }
-  }
-
-  canRoll() {
-    const { state, localPlayer } = this.context;
-    const allSetsHeld = state.diceConfig.diceSets.every(
-      set => state.holders.has(set.id)
-    );
-    const playerHoldsAny = [...state.holders.values()].some(
-      h => h.playerId === localPlayer.id
-    );
-    return allSetsHeld && playerHoldsAny;
-  }
-
-  getMySetIds() {
-    const { state, localPlayer } = this.context;
-    return [...state.holders.entries()]
-      .filter(([_, h]) => h.playerId === localPlayer.id)
-      .map(([setId]) => setId);
-  }
-
-  async roll(playerId, setIds) {
-    const { state, network, animationService } = this.context;
-    const rollResult = await animationService.animateRoll(setIds);
-
-    state.applyRoll(rollResult);
-    network.broadcast('dice:roll', rollResult);
-
-    return rollResult;
-  }
-
-  handleMessage(type, payload, fromPeerId) {
-    const { state, animationService } = this.context;
-
-    switch (type) {
-      case 'dice:grab':
-        state.setHolder(payload.setId, payload.playerId);
-        break;
-      case 'dice:drop':
-        state.clearHolder(payload.setId);
-        break;
-      case 'dice:roll':
-        state.applyRoll(payload);
-        animationService.showRoll(payload);
-        break;
-      case 'dice:lock':
-        state.setLock(payload.setId, payload.dieIndex, payload.locked);
-        break;
-    }
-  }
-
-  getState() {
-    return this.context.state.getSnapshot();
-  }
-
-  loadState(snapshot) {
-    this.context.state.loadSnapshot(snapshot);
-  }
-}
-```
-
-```javascript
-// /src/features/dice-rolling/strategies/grab-and-roll/GrabAndRollView.js
-
-/**
- * View component for the "Grab and Roll" strategy.
- * Uses a click-based interaction model with dice sets displayed as cards.
- */
-export class GrabAndRollView extends HTMLElement {
-  #strategy = null;
-  #unsubscribe = null;
-
-  setStrategy(strategy) {
-    this.#strategy = strategy;
-  }
-
-  connectedCallback() {
-    // Subscribe to state changes
-    this.#unsubscribe = this.#strategy.context.state.subscribe(() => this.render());
-    this.render();
-    this.addEventListener('click', this.#handleClick);
-  }
-
-  disconnectedCallback() {
-    this.#unsubscribe?.();
-    this.removeEventListener('click', this.#handleClick);
-  }
-
-  #handleClick = (e) => {
-    const setEl = e.target.closest('[data-set-id]');
-    if (setEl) {
-      this.#strategy.handleSetClick(setEl.dataset.setId);
-    }
-
-    const lockEl = e.target.closest('[data-lock-die]');
-    if (lockEl) {
-      // Handle die locking...
-    }
-  }
-
-  render() {
-    const { state, localPlayer } = this.#strategy.context;
-    const canRoll = this.#strategy.canRoll();
-
-    this.innerHTML = `
-      <div class="grab-and-roll">
-        <div class="dice-sets">
-          ${state.diceConfig.diceSets.map(set => this.#renderSet(set, canRoll)).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  #renderSet(set, canRoll) {
-    const { state, localPlayer } = this.#strategy.context;
-    const holder = state.holders.get(set.id);
-    const values = state.diceValues.get(set.id) || [];
-    const isHeldByMe = holder?.playerId === localPlayer.id;
-    const isReady = canRoll && isHeldByMe;
-
-    return `
-      <div class="dice-set ${isReady ? 'ready-to-roll' : ''} ${holder ? 'held' : ''}"
-           data-set-id="${set.id}"
-           style="--set-color: ${set.color}">
-        <div class="dice-set__holder">
-          ${holder ? holder.username : 'Click to grab'}
-        </div>
-        <div class="dice-set__dice">
-          ${Array.from({ length: set.count }, (_, i) =>
-            `<dice-die value="${values[i] || ''}" color="${set.color}"></dice-die>`
-          ).join('')}
-        </div>
-        ${isReady ? '<div class="dice-set__roll-hint">Click to roll!</div>' : ''}
-      </div>
-    `;
-  }
-}
-
-customElements.define('dice-grab-and-roll', GrabAndRollView);
-```
-
-#### Alternative Strategy: Drag to Select (Different UX Paradigm)
-
-This example shows how a completely different interaction model works with the view factory pattern.
-Instead of clicking sets, users drag to select individual dice, then roll the selection.
-
-```javascript
-// /src/features/dice-rolling/strategies/drag-select/DragSelectStrategy.js
-
-import { DiceRollingStrategy } from '../DiceRollingStrategy.js';
-import { DragSelectView } from './DragSelectView.js';
-
-/**
- * Drag-to-select strategy: All dice are in a pool, users drag to select
- * which dice to roll. Completely different UX from grab-and-roll.
- */
-export class DragSelectStrategy extends DiceRollingStrategy {
-  #selectedDice = new Set(); // Local selection state
-
-  get name() { return 'Drag to Select'; }
-
-  get description() {
-    return 'Drag to select dice, then roll your selection. Any player can roll anytime.';
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // VIEW FACTORY - Creates a canvas-based drag selection UI
-  // ─────────────────────────────────────────────────────────────
-
-  static get viewTagName() { return 'dice-drag-select'; }
-  static get viewComponent() { return DragSelectView; }
-
-  createView() {
-    const view = document.createElement('dice-drag-select');
-    view.setStrategy(this);
-    return view;
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // SELECTION LOGIC (strategy-specific)
-  // ─────────────────────────────────────────────────────────────
-
-  /** Called by view during drag - dice under the selection rect */
-  updateSelection(diceIds) {
-    this.#selectedDice = new Set(diceIds);
-    // Trigger view update
-    this.context.state.dispatchEvent(new CustomEvent('selection-change'));
-  }
-
-  getSelection() {
-    return this.#selectedDice;
-  }
-
-  clearSelection() {
-    this.#selectedDice.clear();
-  }
-
-  /** Called by view when user releases drag with selection */
-  async rollSelection() {
-    if (this.#selectedDice.size === 0) return;
-
-    const { localPlayer } = this.context;
-    const diceToRoll = [...this.#selectedDice];
-
-    await this.roll(localPlayer.id, diceToRoll);
-    this.clearSelection();
-  }
-
-  async roll(playerId, diceIds) {
-    const { state, network, animationService } = this.context;
-
-    const rollResult = await animationService.animateRoll(diceIds);
-
-    state.applyRoll(rollResult);
-    network.broadcast('dice:roll', rollResult);
-
-    return rollResult;
-  }
-
-  handleMessage(type, payload, fromPeerId) {
-    if (type === 'dice:roll') {
-      this.context.state.applyRoll(payload);
-      this.context.animationService.showRoll(payload);
-    }
-  }
-
-  getState() {
-    return { values: this.context.state.diceValues };
-  }
-
-  loadState(snapshot) {
-    this.context.state.loadValues(snapshot.values);
-  }
-}
-```
-
-```javascript
-// /src/features/dice-rolling/strategies/drag-select/DragSelectView.js
-
-/**
- * View component for drag-to-select strategy.
- * Uses pointer events for drag selection - completely different from click-based UI.
- */
-export class DragSelectView extends HTMLElement {
-  #strategy = null;
-  #unsubscribe = null;
-  #isDragging = false;
-  #dragStart = { x: 0, y: 0 };
-  #dragEnd = { x: 0, y: 0 };
-  #dicePositions = new Map(); // dieId -> {x, y, width, height}
-
-  setStrategy(strategy) {
-    this.#strategy = strategy;
-  }
-
-  connectedCallback() {
-    this.#unsubscribe = this.#strategy.context.state.subscribe(() => this.render());
-
-    // Drag selection events
-    this.addEventListener('pointerdown', this.#onPointerDown);
-    this.addEventListener('pointermove', this.#onPointerMove);
-    this.addEventListener('pointerup', this.#onPointerUp);
-
-    this.render();
-    this.#calculateDicePositions();
-  }
-
-  disconnectedCallback() {
-    this.#unsubscribe?.();
-    this.removeEventListener('pointerdown', this.#onPointerDown);
-    this.removeEventListener('pointermove', this.#onPointerMove);
-    this.removeEventListener('pointerup', this.#onPointerUp);
-  }
-
-  #onPointerDown = (e) => {
-    this.#isDragging = true;
-    this.#dragStart = { x: e.clientX, y: e.clientY };
-    this.#dragEnd = { x: e.clientX, y: e.clientY };
-    this.setPointerCapture(e.pointerId);
-  }
-
-  #onPointerMove = (e) => {
-    if (!this.#isDragging) return;
-
-    this.#dragEnd = { x: e.clientX, y: e.clientY };
-    this.#updateSelectionFromDrag();
-    this.#renderSelectionRect();
-  }
-
-  #onPointerUp = (e) => {
-    if (!this.#isDragging) return;
-
-    this.#isDragging = false;
-    this.releasePointerCapture(e.pointerId);
-    this.#hideSelectionRect();
-
-    // If we have a selection, show roll button or auto-roll
-    if (this.#strategy.getSelection().size > 0) {
-      this.#strategy.rollSelection();
-    }
-  }
-
-  #updateSelectionFromDrag() {
-    const rect = this.#getSelectionRect();
-    const selectedIds = [];
-
-    for (const [dieId, pos] of this.#dicePositions) {
-      if (this.#rectsIntersect(rect, pos)) {
-        selectedIds.push(dieId);
-      }
-    }
-
-    this.#strategy.updateSelection(selectedIds);
-  }
-
-  #getSelectionRect() {
-    return {
-      x: Math.min(this.#dragStart.x, this.#dragEnd.x),
-      y: Math.min(this.#dragStart.y, this.#dragEnd.y),
-      width: Math.abs(this.#dragEnd.x - this.#dragStart.x),
-      height: Math.abs(this.#dragEnd.y - this.#dragStart.y),
-    };
-  }
-
-  #rectsIntersect(a, b) {
-    return !(a.x + a.width < b.x || b.x + b.width < a.x ||
-             a.y + a.height < b.y || b.y + b.height < a.y);
-  }
-
-  #renderSelectionRect() {
-    let rect = this.querySelector('.selection-rect');
-    if (!rect) {
-      rect = document.createElement('div');
-      rect.className = 'selection-rect';
-      this.appendChild(rect);
-    }
-
-    const r = this.#getSelectionRect();
-    const bounds = this.getBoundingClientRect();
-    rect.style.cssText = `
-      left: ${r.x - bounds.left}px;
-      top: ${r.y - bounds.top}px;
-      width: ${r.width}px;
-      height: ${r.height}px;
-      display: block;
-    `;
-  }
-
-  #hideSelectionRect() {
-    this.querySelector('.selection-rect')?.remove();
-  }
-
-  #calculateDicePositions() {
-    this.querySelectorAll('[data-die-id]').forEach(el => {
-      const rect = el.getBoundingClientRect();
-      this.#dicePositions.set(el.dataset.dieId, {
-        x: rect.x, y: rect.y, width: rect.width, height: rect.height
-      });
-    });
-  }
-
-  render() {
-    const { state } = this.#strategy.context;
-    const selection = this.#strategy.getSelection();
-    const allDice = this.#getAllDice();
-
-    this.innerHTML = `
-      <div class="drag-select-pool">
-        <div class="instructions">Drag to select dice, then release to roll</div>
-        <div class="dice-pool">
-          ${allDice.map(die => `
-            <dice-die
-              data-die-id="${die.id}"
-              value="${die.value || ''}"
-              color="${die.color}"
-              ${selection.has(die.id) ? 'selected' : ''}
-            ></dice-die>
-          `).join('')}
-        </div>
-      </div>
-    `;
-
-    // Recalculate positions after render
-    requestAnimationFrame(() => this.#calculateDicePositions());
-  }
-
-  #getAllDice() {
-    const { state } = this.#strategy.context;
-    const dice = [];
-    for (const set of state.diceConfig.diceSets) {
-      const values = state.diceValues.get(set.id) || [];
-      for (let i = 0; i < set.count; i++) {
-        dice.push({
-          id: `${set.id}-${i}`,
-          setId: set.id,
-          index: i,
-          value: values[i],
-          color: set.color,
-        });
-      }
-    }
-    return dice;
-  }
-}
-
-customElements.define('dice-drag-select', DragSelectView);
-```
-
-#### Other Strategy Ideas (Sketches)
-
-```javascript
-// /src/features/dice-rolling/strategies/SequentialRollStrategy.js
-
-/**
- * Turn-based rolling. Shows whose turn it is prominently.
- * Has its own view with turn indicator and "End Turn" button.
- */
-export class SequentialRollStrategy extends DiceRollingStrategy {
-  get name() { return 'Take Turns'; }
-
-  static get viewTagName() { return 'dice-sequential'; }
-  static get viewComponent() { return SequentialView; }
-
-  createView() {
-    const view = document.createElement('dice-sequential');
-    view.setStrategy(this);
-    return view;
-  }
-
-  // View shows: "It's [Player]'s turn!" banner
-  // Only active player sees roll button
-  // "Pass" button to skip without rolling
-}
-```
-
-```javascript
-// /src/features/dice-rolling/strategies/Physics3DStrategy.js
-
-/**
- * 3D dice with physics! Uses WebGL/Three.js for rendering.
- * Dice tumble realistically when rolled.
- */
-export class Physics3DStrategy extends DiceRollingStrategy {
-  get name() { return '3D Physics'; }
-
-  static get viewTagName() { return 'dice-3d-physics'; }
-  static get viewComponent() { return Physics3DView; }
-
-  createView() {
-    const view = document.createElement('dice-3d-physics');
-    view.setStrategy(this);
-    return view;
-  }
-
-  // View is a WebGL canvas with Three.js
-  // Dice are 3D models with physics simulation
-  // Click and drag to "throw" dice
-  // Results determined by physics, synced via network
-}
-```
-
-```javascript
-// /src/features/dice-rolling/strategies/TouchGestureStrategy.js
-
-/**
- * Mobile-optimized with swipe gestures.
- * Swipe up to roll, pinch to select, etc.
- */
-export class TouchGestureStrategy extends DiceRollingStrategy {
-  get name() { return 'Touch Gestures'; }
-
-  static get viewTagName() { return 'dice-touch'; }
-  static get viewComponent() { return TouchGestureView; }
-
-  createView() {
-    const view = document.createElement('dice-touch');
-    view.setStrategy(this);
-    return view;
-  }
-
-  // View uses Hammer.js or similar for gesture recognition
-  // Swipe up = roll all
-  // Tap dice = toggle lock
-  // Pinch = zoom in on dice
-}
+The `DiceRollingStrategy` abstract base class defines the interface that any strategy must implement:
+- `name` / `description` - Metadata
+- `createView()` - Factory method returning a Web Component
+- `static viewTagName` / `static viewComponent` - For custom element registration
+- `roll()` / `handleMessage()` / `getState()` / `loadState()` - Core logic
+- `activate()` / `deactivate()` - Lifecycle hooks
+
+The current implementation uses the **Drag to Pick Up** strategy (`DragPickupStrategy`), which provides a touch/mouse-friendly interaction where users drag across dice to pick them up and release to roll.
 
 ---
 
@@ -919,10 +261,9 @@ export class Store extends EventTarget {
 import { Store } from '../core/Store.js';
 
 const initialState = {
-  config: { diceSets: [], allowLocking: false },
+  config: { diceSets: [] },
   values: new Map(),      // setId -> number[]
   holders: new Map(),     // setId -> { playerId, username }
-  lockedDice: new Map(),  // setId -> Set<index>
   lastRoller: new Map(),  // setId -> { playerId, username }
 };
 
@@ -956,22 +297,6 @@ export class DiceStore extends Store {
       values: new Map([...state.values, ...Object.entries(rollResult.values)]),
       lastRoller: new Map([...state.lastRoller, ...Object.entries(rollResult.rollers)])
     }));
-  }
-
-  toggleLock(setId, dieIndex) {
-    this.update(state => {
-      const lockedDice = new Map(state.lockedDice);
-      const setLocks = new Set(lockedDice.get(setId) || []);
-
-      if (setLocks.has(dieIndex)) {
-        setLocks.delete(dieIndex);
-      } else {
-        setLocks.add(dieIndex);
-      }
-
-      lockedDice.set(setId, setLocks);
-      return { ...state, lockedDice };
-    });
   }
 }
 ```
@@ -1079,7 +404,7 @@ Separate smart containers from dumb presentational components.
 
 export class Die extends HTMLElement {
   static get observedAttributes() {
-    return ['value', 'locked', 'color', 'rolling'];
+    return ['value', 'color', 'rolling', 'selected'];
   }
 
   connectedCallback() {
@@ -1092,15 +417,14 @@ export class Die extends HTMLElement {
 
   render() {
     const value = this.getAttribute('value') || '';
-    const locked = this.hasAttribute('locked');
     const color = this.getAttribute('color') || '#ffffff';
+    const selected = this.hasAttribute('selected');
     const rolling = this.hasAttribute('rolling');
 
     this.innerHTML = `
-      <div class="die ${locked ? 'locked' : ''} ${rolling ? 'rolling' : ''}"
+      <div class="die ${selected ? 'die--selected' : ''} ${rolling ? 'die--rolling' : ''}"
            style="--die-color: ${color}">
         ${this.renderFace(value)}
-        ${locked ? '<span class="lock-icon">🔒</span>' : ''}
       </div>
     `;
   }
@@ -1208,7 +532,7 @@ like `<dice-die>` for rendering individual dice. This avoids duplication.
 
 export class Die extends HTMLElement {
   static get observedAttributes() {
-    return ['value', 'locked', 'color', 'rolling', 'selected'];
+    return ['value', 'color', 'rolling', 'selected'];
   }
 
   attributeChangedCallback() {
@@ -1217,19 +541,16 @@ export class Die extends HTMLElement {
 
   render() {
     const value = this.getAttribute('value') || '';
-    const locked = this.hasAttribute('locked');
     const selected = this.hasAttribute('selected');
     const color = this.getAttribute('color') || '#ffffff';
     const rolling = this.hasAttribute('rolling');
 
     this.innerHTML = `
       <div class="die
-                  ${locked ? 'die--locked' : ''}
                   ${selected ? 'die--selected' : ''}
                   ${rolling ? 'die--rolling' : ''}"
            style="--die-color: ${color}">
         ${this.#renderFace(value)}
-        ${locked ? '<span class="die__lock-icon"></span>' : ''}
       </div>
     `;
   }
@@ -1310,7 +631,7 @@ container.register('signaling', () => new SignalingClient(config.wsUrl));
 container.register('mesh', (c) => new MeshManager(c.get('signaling')));
 container.register('network', (c) => new NetworkService(c.get('signaling'), c.get('mesh')));
 container.register('diceStore', () => new DiceStore());
-container.register('diceStrategy', (c) => new GrabAndRollStrategy({
+container.register('diceStrategy', (c) => new DragPickupStrategy({
   state: c.get('diceStore'),
   network: c.get('network'),
   localPlayer: c.get('localPlayer'),
@@ -1331,7 +652,7 @@ container.register('diceStrategy', (c) => new GrabAndRollStrategy({
   │
   ├── features/
   │   ├── dice-rolling/
-  │   │   ├── strategies/         (4-5 strategy files, ~150 lines each)
+  │   │   ├── strategies/         (strategy + view files, ~150 lines each)
   │   │   ├── state/              (3 files, ~50-100 lines each)
   │   │   ├── services/           (3 files, ~80 lines each)
   │   │   └── components/         (6 files, ~50 lines each)
@@ -1383,7 +704,7 @@ container.register('diceStrategy', (c) => new GrabAndRollStrategy({
 | Module | Files | Avg Lines | Total |
 |--------|-------|-----------|-------|
 | App shell | 4 | 60 | 240 |
-| Dice strategies | 5 | 150 | 750 |
+| Dice strategy | 3 | 150 | 450 |
 | Dice state/services | 6 | 80 | 480 |
 | Network layer | 8 | 100 | 800 |
 | State management | 9 | 50 | 450 |
@@ -1408,7 +729,7 @@ The total lines increase slightly due to clearer boundaries, but:
 
 ### Phase 2: Core Features (Week 2)
 1. Implement Strategy pattern for dice rolling
-2. Create GrabAndRollStrategy (current behavior)
+2. Implement DragPickupStrategy (current behavior)
 3. Extract dice-related services
 4. Create message bus
 
@@ -1495,13 +816,11 @@ export class MyNewView extends HTMLElement {
 ```javascript
 // /src/features/dice-rolling/strategies/index.js
 
-import { GrabAndRollStrategy } from './grab-and-roll/GrabAndRollStrategy.js';
-import { DragSelectStrategy } from './drag-select/DragSelectStrategy.js';
+import { DragPickupStrategy } from './drag-pickup/DragPickupStrategy.js';
 import { MyNewStrategy } from './my-new-strategy/MyNewStrategy.js';
 
 export const strategies = {
-  'grab-and-roll': GrabAndRollStrategy,
-  'drag-select': DragSelectStrategy,
+  'drag-pickup': DragPickupStrategy,
   'my-new-strategy': MyNewStrategy,  // Add here
 };
 
@@ -1539,17 +858,6 @@ This architecture provides:
 
 ### Why View Factory?
 
-The key insight is that some UX paradigms are fundamentally incompatible with a shared template:
-
-| Strategy | DOM Structure | Event Model | Rendering |
-|----------|---------------|-------------|-----------|
-| Grab & Roll | Card grid | Click events | HTML/CSS |
-| Drag Select | Flat pool + selection rect | Pointer events + drag | HTML + canvas overlay |
-| Sequential | Turn queue + active area | Click + timers | HTML/CSS |
-| 3D Physics | WebGL canvas | Raycasting + physics | Three.js |
-| Touch Gestures | Full-screen touch area | Hammer.js gestures | HTML/CSS |
-
-Forcing these into a single template would result in complex conditionals and brittle code.
 By letting each strategy provide its own view, we get:
 
 - **Maximum flexibility** - Any UX paradigm is possible

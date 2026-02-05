@@ -72,9 +72,6 @@ export class NetworkAdapter {
   #legacyTypeToNewType(legacyType) {
     const mappings = {
       "dice-roll": "dice:roll",
-      "dice-grab": "dice:grab",
-      "dice-drop": "dice:drop",
-      "dice-lock": "dice:lock",
       hello: "peer:hello",
       welcome: "peer:welcome",
       "request-state": "peer:request-state",
@@ -92,9 +89,6 @@ export class NetworkAdapter {
   #newTypeToLegacyType(newType) {
     const mappings = {
       "dice:roll": "dice-roll",
-      "dice:grab": "dice-grab",
-      "dice:drop": "dice-drop",
-      "dice:lock": "dice-lock",
       "peer:hello": "hello",
       "peer:welcome": "welcome",
       "peer:request-state": "request-state",

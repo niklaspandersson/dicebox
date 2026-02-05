@@ -98,7 +98,7 @@ export class DiceRollingStrategy {
 
   /**
    * Handle incoming network message related to dice.
-   * @param {string} type - Message type (e.g., 'dice:roll', 'dice:grab')
+   * @param {string} type - Message type (e.g., 'dice:roll')
    * @param {object} payload - Message data
    * @param {string} fromPeerId - Sender's peer ID
    */

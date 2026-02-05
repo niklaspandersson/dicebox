@@ -2,8 +2,6 @@
  * Strategy registry - maps strategy IDs to strategy classes.
  */
 
-import { GrabAndRollStrategy } from "./grab-and-roll/GrabAndRollStrategy.js";
-import { DragSelectStrategy } from "./drag-select/DragSelectStrategy.js";
 import { DragPickupStrategy } from "./drag-pickup/DragPickupStrategy.js";
 
 /**
@@ -11,15 +9,13 @@ import { DragPickupStrategy } from "./drag-pickup/DragPickupStrategy.js";
  * Add new strategies here to make them available in the app.
  */
 export const strategies = {
-  "grab-and-roll": GrabAndRollStrategy,
-  "drag-select": DragSelectStrategy,
   "drag-pickup": DragPickupStrategy,
 };
 
 /**
  * Default strategy ID.
  */
-export const DEFAULT_STRATEGY = "grab-and-roll";
+export const DEFAULT_STRATEGY = "drag-pickup";
 
 /**
  * Create a strategy instance by ID.
@@ -37,27 +33,4 @@ export function createStrategy(strategyId, context) {
     );
   }
   return new Strategy(context);
-}
-
-/**
- * Get metadata for all available strategies.
- * Useful for building strategy picker UI.
- *
- * @returns {Array<{id: string, name: string, description: string}>}
- */
-export function getAvailableStrategies() {
-  return Object.entries(strategies).map(([id, Strategy]) => {
-    // Create a temporary instance to get name/description
-    // This is a bit wasteful but strategies are lightweight
-    const instance = new Strategy({
-      state: null,
-      network: null,
-      localPlayer: null,
-    });
-    return {
-      id,
-      name: instance.name,
-      description: instance.description,
-    };
-  });
 }

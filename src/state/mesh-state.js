@@ -12,10 +12,6 @@ export class MeshState extends EventTarget {
     this.maxHistorySize = 100;
     this.knownRollIds = new Set(); // For deduplication
 
-    // Dice locking state
-    this.lockedDice = new Map(); // setId -> { lockedIndices: Set<number>, values: Map<index, value> }
-    this.holderHasRolled = new Map(); // setId -> boolean (has current holder rolled at least once?)
-    this.savedDiceState = new Map(); // peerId -> Map<setId, { lockedIndices: number[], values: number[] }>
     this.lastRoller = new Map(); // setId -> { peerId, username } - who last rolled this set
   }
 
@@ -181,135 +177,6 @@ export class MeshState extends EventTarget {
     return false;
   }
 
-  // === Dice Locking ===
-
-  /**
-   * Lock a die at a specific index in a set
-   */
-  lockDie(setId, dieIndex, value) {
-    if (!this.lockedDice.has(setId)) {
-      this.lockedDice.set(setId, {
-        lockedIndices: new Set(),
-        values: new Map(),
-      });
-    }
-    const lock = this.lockedDice.get(setId);
-    lock.lockedIndices.add(dieIndex);
-    lock.values.set(dieIndex, value);
-  }
-
-  /**
-   * Unlock a die at a specific index
-   */
-  unlockDie(setId, dieIndex) {
-    const lock = this.lockedDice.get(setId);
-    if (lock) {
-      lock.lockedIndices.delete(dieIndex);
-      lock.values.delete(dieIndex);
-      if (lock.lockedIndices.size === 0) {
-        this.lockedDice.delete(setId);
-      }
-    }
-  }
-
-  /**
-   * Check if a die is locked
-   */
-  isLocked(setId, dieIndex) {
-    const lock = this.lockedDice.get(setId);
-    return lock ? lock.lockedIndices.has(dieIndex) : false;
-  }
-
-  /**
-   * Get all locked dice info for a set
-   */
-  getLockedDice(setId) {
-    return this.lockedDice.get(setId) || null;
-  }
-
-  /**
-   * Get locked value for a specific die
-   */
-  getLockedValue(setId, dieIndex) {
-    const lock = this.lockedDice.get(setId);
-    return lock ? lock.values.get(dieIndex) : null;
-  }
-
-  /**
-   * Mark that the current holder has rolled (enables locking)
-   */
-  setHolderHasRolled(setId) {
-    this.holderHasRolled.set(setId, true);
-  }
-
-  /**
-   * Check if current holder has rolled at least once
-   */
-  hasHolderRolled(setId) {
-    return this.holderHasRolled.get(setId) || false;
-  }
-
-  /**
-   * Clear the rolled flag for a set (when holder changes)
-   */
-  clearHolderRolled(setId) {
-    this.holderHasRolled.delete(setId);
-  }
-
-  /**
-   * Save dice state for a peer (when they drop dice)
-   */
-  saveDiceState(setId, peerId, lockedIndices, values) {
-    if (!this.savedDiceState.has(peerId)) {
-      this.savedDiceState.set(peerId, new Map());
-    }
-    this.savedDiceState.get(peerId).set(setId, {
-      lockedIndices: [...lockedIndices],
-      values: [...values],
-    });
-  }
-
-  /**
-   * Get saved dice state for a peer and set
-   */
-  getSavedDiceState(setId, peerId) {
-    const peerState = this.savedDiceState.get(peerId);
-    return peerState ? peerState.get(setId) : null;
-  }
-
-  /**
-   * Clear saved state for a set (after someone rolls all dice)
-   */
-  clearSavedStateForSet(setId) {
-    for (const [peerId, peerState] of this.savedDiceState) {
-      peerState.delete(setId);
-      if (peerState.size === 0) {
-        this.savedDiceState.delete(peerId);
-      }
-    }
-  }
-
-  /**
-   * Clear all locks for a set
-   */
-  clearLocksForSet(setId) {
-    this.lockedDice.delete(setId);
-  }
-
-  /**
-   * Set lock state directly (for syncing from broadcast)
-   */
-  setLockState(setId, lockedIndices, values) {
-    if (lockedIndices.length === 0) {
-      this.lockedDice.delete(setId);
-      return;
-    }
-    this.lockedDice.set(setId, {
-      lockedIndices: new Set(lockedIndices),
-      values: new Map(lockedIndices.map((idx, i) => [idx, values[i]])),
-    });
-  }
-
   /**
    * Set the last roller for a set
    */
@@ -344,29 +211,6 @@ export class MeshState extends EventTarget {
    * Get full state snapshot for syncing to new peers
    */
   getSnapshot() {
-    // Serialize locked dice state
-    const lockedDiceSnapshot = [];
-    for (const [setId, lock] of this.lockedDice) {
-      lockedDiceSnapshot.push({
-        setId,
-        lockedIndices: [...lock.lockedIndices],
-        values: [...lock.values.entries()].map(([idx, val]) => ({ idx, val })),
-      });
-    }
-
-    // Serialize saved dice state
-    const savedDiceSnapshot = [];
-    for (const [peerId, peerState] of this.savedDiceState) {
-      for (const [setId, state] of peerState) {
-        savedDiceSnapshot.push({
-          peerId,
-          setId,
-          lockedIndices: state.lockedIndices,
-          values: state.values,
-        });
-      }
-    }
-
     return {
       peers: Array.from(this.peers.entries()).map(([peerId, data]) => ({
         peerId,
@@ -376,9 +220,6 @@ export class MeshState extends EventTarget {
       rollHistory: this.rollHistory.slice(0, 50),
       diceConfig: this.diceConfig,
       holders: Array.from(this.holders.entries()),
-      lockedDice: lockedDiceSnapshot,
-      holderHasRolled: Array.from(this.holderHasRolled.entries()),
-      savedDiceState: savedDiceSnapshot,
       lastRoller: Array.from(this.lastRoller.entries()),
     };
   }
@@ -416,39 +257,6 @@ export class MeshState extends EventTarget {
       }
     }
 
-    // Load locked dice state
-    this.lockedDice.clear();
-    if (snapshot.lockedDice) {
-      for (const lock of snapshot.lockedDice) {
-        this.lockedDice.set(lock.setId, {
-          lockedIndices: new Set(lock.lockedIndices),
-          values: new Map(lock.values.map((v) => [v.idx, v.val])),
-        });
-      }
-    }
-
-    // Load holder rolled state
-    this.holderHasRolled.clear();
-    if (snapshot.holderHasRolled) {
-      for (const [setId, hasRolled] of snapshot.holderHasRolled) {
-        this.holderHasRolled.set(setId, hasRolled);
-      }
-    }
-
-    // Load saved dice state
-    this.savedDiceState.clear();
-    if (snapshot.savedDiceState) {
-      for (const saved of snapshot.savedDiceState) {
-        if (!this.savedDiceState.has(saved.peerId)) {
-          this.savedDiceState.set(saved.peerId, new Map());
-        }
-        this.savedDiceState.get(saved.peerId).set(saved.setId, {
-          lockedIndices: saved.lockedIndices,
-          values: saved.values,
-        });
-      }
-    }
-
     // Load last roller state
     this.lastRoller.clear();
     if (snapshot.lastRoller) {
@@ -466,9 +274,6 @@ export class MeshState extends EventTarget {
     this.knownRollIds.clear();
     this.diceConfig = null;
     this.holders.clear();
-    this.lockedDice.clear();
-    this.holderHasRolled.clear();
-    this.savedDiceState.clear();
     this.lastRoller.clear();
   }
 }

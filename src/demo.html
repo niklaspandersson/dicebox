@@ -239,7 +239,7 @@
         <button class="player-btn" data-player="carol">Carol</button>
       </div>
       <p style="color: #64748b; font-size: 13px; margin-top: 12px; margin-bottom: 0;">
-        Switch players to test multi-player mechanics. GrabAndRoll uses holders; DragSelect lets anyone roll anytime.
+        Switch players to test multi-player mechanics.
       </p>
     </div>
 
@@ -330,53 +330,29 @@
           { id: 'red', count: 5, color: '#ef4444' },
           { id: 'blue', count: 5, color: '#3b82f6' },
         ],
-        allowLocking: true,
       },
       localPlayer: currentPlayer,
       network: mockNetwork,
-      strategyId: 'grab-and-roll',
+      strategyId: 'drag-pickup',
     });
 
     // Mount dice roller
     app.mount('#dice-mount');
 
-    log('App initialized with GrabAndRoll strategy', 'success');
+    log('App initialized with DragPickup strategy', 'success');
 
     // ─────────────────────────────────────────────────────────────
     // STRATEGY SWITCHER
     // ─────────────────────────────────────────────────────────────
 
     const strategySelectorEl = document.getElementById('strategy-selector');
-    const availableStrategies = app.getAvailableStrategies();
-
-    availableStrategies.forEach((strat) => {
-      const btn = document.createElement('button');
-      btn.className = `strategy-btn ${strat.id === app.currentStrategyId ? 'active' : ''}`;
-      btn.dataset.strategyId = strat.id;
-      btn.innerHTML = `
-        <span class="strategy-btn__name">${strat.name}</span>
-        <span class="strategy-btn__desc">${strat.description}</span>
-      `;
-      strategySelectorEl.appendChild(btn);
-    });
-
-    strategySelectorEl.addEventListener('click', (e) => {
-      const btn = e.target.closest('.strategy-btn');
-      if (!btn) return;
-
-      const strategyId = btn.dataset.strategyId;
-      if (strategyId === app.currentStrategyId) return;
-
-      // Update UI
-      document.querySelectorAll('.strategy-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      // Switch strategy
-      app.setStrategy(strategyId);
-      updateStateDisplay();
-
-      log(`Switched to strategy: ${strategyId}`, 'warn');
-    });
+    const btn = document.createElement('button');
+    btn.className = 'strategy-btn active';
+    btn.innerHTML = `
+      <span class="strategy-btn__name">Drag to Pick Up</span>
+      <span class="strategy-btn__desc">Drag across dice to pick them up, release to roll.</span>
+    `;
+    strategySelectorEl.appendChild(btn);
 
     // ─────────────────────────────────────────────────────────────
     // STATE DISPLAY

@@ -5,16 +5,15 @@
  * Attributes:
  * - value: Die face value (1-6), empty for blank
  * - color: Die background color (hex)
- * - locked: Present if die is locked
  * - selected: Present if die is selected
  * - rolling: Present if die is animating
  *
  * @example
- * <dice-die value="6" color="#ef4444" locked></dice-die>
+ * <dice-die value="6" color="#ef4444"></dice-die>
  */
 export class Die extends HTMLElement {
   static get observedAttributes() {
-    return ["value", "color", "locked", "selected", "rolling"];
+    return ["value", "color", "selected", "rolling"];
   }
 
   constructor() {
@@ -33,7 +32,6 @@ export class Die extends HTMLElement {
   render() {
     const value = this.getAttribute("value");
     const color = this.getAttribute("color") || "#ffffff";
-    const locked = this.hasAttribute("locked");
     const selected = this.hasAttribute("selected");
     const rolling = this.hasAttribute("rolling");
 
@@ -56,10 +54,6 @@ export class Die extends HTMLElement {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           position: relative;
           transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .die--locked {
-          box-shadow: 0 0 0 3px #facc15, 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .die--selected {
@@ -89,28 +83,13 @@ export class Die extends HTMLElement {
           height: 100%;
         }
 
-        .die__lock-icon {
-          position: absolute;
-          top: -6px;
-          right: -6px;
-          width: 16px;
-          height: 16px;
-          background: #facc15;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 10px;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
       </style>
 
-      <div class="die ${locked ? "die--locked" : ""} ${selected ? "die--selected" : ""} ${rolling ? "die--rolling" : ""}"
+      <div class="die ${selected ? "die--selected" : ""} ${rolling ? "die--rolling" : ""}"
            style="--die-color: ${color}">
         <div class="die__face">
           ${value ? this.#renderFace(parseInt(value), pipColor) : ""}
         </div>
-        ${locked ? '<div class="die__lock-icon">🔒</div>' : ""}
       </div>
     `;
   }

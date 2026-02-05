@@ -146,16 +146,8 @@ export class DragPickupStrategy extends DiceRollingStrategy {
   handleMessage(type, payload, fromPeerId) {
     const { state } = this.context;
 
-    switch (type) {
-      case "dice:roll":
-        state.applyRoll(payload);
-        break;
-
-      // This strategy doesn't use grab/drop messages
-      case "dice:grab":
-      case "dice:drop":
-        // Ignore - not used in this strategy
-        break;
+    if (type === "dice:roll") {
+      state.applyRoll(payload);
     }
   }
 

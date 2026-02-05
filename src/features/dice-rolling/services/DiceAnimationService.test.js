@@ -58,24 +58,6 @@ describe("DiceAnimationService", () => {
       });
     });
 
-    it("should preserve locked dice values", async () => {
-      const lockedDice = new Map([["red", new Set([0, 2, 4])]]);
-      const currentValues = new Map([["red", [1, 2, 3, 4, 5]]]);
-
-      const result = await service.animateRoll({
-        setIds: ["red"],
-        diceConfig,
-        lockedDice,
-        currentValues,
-      });
-
-      const values = result.get("red");
-      expect(values[0]).toBe(1); // locked
-      expect(values[2]).toBe(3); // locked
-      expect(values[4]).toBe(5); // locked
-      // indices 1 and 3 are random
-    });
-
     it("should call onFrame during animation", async () => {
       const onFrame = vi.fn();
 

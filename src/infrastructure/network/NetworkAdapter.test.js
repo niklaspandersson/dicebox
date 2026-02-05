@@ -47,10 +47,10 @@ describe("NetworkAdapter", () => {
 
     it("should broadcast with exclude peer", () => {
       const adapter = new NetworkAdapter(mockWebrtcManager);
-      adapter.broadcast("dice:grab", { setId: "red" }, "peer-1");
+      adapter.broadcast("dice:roll", { values: [4, 5, 6] }, "peer-1");
 
       expect(mockWebrtcManager.broadcast).toHaveBeenCalledWith(
-        { type: "dice-grab", setId: "red" },
+        { type: "dice-roll", values: [4, 5, 6] },
         "peer-1",
       );
     });
@@ -69,12 +69,12 @@ describe("NetworkAdapter", () => {
   describe("send", () => {
     it("should send message to specific peer", () => {
       const adapter = new NetworkAdapter(mockWebrtcManager);
-      adapter.send("peer-1", "dice:lock", { setId: "red", index: 0 });
+      adapter.send("peer-1", "dice:roll", { setId: "red", values: [3] });
 
       expect(mockWebrtcManager.sendToPeer).toHaveBeenCalledWith("peer-1", {
-        type: "dice-lock",
+        type: "dice-roll",
         setId: "red",
-        index: 0,
+        values: [3],
       });
     });
   });
@@ -126,19 +126,19 @@ describe("NetworkAdapter", () => {
       const adapter = new NetworkAdapter(mockWebrtcManager);
       const handler = vi.fn();
 
-      adapter.onMessage("dice:grab", handler);
+      adapter.onMessage("dice:roll", handler);
 
       const messageCallback =
         mockWebrtcManager.addEventListener.mock.calls[0][1];
       messageCallback({
         detail: {
           peerId: "peer-2",
-          message: { type: "dice-grab", setId: "red", username: "Alice" },
+          message: { type: "dice-roll", setId: "red", values: [1, 2, 3] },
         },
       });
 
       expect(handler).toHaveBeenCalledWith(
-        { setId: "red", username: "Alice" },
+        { setId: "red", values: [1, 2, 3] },
         { fromPeerId: "peer-2" },
       );
     });
@@ -272,9 +272,6 @@ describe("NetworkAdapter", () => {
 
       const mappings = [
         ["dice:roll", "dice-roll"],
-        ["dice:grab", "dice-grab"],
-        ["dice:drop", "dice-drop"],
-        ["dice:lock", "dice-lock"],
       ];
 
       for (const [newType, legacyType] of mappings) {

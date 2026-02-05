@@ -7,7 +7,6 @@ const initialState = {
   // Dice configuration (set at room creation)
   config: {
     diceSets: [], // [{ id, count, color }]
-    allowLocking: false,
   },
 
   // Current dice values: Map<setId, number[]>
@@ -15,9 +14,6 @@ const initialState = {
 
   // Who holds each set: Map<setId, { playerId, username }>
   holders: new Map(),
-
-  // Locked dice: Map<setId, Set<index>>
-  lockedDice: new Map(),
 
   // Who rolled each set last: Map<setId, { playerId, username }>
   lastRoller: new Map(),
@@ -28,7 +24,7 @@ const initialState = {
 
 /**
  * Store for dice-related state.
- * Manages dice configuration, values, holders, and locking.
+ * Manages dice configuration, values, and holders.
  */
 export class DiceStore extends Store {
   constructor() {
@@ -150,43 +146,6 @@ export class DiceStore extends Store {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // LOCKING
-  // ─────────────────────────────────────────────────────────────
-
-  get lockedDice() {
-    return this.state.lockedDice;
-  }
-
-  setLock(setId, dieIndex, locked) {
-    this.update((state) => {
-      const lockedDice = new Map(state.lockedDice);
-      const setLocks = new Set(lockedDice.get(setId) || []);
-
-      if (locked) {
-        setLocks.add(dieIndex);
-      } else {
-        setLocks.delete(dieIndex);
-      }
-
-      lockedDice.set(setId, setLocks);
-      return { ...state, lockedDice };
-    });
-  }
-
-  toggleLock(setId, dieIndex) {
-    const setLocks = this.state.lockedDice.get(setId) || new Set();
-    this.setLock(setId, dieIndex, !setLocks.has(dieIndex));
-  }
-
-  clearLocks(setId) {
-    this.update((state) => {
-      const lockedDice = new Map(state.lockedDice);
-      lockedDice.delete(setId);
-      return { ...state, lockedDice };
-    });
-  }
-
-  // ─────────────────────────────────────────────────────────────
   // SERIALIZATION (for P2P sync)
   // ─────────────────────────────────────────────────────────────
 
@@ -196,9 +155,6 @@ export class DiceStore extends Store {
       config: state.config,
       values: Object.fromEntries(state.values),
       holders: Object.fromEntries(state.holders),
-      lockedDice: Object.fromEntries(
-        [...state.lockedDice].map(([k, v]) => [k, [...v]]),
-      ),
       lastRoller: Object.fromEntries(state.lastRoller),
       holderHasRolled: Object.fromEntries(state.holderHasRolled),
     };
@@ -209,12 +165,6 @@ export class DiceStore extends Store {
       config: snapshot.config,
       values: new Map(Object.entries(snapshot.values || {})),
       holders: new Map(Object.entries(snapshot.holders || {})),
-      lockedDice: new Map(
-        Object.entries(snapshot.lockedDice || {}).map(([k, v]) => [
-          k,
-          new Set(v),
-        ]),
-      ),
       lastRoller: new Map(Object.entries(snapshot.lastRoller || {})),
       holderHasRolled: new Map(Object.entries(snapshot.holderHasRolled || {})),
     });
