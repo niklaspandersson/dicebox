@@ -169,15 +169,15 @@ export class DragPickupView extends HTMLElement {
   };
 
   #updateDragState() {
-    const diceArea = this.querySelector(".dice-display");
+    const container = this.querySelector(".drag-pickup-container");
     const hint = this.querySelector(".hint");
 
-    if (diceArea) {
-      diceArea.classList.toggle(
+    if (container) {
+      container.classList.toggle(
         "dragging",
         this.#isDragging && !this.#isCancelled,
       );
-      diceArea.classList.toggle("cancelled", this.#isCancelled);
+      container.classList.toggle("cancelled", this.#isCancelled);
     }
 
     if (hint) {
