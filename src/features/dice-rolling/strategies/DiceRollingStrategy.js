@@ -13,7 +13,6 @@ export class DiceRollingStrategy {
    * @param {object} context.state - DiceStore instance
    * @param {object} context.network - NetworkService instance
    * @param {object} context.localPlayer - Local player info { id, username }
-   * @param {object} context.animationService - DiceAnimationService instance
    */
   constructor(context) {
     if (new.target === DiceRollingStrategy) {

@@ -5,7 +5,6 @@ import {
   DEFAULT_STRATEGY,
 } from "../features/dice-rolling/strategies/index.js";
 import { MessageBus } from "../infrastructure/messaging/MessageBus.js";
-import { DiceAnimationService } from "../features/dice-rolling/services/DiceAnimationService.js";
 
 // Import UI components to register them
 import "../ui/containers/DiceRollerContainer.js";
@@ -64,10 +63,6 @@ export class App {
     const messageBus = new MessageBus();
     this.#container.registerInstance("messageBus", messageBus);
 
-    // Create animation service
-    const animationService = new DiceAnimationService();
-    this.#container.registerInstance("animationService", animationService);
-
     // Set initial strategy
     this.setStrategy(strategyId);
 
@@ -121,7 +116,6 @@ export class App {
       state: this.#container.get("diceStore"),
       network: this.#container.get("network"),
       localPlayer: this.#container.get("localPlayer"),
-      animationService: this.#container.get("animationService"),
     };
 
     // Create new strategy

@@ -21,7 +21,7 @@ export const DEFAULT_STRATEGY = "drag-pickup";
  * Create a strategy instance by ID.
  *
  * @param {string} strategyId - Strategy identifier
- * @param {object} context - Strategy context { state, network, localPlayer, animationService }
+ * @param {object} context - Strategy context { state, network, localPlayer }
  * @returns {DiceRollingStrategy}
  * @throws {Error} If strategy ID is unknown
  */
