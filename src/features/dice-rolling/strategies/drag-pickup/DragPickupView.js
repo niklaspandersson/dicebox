@@ -208,6 +208,14 @@ export class DragPickupView extends HTMLElement {
       const isPickedUp = this.#pickedUpDice.has(index);
       dieEl.classList.toggle("picked-up", isPickedUp);
       dieEl.classList.toggle("not-picked", hasPickedUp && !isPickedUp);
+
+      // Clear inline transform when picked up so CSS class transform applies;
+      // restore it when not picked up
+      if (isPickedUp) {
+        dieEl.style.transform = "";
+      } else if (this.#diceTransforms[index]) {
+        dieEl.style.transform = this.#diceTransforms[index];
+      }
     });
   }
 
@@ -318,9 +326,10 @@ export class DragPickupView extends HTMLElement {
         if (isPickedUp) classes.push("picked-up");
         else if (hasPickedUp) classes.push("not-picked");
 
+        const styleAttr = transform ? `style="transform: ${transform}"` : "";
         return `
           <div class="die-wrapper" data-die-index="${index}">
-            <dice-die class="${classes.join(" ")}" color="${die.color}" value="${die.value}" style="transform: ${transform}"></dice-die>
+            <dice-die class="${classes.join(" ")}" color="${die.color}" value="${die.value}" ${styleAttr}></dice-die>
           </div>
         `;
       })
