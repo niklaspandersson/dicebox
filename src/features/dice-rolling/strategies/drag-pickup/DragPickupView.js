@@ -238,9 +238,9 @@ export class DragPickupView extends HTMLElement {
       this.querySelectorAll("dice-die.rolling").forEach((die) => {
         die.setAttribute("value", Math.floor(Math.random() * 6) + 1);
       });
-    }, 80);
+    }, 120);
 
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 1000));
     clearInterval(animateInterval);
 
     // Actually roll the dice
