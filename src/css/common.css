@@ -224,7 +224,7 @@ play-frame .play-frame-top-slot {
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, calc(-50% - 4px));
   z-index: 1;
 }
 
@@ -235,14 +235,15 @@ play-frame .play-frame-top-slot:empty {
 /* Frame Badge - reusable label style for frame slots */
 .frame-badge {
   display: inline-block;
-  background: var(--navy);
-  color: var(--gold);
+  background: var(--red);
+  color: var(--cream);
   padding: 4px 14px;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.75rem;
+  font-family: 'Lora', serif;
+  font-weight: bold;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  border-radius: 3px;
+  border: 2px solid var(--navy);
   white-space: nowrap;
 }
 
