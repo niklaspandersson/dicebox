@@ -381,7 +381,13 @@ class DiceBoxApp {
     // Hide any views in the play page
     this.#showView("room");
 
-    this.headerBar.showRoomView(this.roomManager.roomId);
+    this.headerBar.showRoomView();
+
+    // Show room code badge on the play frame
+    const topSlot = document.querySelector("play-frame .play-frame-top-slot");
+    if (topSlot) {
+      topSlot.innerHTML = `<span class="frame-badge">Room ${this.roomManager.roomId}</span>`;
+    }
 
     // Get UI components
     const diceRollerContainer = this.roomView.querySelector(
@@ -479,6 +485,10 @@ class DiceBoxApp {
 
     if (this.peerList) this.peerList.clear();
     if (this.diceHistory) this.diceHistory.clear();
+
+    // Clear the room code badge
+    const topSlot = document.querySelector("play-frame .play-frame-top-slot");
+    if (topSlot) topSlot.innerHTML = "";
 
     // Redirect to play page mode selection
     window.location.href = window.location.pathname.replace(/\?.*$/, "");

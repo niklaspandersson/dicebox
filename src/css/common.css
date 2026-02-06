@@ -218,6 +218,33 @@ play-frame .corner-br {
   border-top: none;
 }
 
+/* Play Frame Top Slot - generic slot for content overlapping the top border */
+play-frame .play-frame-top-slot {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+play-frame .play-frame-top-slot:empty {
+  display: none;
+}
+
+/* Frame Badge - reusable label style for frame slots */
+.frame-badge {
+  display: inline-block;
+  background: var(--navy);
+  color: var(--gold);
+  padding: 4px 14px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
 /* Shared Keyframe Animations */
 @keyframes fadeIn {
   from {

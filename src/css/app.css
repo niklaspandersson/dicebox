@@ -137,10 +137,6 @@ input {
   display: none;
 }
 
-#app.in-room header-bar .room-info .room-id {
-  font-size: 0.8rem;
-}
-
 /* ==========================================================================
    Mode Selection & Forms
    ========================================================================== */
@@ -318,25 +314,6 @@ header-bar h1 {
 
 header-bar .tagline {
   display: none;
-}
-
-header-bar .room-info {
-  display: flex;
-  align-items: center;
-}
-
-header-bar .room-info .room-id {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-header-bar .room-info .room-id span {
-  color: var(--gold);
-  font-weight: 600;
-  letter-spacing: 0.1em;
 }
 
 header-bar .btn-leave {

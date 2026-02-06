@@ -15,6 +15,7 @@ class PlayFrame extends HTMLElement {
     outer.className = "play-frame-outer";
     outer.innerHTML = `
       <div class="play-frame-inner">
+        <div class="play-frame-top-slot"></div>
         <span class="play-corner corner-tl"></span>
         <span class="play-corner corner-tr"></span>
         <span class="play-corner corner-bl"></span>
