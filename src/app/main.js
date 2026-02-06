@@ -84,12 +84,33 @@ class DiceBoxApp {
   setupManagerEvents() {
     // Connection manager events
     this.connectionManager.setupEventListeners({
-      onConnected: () => {},
-      onDisconnected: () => {},
+      onConnected: () => {
+        if (this.peerList) {
+          this.peerList.setSelfStatus("connected");
+        }
+      },
+      onDisconnected: () => {
+        if (this.peerList) {
+          const hasPeers = this.peerList.peers.size > 0;
+          this.peerList.setSelfStatus(
+            hasPeers ? "reconnecting-with-peers" : "reconnecting",
+          );
+        }
+      },
       onReconnected: () => {
+        if (this.peerList) {
+          this.peerList.setSelfStatus("connected");
+        }
         // Session should be automatically restored by signaling client
       },
-      onReconnectFailed: () => {},
+      onReconnectFailed: () => {
+        if (this.peerList) {
+          const hasPeers = this.peerList.peers.size > 0;
+          this.peerList.setSelfStatus(
+            hasPeers ? "reconnecting-with-peers" : "disconnected",
+          );
+        }
+      },
       onServerError: () => {},
     });
 
@@ -399,6 +420,7 @@ class DiceBoxApp {
     this.peerList.setSelf(
       this.connectionManager.getEffectiveId(),
       this.roomManager.username,
+      this.connectionManager.serverConnected ? "connected" : "disconnected",
     );
     this.diceHistory.peerId = this.connectionManager.getEffectiveId();
 

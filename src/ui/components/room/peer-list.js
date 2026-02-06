@@ -112,7 +112,7 @@ class PeerList extends HTMLElement {
           ${isHolder ? '<div class="peer-dice-icon">&#127922;</div>' : ""}
         </div>
         <div class="peer-name ${isSelf ? "self" : ""}">${escapeHtml(username)}</div>
-        <div class="peer-status ${status === "connecting" ? "connecting" : ""}"></div>
+        <div class="peer-status ${status !== "connected" ? status : ""}"></div>
       </div>
     `,
       )

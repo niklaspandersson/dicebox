@@ -914,12 +914,34 @@ peer-list .peer-status {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--secondary-color);
+  background: var(--success);
 }
 
 peer-list .peer-status.connecting {
   background: var(--warning);
   animation: pulse 1s infinite;
+}
+
+peer-list .peer-status.disconnected {
+  background: var(--danger);
+}
+
+peer-list .peer-status.reconnecting {
+  animation: pulse-reconnect 2s infinite;
+}
+
+peer-list .peer-status.reconnecting-with-peers {
+  animation: pulse-reconnect-peers 2s infinite;
+}
+
+@keyframes pulse-reconnect {
+  0%, 100% { background: var(--danger); }
+  50% { background: var(--warning); }
+}
+
+@keyframes pulse-reconnect-peers {
+  0%, 100% { background: var(--success); }
+  50% { background: var(--warning); }
 }
 
 peer-list .empty-message {

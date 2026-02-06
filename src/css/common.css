@@ -21,6 +21,7 @@
   --text-muted: #6b5a4a;
   --danger: var(--red);
   --warning: var(--gold);
+  --success: #4a8c5c;
 
   /* Design tokens */
   --border-radius: 0px;
