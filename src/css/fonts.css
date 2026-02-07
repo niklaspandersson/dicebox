@@ -1,0 +1,14 @@
+/* Self-hosted Google Fonts via @fontsource packages.
+   Vite resolves and bundles the woff2 files from node_modules automatically.
+   Only latin subset is loaded to keep bundle size down. */
+
+@import "@fontsource/alfa-slab-one/latin-400.css";
+
+@import "@fontsource/oswald/latin-400.css";
+@import "@fontsource/oswald/latin-500.css";
+@import "@fontsource/oswald/latin-600.css";
+@import "@fontsource/oswald/latin-700.css";
+
+@import "@fontsource/lora/latin-400.css";
+@import "@fontsource/lora/latin-400-italic.css";
+@import "@fontsource/lora/latin-600.css";
