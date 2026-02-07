@@ -14,9 +14,24 @@ const app = express();
 // a comma-separated list of trusted IPs, or "true" to trust all (not recommended).
 // When unset, X-Forwarded-For is ignored and req.ip uses the direct connection IP.
 if (process.env.TRUST_PROXY) {
-  const value = process.env.TRUST_PROXY;
-  // If it looks like a number, parse it; otherwise pass as string
-  const parsed = /^\d+$/.test(value) ? parseInt(value, 10) : value;
+  const value = process.env.TRUST_PROXY.trim();
+
+  let parsed;
+  if (/^\d+$/.test(value)) {
+    // Numeric: number of proxy hops
+    parsed = parseInt(value, 10);
+  } else if (value.toLowerCase() === "true") {
+    parsed = true;
+  } else if (value.toLowerCase() === "false") {
+    parsed = false;
+  } else if (value.includes(",")) {
+    // Comma-separated list of trusted IPs/subnets
+    parsed = value.split(",").map((s) => s.trim());
+  } else {
+    // Single IP/subnet string
+    parsed = value;
+  }
+
   app.set("trust proxy", parsed);
 }
 
