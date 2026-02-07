@@ -99,6 +99,7 @@ const RATE_LIMIT = {
 const HTTP_RATE_LIMIT = {
   windowMs: 60 * 1000, // 1 minute window
   maxRequests: 30, // max requests per window per IP
+  maxEntries: 10000, // cap map size to prevent memory exhaustion
 };
 const httpRates = new Map(); // ip -> { count, windowStart }
 
@@ -108,6 +109,10 @@ function httpRateLimiter(req, res, next) {
   let rateData = httpRates.get(ip);
 
   if (!rateData || now - rateData.windowStart > HTTP_RATE_LIMIT.windowMs) {
+    // Before inserting a new entry, enforce size cap
+    if (!rateData && httpRates.size >= HTTP_RATE_LIMIT.maxEntries) {
+      httpRates.clear();
+    }
     rateData = { count: 0, windowStart: now };
     httpRates.set(ip, rateData);
   }
