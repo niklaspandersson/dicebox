@@ -137,18 +137,6 @@
 
   <div class="safe-area"></div>
 
-  <!-- Smooth scroll for anchor links -->
-  <script>
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = anchor.getAttribute('href').substring(1);
-        const target = document.getElementById(targetId);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth' });
-        }
-      });
-    });
-  </script>
+  <script src="./js/smooth-scroll.js"></script>
 </body>
 </html>
