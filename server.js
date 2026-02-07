@@ -326,16 +326,27 @@ function checkRateLimit(peerId) {
   return rateData.count <= RATE_LIMIT.maxMessages;
 }
 
-// Get client IP from request (respects TRUST_PROXY setting)
+// Get client IP from WebSocket upgrade request.
+// Uses Express's compiled "trust proxy fn" to decide whether the
+// immediate peer is a trusted proxy before reading X-Forwarded-For.
 function getClientIp(req) {
-  // Only trust X-Forwarded-For when a proxy is configured
-  if (process.env.TRUST_PROXY) {
+  const directIp = req.socket?.remoteAddress || "unknown";
+
+  if (!process.env.TRUST_PROXY) {
+    return directIp;
+  }
+
+  // Express compiles "trust proxy" into a function at app.set() time.
+  // Re-use it so the WS path applies the exact same trust logic.
+  const trustFn = app.get("trust proxy fn");
+  if (trustFn && trustFn(directIp, 0)) {
     const forwarded = req.headers["x-forwarded-for"];
     if (forwarded) {
       return forwarded.split(",")[0].trim();
     }
   }
-  return req.socket?.remoteAddress || "unknown";
+
+  return directIp;
 }
 
 // Check connection limit per IP
