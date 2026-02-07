@@ -3,6 +3,10 @@
  * Mesh topology: all peers are equal, no host/client distinction
  */
 
+// Error reporting — install global handlers before anything else
+import { initErrorReporter } from "../services/error-reporter.js";
+initErrorReporter();
+
 // Services
 import { signalingClient } from "../services/signaling-client.js";
 import { webrtcManager } from "../services/webrtc-manager.js";

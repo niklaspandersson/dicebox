@@ -186,6 +186,47 @@ app.get("/api/health", httpRateLimiter, async (req, res) => {
   }
 });
 
+// API: Client error reporting
+// Accepts batched error reports from the frontend and logs them via Pino.
+const CLIENT_ERROR_MAX_BODY = 16 * 1024; // 16KB
+app.post(
+  "/api/client-errors",
+  httpRateLimiter,
+  express.json({ limit: CLIENT_ERROR_MAX_BODY }),
+  (req, res) => {
+    const { errors } = req.body || {};
+    if (!Array.isArray(errors) || errors.length === 0) {
+      return res.status(400).json({ error: "Expected { errors: [...] }" });
+    }
+
+    const clientIp = req.ip || req.socket?.remoteAddress || "unknown";
+
+    // Log up to 20 errors per request to prevent abuse
+    for (const entry of errors.slice(0, 20)) {
+      const message = typeof entry.message === "string"
+        ? entry.message.slice(0, 1024)
+        : "unknown error";
+      const stack = typeof entry.stack === "string"
+        ? entry.stack.slice(0, 2048)
+        : undefined;
+
+      logger.warn(
+        {
+          component: "client",
+          clientIp,
+          url: typeof entry.url === "string" ? entry.url.slice(0, 512) : undefined,
+          source: typeof entry.source === "string" ? entry.source.slice(0, 256) : undefined,
+          stack,
+          clientTimestamp: entry.timestamp,
+        },
+        `Client error: ${message}`,
+      );
+    }
+
+    res.status(204).end();
+  },
+);
+
 // Static file serving with cache headers
 // HTML files: ETag enabled, no caching
 // All other files: Cache forever (immutable)
