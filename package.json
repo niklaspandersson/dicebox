@@ -20,6 +20,9 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@fontsource/alfa-slab-one": "^5.2.8",
+    "@fontsource/lora": "^5.2.8",
+    "@fontsource/oswald": "^5.2.8",
     "express": "^4.21.0",
     "pino": "^9.6.0",
     "redis": "^4.6.13",
