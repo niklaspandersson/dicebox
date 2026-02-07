@@ -790,6 +790,10 @@ dice-history .history-die-wrapper {
   display: inline-flex;
 }
 
+dice-history .history-die-wrapper.dimmed {
+  opacity: 0.3;
+}
+
 dice-history .history-item.multi-holder {
   flex-direction: column;
   align-items: flex-start;

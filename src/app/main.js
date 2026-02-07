@@ -528,23 +528,41 @@ class DiceBoxApp {
 
   #convertToNetworkMessage(type, payload) {
     switch (type) {
-      case "dice:roll":
+      case "dice:roll": {
+        const setResults = payload.setResults
+          ? payload.setResults.map((sr) => ({
+              setId: sr.setId,
+              color: sr.color,
+              values: sr.values,
+              holderId: sr.holderId || sr.playerId,
+              holderUsername: sr.holderUsername || sr.username,
+              rolledIndices: sr.rolledIndices,
+            }))
+          : [
+              {
+                setId: payload.setId,
+                color: payload.color,
+                values: payload.values,
+                holderId: payload.playerId,
+                holderUsername: payload.username,
+              },
+            ];
+
+        const total =
+          payload.total ||
+          setResults.reduce(
+            (sum, sr) => sum + (sr.values || []).reduce((a, b) => a + b, 0),
+            0,
+          );
+
         return {
           type: MSG.DICE_ROLL,
           rollId: payload.rollId || `roll-${Date.now()}`,
           timestamp: payload.timestamp || Date.now(),
-          total:
-            payload.total || payload.values?.reduce((a, b) => a + b, 0) || 0,
-          setResults: payload.setResults || [
-            {
-              setId: payload.setId,
-              color: payload.color,
-              values: payload.values,
-              holderId: payload.playerId,
-              holderUsername: payload.username,
-            },
-          ],
+          total,
+          setResults,
         };
+      }
       default:
         return null;
     }

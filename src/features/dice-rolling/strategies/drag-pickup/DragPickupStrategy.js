@@ -124,9 +124,18 @@ export class DragPickupStrategy extends DiceRollingStrategy {
       state.applyRoll(result);
     }
 
-    // Broadcast all results
-    for (const result of results) {
-      network.broadcast("dice:roll", result);
+    // Broadcast all results together as a single roll
+    if (results.length > 0) {
+      network.broadcast("dice:roll", {
+        setResults: results.map((r) => ({
+          setId: r.setId,
+          color: r.color,
+          values: r.values,
+          playerId: r.playerId,
+          username: r.username,
+          rolledIndices: r.rolledIndices,
+        })),
+      });
     }
 
     return results;
