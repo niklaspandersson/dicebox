@@ -3,7 +3,8 @@
  * Mesh topology: all peers are equal, no host/client distinction
  */
 
-// Error reporting — install global handlers before anything else
+// Error reporting — install global handlers early in this module's init.
+// Note: ES module imports are hoisted, so imported modules evaluate first.
 import { initErrorReporter } from "../services/error-reporter.js";
 initErrorReporter();
 
